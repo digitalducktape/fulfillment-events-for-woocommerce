@@ -89,6 +89,7 @@ final class SplitPlanTest extends TestCase {
 		$GLOBALS['fe_test_actions'] = array();
 		$GLOBALS['fe_test_filters'] = array();
 		$GLOBALS['wpdb']->rows      = array();
+		$GLOBALS['wpdb']->writes    = 0;
 	}
 
 	private function product( $name, $group, $total, $tax, $reduced ) {
@@ -342,10 +343,43 @@ final class SplitPlanTest extends TestCase {
 		$this->assertSame( 0, $this->count_actions( 'fe_order_split' ) );
 		$this->assertSame( array(), $GLOBALS['wpdb']->rows, 'lock released' );
 
-		// The order can still be split later.
+		$this->assertSame( 'yes', $order->get_meta( Fe_Meta::SPLIT_FAILED ) );
+
+		// A failed parent is not split again by later triggers ...
 		unset( $GLOBALS['fe_test_filters']['fe_child_order_args'] );
 		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		Fe_Order_Splitter::on_status_changed( $order->get_id(), 'on-hold', 'processing', $order );
+		$this->assertSame( 'processing', $order->get_status() );
+		$this->assertSame( 1, $this->count_actions( 'fe_order_split_failed' ) );
+		$this->assertSame( $before, array_keys( $GLOBALS['fe_test_orders'] ) );
+
+		// ... until staff delete the flag.
+		$order->delete_meta_data( Fe_Meta::SPLIT_FAILED );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
 		$this->assertSame( Fe_Split_Status::STATUS, $order->get_status() );
+	}
+
+	public function test_order_without_split_mark_costs_no_lock_writes() {
+		$order = $this->parent_order();
+		$order->delete_meta_data( Fe_Meta::WILL_SPLIT );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		Fe_Order_Splitter::maybe_split( 999999 );
+		$this->assertSame( 0, $GLOBALS['wpdb']->writes );
+
+		$order->update_meta_data( Fe_Meta::WILL_SPLIT, 'yes' );
+		$order->update_meta_data( Fe_Meta::SPLIT_FAILED, 'yes' );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$this->assertSame( 0, $GLOBALS['wpdb']->writes );
+	}
+
+	public function test_children_do_not_copy_transaction_id() {
+		$order = $this->parent_order();
+		$order->set_transaction_id( 'ch_123' );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		foreach ( $this->children_of( $order ) as $child ) {
+			$this->assertSame( '', $child->get_transaction_id() );
+			$this->assertSame( 'ch_123', $child->get_meta( Fe_Meta::PARENT_TRANSACTION_ID ) );
+		}
 	}
 
 	public function test_phase_b_failure_is_flagged_for_review() {

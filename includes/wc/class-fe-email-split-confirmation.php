@@ -37,8 +37,6 @@ class Fe_Email_Split_Confirmation extends WC_Email {
 			'{order_number}' => '',
 		);
 
-		add_action( 'fe_order_split', array( $this, 'trigger' ), 10, 2 );
-
 		parent::__construct();
 	}
 

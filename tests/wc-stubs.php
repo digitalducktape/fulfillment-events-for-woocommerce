@@ -260,12 +260,14 @@ if ( ! class_exists( 'FeFakeWpdb' ) ) {
 	class FeFakeWpdb {
 		public $options = 'wp_options';
 		public $rows    = array();
+		public $writes  = 0;
 		public function prepare( $sql, ...$args ) {
 			return array( $sql, $args );
 		}
 		public function query( $prepared ) {
 			list( $sql, $args ) = $prepared;
 			if ( 0 === strpos( $sql, 'INSERT IGNORE' ) ) {
+				$this->writes++;
 				if ( isset( $this->rows[ $args[0] ] ) ) {
 					return 0;
 				}
@@ -279,6 +281,7 @@ if ( ! class_exists( 'FeFakeWpdb' ) ) {
 			return isset( $this->rows[ $args[0] ] ) ? $this->rows[ $args[0] ] : null;
 		}
 		public function delete( $table, $where ) {
+			$this->writes++;
 			$name = $where['option_name'];
 			if ( ! isset( $this->rows[ $name ] ) ) {
 				return 0;

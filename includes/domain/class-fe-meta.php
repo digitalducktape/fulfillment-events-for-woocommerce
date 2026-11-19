@@ -30,6 +30,11 @@ class Fe_Meta {
 	const WILL_SPLIT = '_fe_will_split';
 	const SPLIT_DONE = '_fe_split_done';
 	const CHILDREN   = '_fe_children';
+	// Set when a split was rolled back; the order stays one order and is not
+	// split again until staff delete this key.
+	const SPLIT_FAILED = '_fe_split_failed';
+	// Parent's transaction id, kept on each child for reference.
+	const PARENT_TRANSACTION_ID = '_fe_parent_transaction_id';
 
 	// Order item meta.
 	const GROUP = '_fe_group';

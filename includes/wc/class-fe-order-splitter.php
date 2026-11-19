@@ -142,7 +142,15 @@ class Fe_Order_Splitter {
 	 */
 	public static function maybe_split( $order_id ) {
 		$order_id = (int) $order_id;
-		if ( $order_id <= 0 || ! self::acquire_lock( $order_id ) ) {
+		if ( $order_id <= 0 ) {
+			return;
+		}
+		// Cheap check before the lock, so orders that will never split cost
+		// no database writes on every payment.
+		if ( ! self::needs_split( wc_get_order( $order_id ) ) ) {
+			return;
+		}
+		if ( ! self::acquire_lock( $order_id ) ) {
 			return;
 		}
 		try {
@@ -150,6 +158,21 @@ class Fe_Order_Splitter {
 		} finally {
 			self::release_lock( $order_id );
 		}
+	}
+
+	/**
+	 * Whether an order is marked to split and has neither been split nor
+	 * failed a split. A rolled-back split is not retried until staff delete
+	 * `_fe_split_failed`.
+	 *
+	 * @param WC_Order|false|null $order Order.
+	 * @return bool
+	 */
+	private static function needs_split( $order ) {
+		return $order
+			&& 'yes' === $order->get_meta( Fe_Meta::WILL_SPLIT )
+			&& ! $order->get_meta( Fe_Meta::SPLIT_DONE )
+			&& 'yes' !== $order->get_meta( Fe_Meta::SPLIT_FAILED );
 	}
 
 	/**
@@ -215,7 +238,7 @@ class Fe_Order_Splitter {
 	private static function split_locked( $order_id ) {
 		// Fresh read after taking the lock.
 		$order = wc_get_order( $order_id );
-		if ( ! $order || 'yes' !== $order->get_meta( Fe_Meta::WILL_SPLIT ) || $order->get_meta( Fe_Meta::SPLIT_DONE ) ) {
+		if ( ! self::needs_split( $order ) ) {
 			return;
 		}
 		$parent_status = (string) $order->get_status();
@@ -388,7 +411,6 @@ class Fe_Order_Splitter {
 			'customer_id'          => $parent->get_customer_id(),
 			'payment_method'       => $parent->get_payment_method(),
 			'payment_method_title' => $parent->get_payment_method_title(),
-			'transaction_id'       => $parent->get_transaction_id(),
 			'customer_note'        => $parent->get_customer_note(),
 			'currency'             => $parent->get_currency(),
 			'prices_include_tax'   => $parent->get_prices_include_tax(),
@@ -504,6 +526,11 @@ class Fe_Order_Splitter {
 			}
 		}
 		$meta = $fulfillment ? Fe_Meta::to_meta( $fulfillment ) : array( Fe_Meta::PARENT_ID => (string) (int) $parent->get_id() );
+		// The payment belongs to the parent; a copied transaction id would let
+		// staff refund the same charge again from a child via the gateway.
+		if ( '' !== (string) $parent->get_transaction_id() ) {
+			$meta[ Fe_Meta::PARENT_TRANSACTION_ID ] = (string) $parent->get_transaction_id();
+		}
 		foreach ( $meta as $key => $value ) {
 			$child->update_meta_data( $key, $value );
 		}
@@ -566,11 +593,17 @@ class Fe_Order_Splitter {
 				self::log( sprintf( 'Could not delete pending split order #%d: %s', $child->get_id(), $ignored->getMessage() ) );
 			}
 		}
-		$parent->delete_meta_data( Fe_Meta::SPLIT_DONE );
-		$parent->save();
 		self::log( sprintf( 'Split of order #%d failed and was rolled back: %s', $parent->get_id(), $e->getMessage() ) );
-		/* translators: %s: error message. */
-		$parent->add_order_note( sprintf( __( 'Splitting this order failed and nothing was changed: %s. It stays one order.', 'fulfillment-events-for-woocommerce' ), $e->getMessage() ) );
+		try {
+			$parent->delete_meta_data( Fe_Meta::SPLIT_DONE );
+			// Not retried automatically; staff delete this key to retry.
+			$parent->update_meta_data( Fe_Meta::SPLIT_FAILED, 'yes' );
+			$parent->save();
+			/* translators: %s: error message. */
+			$parent->add_order_note( sprintf( __( 'Splitting this order failed and nothing was changed: %s. It stays one order.', 'fulfillment-events-for-woocommerce' ), $e->getMessage() ) );
+		} catch ( Throwable $inner ) {
+			self::log( sprintf( 'Could not update order #%d after a failed split: %s', $parent->get_id(), $inner->getMessage() ) );
+		}
 		do_action( 'fe_order_split_failed', $parent, array(), $e );
 	}
 
@@ -593,15 +626,19 @@ class Fe_Order_Splitter {
 			$moved[] = '#' . $child->get_order_number();
 		}
 		self::log( sprintf( 'Split of order #%d NEEDS MANUAL REVIEW: %s', $parent->get_id(), $e->getMessage() ) );
-		$parent->add_order_note(
-			sprintf(
-				/* translators: 1: error message, 2: all child order numbers, 3: child order numbers already moved, or a dash. */
-				__( 'Split needs manual review: %1$s. Split orders: %2$s. Already moved out of pending: %3$s. Check stock, sales and statuses on this order and those.', 'fulfillment-events-for-woocommerce' ),
-				$e->getMessage(),
-				implode( ', ', $all ),
-				empty( $moved ) ? '-' : implode( ', ', $moved )
-			)
-		);
+		try {
+			$parent->add_order_note(
+				sprintf(
+					/* translators: 1: error message, 2: all child order numbers, 3: child order numbers already moved, or a dash. */
+					__( 'Split needs manual review: %1$s. Split orders: %2$s. Already moved out of pending: %3$s. Check stock, sales and statuses on this order and those.', 'fulfillment-events-for-woocommerce' ),
+					$e->getMessage(),
+					implode( ', ', $all ),
+					empty( $moved ) ? '-' : implode( ', ', $moved )
+				)
+			);
+		} catch ( Throwable $inner ) {
+			self::log( sprintf( 'Could not add the review note to order #%d: %s', $parent->get_id(), $inner->getMessage() ) );
+		}
 		do_action( 'fe_order_split_failed', $parent, $children, $e );
 	}
 
