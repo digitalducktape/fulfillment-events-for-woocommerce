@@ -24,6 +24,11 @@ here.
 - [ ] A cart with only a non-event product is byte-identical to before: compare the Store API /cart response with the plugin on and off.
 - [ ] Enter an address in a zone with no rates for an event: a notice reads "{event} items aren't available for {postcode}. Try a different address or remove them from your cart." in classic cart/checkout and blocks, and blocks checkout is blocked. With no postcode entered, the notice omits it.
 
+- [ ] Single-event orders (delivery, pickup, courier) in block and classic checkout: order meta shows `_fe_contract`, `_fe_event_id`, `_fe_event_name`, `_fe_date`, `_fe_type`, `_fe_window` (plus `_fe_location` for pickup), and `fe_get_order_fulfillment()` returns them.
+- [ ] Line items carry `_fe_group` (`event:{id}`, `regular`, or `none` for virtual) and shipping items carry the package group.
+- [ ] An order with an event package plus a regular package gets `_fe_will_split = yes` and no contract meta.
+- [ ] Rename the event or location after ordering: existing orders keep the name and location they were stamped with.
+
 ## M2: order split
 
 ## M4: add-ons and polish

@@ -28,6 +28,7 @@ class Fe_Plugin {
 		Fe_Activator::maybe_upgrade();
 		add_action( 'init', array( 'Fe_Event_Repo', 'register_post_type' ) );
 		Fe_Cart::init();
+		Fe_Order_Stamper::init();
 		add_action( 'woocommerce_shipping_init', array( __CLASS__, 'load_shipping_methods' ) );
 		add_filter( 'woocommerce_shipping_methods', array( __CLASS__, 'register_shipping_methods' ) );
 	}
