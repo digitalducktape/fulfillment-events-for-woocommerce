@@ -37,7 +37,7 @@ class Fe_Activator {
   delivery_window VARCHAR(100) NOT NULL DEFAULT '',
   pickup TINYINT(1) NOT NULL DEFAULT 0,
   pickup_window VARCHAR(100) NOT NULL DEFAULT '',
-  location_id BIGINT(20) UNSIGNED NULL,
+  location_id BIGINT(20) UNSIGNED DEFAULT NULL,
   PRIMARY KEY  (id),
   KEY event_id (event_id)
 ) {$charset_sql};";
@@ -45,8 +45,8 @@ class Fe_Activator {
 		$locations = "CREATE TABLE {$prefix}fe_locations (
   id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(190) NOT NULL DEFAULT '',
-  address TEXT NULL,
-  instructions TEXT NULL,
+  address TEXT DEFAULT NULL,
+  instructions TEXT DEFAULT NULL,
   is_default TINYINT(1) NOT NULL DEFAULT 0,
   PRIMARY KEY  (id)
 ) {$charset_sql};";
@@ -56,9 +56,9 @@ class Fe_Activator {
   event_id BIGINT(20) UNSIGNED NOT NULL,
   zone_id BIGINT(20) UNSIGNED NOT NULL,
   type VARCHAR(20) NOT NULL,
-  date DATE NULL,
+  date DATE DEFAULT NULL,
   mode VARCHAR(10) NOT NULL DEFAULT 'inherit',
-  cost DECIMAL(10,2) NULL,
+  cost DECIMAL(10,2) DEFAULT NULL,
   PRIMARY KEY  (id),
   UNIQUE KEY event_zone_type_date (event_id,zone_id,type,date)
 ) {$charset_sql};";
