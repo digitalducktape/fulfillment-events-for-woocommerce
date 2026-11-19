@@ -28,6 +28,35 @@ class Fe_Plugin {
 		Fe_Activator::maybe_upgrade();
 		add_action( 'init', array( 'Fe_Event_Repo', 'register_post_type' ) );
 		Fe_Cart::init();
+		add_action( 'woocommerce_shipping_init', array( __CLASS__, 'load_shipping_methods' ) );
+		add_filter( 'woocommerce_shipping_methods', array( __CLASS__, 'register_shipping_methods' ) );
+	}
+
+	/**
+	 * Loads the shipping method classes once WC_Shipping_Method exists.
+	 */
+	public static function load_shipping_methods() {
+		require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-rate-builder.php';
+		require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-shipping-method.php';
+		require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-method-delivery.php';
+		require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-method-pickup.php';
+		require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-method-courier.php';
+		require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-method-addon.php';
+	}
+
+	/**
+	 * Registers the event shipping methods.
+	 *
+	 * @param array $methods Method id => class name.
+	 * @return array
+	 */
+	public static function register_shipping_methods( $methods ) {
+		self::load_shipping_methods();
+		$methods['fe_delivery'] = 'Fe_Method_Delivery';
+		$methods['fe_pickup']   = 'Fe_Method_Pickup';
+		$methods['fe_courier']  = 'Fe_Method_Courier';
+		$methods['fe_addon']    = 'Fe_Method_Addon';
+		return $methods;
 	}
 
 	/**

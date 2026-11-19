@@ -14,6 +14,11 @@ here.
 - [ ] A product linked to an open event and a closed event stays purchasable; an unlinked product is unaffected.
 - [ ] A product whose only open event has all dates in the past is not purchasable.
 
+- [ ] WooCommerce > Settings > Shipping: add Event delivery, Event pickup, Event courier and Event add-on to a zone; each saves its title, cost and default window in the modal.
+- [ ] For a package carrying a published event, the zone shows one rate per date, labelled like "Delivery · Thu, Dec 10" and "Pickup at {location} · Sun, Dec 13"; past dates and dates switched off for the zone are absent; a draft event yields no rates.
+- [ ] After checkout, the shipping line item carries fe_event_id, fe_event_name, fe_date, fe_type, fe_window and fe_location meta.
+- [ ] A cart with no event product shows none of these rates.
+
 ## M2: order split
 
 ## M4: add-ons and polish

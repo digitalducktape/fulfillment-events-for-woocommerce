@@ -18,3 +18,4 @@ require_once $includes . 'domain/class-fe-event-resolver.php';
 require_once $includes . 'data/class-fe-event-repo.php';
 require_once $includes . 'data/class-fe-zone-rule-repo.php';
 require_once $includes . 'data/class-fe-location-repo.php';
+require_once $includes . 'domain/class-fe-rate-builder.php';
