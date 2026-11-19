@@ -35,4 +35,11 @@ class EmailsTest extends TestCase {
 		$this->assertFalse( Fe_Emails::suppress( 'customer_refunded_order', $this->child, 'no' ) );
 		$this->assertFalse( Fe_Emails::suppress( 'fe_split_confirmation', $this->parent, 'no' ) );
 	}
+
+	public function test_split_failed_parent_suppresses_nothing() {
+		$meta = array( '_fe_will_split' => 'yes', '_fe_split_failed' => 'yes' );
+		foreach ( array( 'customer_processing_order', 'customer_on_hold_order', 'new_order' ) as $id ) {
+			$this->assertFalse( Fe_Emails::suppress( $id, $meta, 'no' ) );
+		}
+	}
 }

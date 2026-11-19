@@ -49,6 +49,8 @@ here.
 - [ ] Cancel one child: only that child's items are restocked. Cancel (or fully refund with "restock" ticked) the parent: no stock changes.
 - [ ] An offline gateway (bank transfer, cheque) puts the parent on-hold: it splits immediately and the children are On hold. Moving the children to Processing reduces no stock.
 - [ ] Emails at split (two-event order): the customer receives exactly one email, the split confirmation, listing every child with event, type, date, window, pickup location and items; no per-child processing or on-hold emails and none for the parent.
+- [ ] Forced split failure that rolls back (for example fail child creation): the parent stays one order, gets `_fe_split_failed` = yes, and the customer processing/on-hold email and the staff new-order email are sent once for the parent.
+- [ ] Partial split failure ("needs manual review" note): no email is sent automatically; contact the customer manually.
 - [ ] Staff new-order emails: one per child with "per child" ticked in Settings; none at all with it unticked; never one for the parent.
 - [ ] Single-event and regular orders: stock WooCommerce emails are unchanged (customer processing/on-hold and staff new order).
 - [ ] WooCommerce > Settings > Emails lists "Split order confirmation" with editable subject, heading and additional content; a theme copy at woocommerce/emails/split-confirmation.php overrides the template; plain text format renders.

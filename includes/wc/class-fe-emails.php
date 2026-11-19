@@ -22,6 +22,13 @@ class Fe_Emails {
 	const CUSTOMER_IDS = array( 'customer_processing_order', 'customer_on_hold_order' );
 
 	/**
+	 * Marks a parent whose split was rolled back; it is a normal order again.
+	 *
+	 * @var string
+	 */
+	const SPLIT_FAILED = '_fe_split_failed';
+
+	/**
 	 * Registers the hooks.
 	 */
 	public static function init() {
@@ -29,6 +36,7 @@ class Fe_Emails {
 			add_filter( 'woocommerce_email_enabled_' . $id, array( __CLASS__, 'filter_customer_email' ), 10, 2 );
 		}
 		add_filter( 'woocommerce_email_enabled_new_order', array( __CLASS__, 'filter_new_order_email' ), 10, 2 );
+		add_action( 'fe_order_split_failed', array( __CLASS__, 'on_split_failed' ), 10, 3 );
 		add_filter( 'woocommerce_email_classes', array( __CLASS__, 'register_email_class' ) );
 	}
 
@@ -41,6 +49,9 @@ class Fe_Emails {
 	 * @return bool True when the email must not be sent.
 	 */
 	public static function suppress( $email_id, array $meta, $staff_per_child ) {
+		if ( isset( $meta['_fe_split_failed'] ) && 'yes' === $meta['_fe_split_failed'] ) {
+			return false;
+		}
 		$is_parent = isset( $meta['_fe_will_split'] ) && 'yes' === $meta['_fe_will_split'];
 		$is_child  = ! empty( $meta['_fe_parent_id'] );
 
@@ -66,6 +77,7 @@ class Fe_Emails {
 		return array(
 			'_fe_will_split' => $order->get_meta( Fe_Meta::WILL_SPLIT ),
 			'_fe_parent_id'  => $order->get_meta( Fe_Meta::PARENT_ID ),
+			_fe_split_failed' => $order->get_meta( self::SPLIT_FAILED ),
 		);
 	}
 
@@ -97,6 +109,34 @@ class Fe_Emails {
 			return false;
 		}
 		return $enabled;
+	}
+
+	/**
+	 * After a rolled-back split the parent is a single order whose emails were
+	 * suppressed. Sends the ones WooCommerce would have sent. The partial
+	 * failure path (children passed) sends nothing: children may already have
+	 * emailed, so staff contact the customer from the order note.
+	 *
+	 * @param WC_Order   $parent   Parent order.
+	 * @param WC_Order[] $children Children (empty on a clean rollback).
+	 * @param Throwable  $e        Error.
+	 */
+	public static function on_split_failed( $parent, $children = array(), $e = null ) {
+		if ( ! empty( $children ) || ! $parent instanceof WC_Order || ! function_exists( 'WC' ) ) {
+			return;
+		}
+		$parent->update_meta_data( self::SPLIT_FAILED, 'yes' );
+		$parent->save();
+
+		$emails = WC()->mailer()->emails;
+		$status = $parent->get_status();
+		$key    = 'on-hold' === $status ? 'WC_Email_Customer_On_Hold_Order' : ( 'processing' === $status ? 'WC_Email_Customer_Processing_Order' : '' );
+		if ( '' !== $key && isset( $emails[ $key ] ) ) {
+			$emails[ $key ]->trigger( $parent->get_id(), $parent );
+		}
+		if ( isset( $emails['WC_Email_New_Order'] ) ) {
+			$emails['WC_Email_New_Order']->trigger( $parent->get_id(), $parent );
+		}
 	}
 
 	/**
