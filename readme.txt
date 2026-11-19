@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.2
+Stable tag: 0.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,9 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.4.3 =
+* Products that don't need shipping (virtual, e.g. class tickets) ignore events: no "Available for delivery or pickup" note, and a closed event no longer makes them unpurchasable, even when their category is in the event.
 
 = 0.4.2 =
 * Products list bulk edit: add products to an event, exclude them from it, or remove them (back to following their categories).

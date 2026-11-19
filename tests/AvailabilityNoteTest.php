@@ -44,4 +44,19 @@ class AvailabilityNoteTest extends TestCase {
 		$this->assertTrue( Fe_Cart::should_append_to_price_block( array(), array( 'productId' => 7 ), 7 ) );
 		$this->assertFalse( Fe_Cart::should_append_to_price_block( array(), array(), 7 ) );
 	}
+
+	public function test_non_shipping_product_is_treated_as_in_no_event() {
+		$active = array( 'status' => 'active', 'event_id' => 4 );
+		$closed = array( 'status' => 'closed', 'event_id' => null );
+		$none   = array( 'status' => 'none', 'event_id' => null );
+		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $active ) );
+		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $closed ) );
+	}
+
+	public function test_shipping_product_keeps_its_event_status() {
+		$active = array( 'status' => 'active', 'event_id' => 4 );
+		$closed = array( 'status' => 'closed', 'event_id' => null );
+		$this->assertSame( $active, Fe_Cart::status_for_shipping( true, $active ) );
+		$this->assertSame( $closed, Fe_Cart::status_for_shipping( true, $closed ) );
+	}
 }

@@ -13,6 +13,7 @@ here.
 - [ ] A product linked only to an event whose sales window has ended: the add-to-cart button disappears and the product cannot be added; a variation of it is also unavailable.
 - [ ] A product linked to an open event and a closed event stays purchasable; an unlinked product is unaffected.
 - [ ] A product whose only open event has all dates in the past is not purchasable.
+- [ ] A virtual product (class ticket) in a category linked to an event shows no "Available for…" note, and stays purchasable after that event closes; a virtual variation of a variable product behaves the same.
 
 - [ ] WooCommerce > Settings > Shipping: add Event delivery, Event pickup, Event courier and Event add-on to a zone; delivery, pickup and courier save their title, cost and default window in the modal; Event add-on shows only a title.
 - [ ] For a package carrying a published event, the zone shows one rate per date, labelled like "Delivery · Thu, Dec 10" and "Pickup at {location} · Sun, Dec 13"; past dates and dates switched off for the zone are absent; a draft event yields no rates.

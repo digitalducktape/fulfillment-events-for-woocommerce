@@ -213,13 +213,18 @@ class Fe_Cart {
 	}
 
 	/**
-	 * Note markup for a product, or '' when it has no open event.
+	 * Note markup for a product, or '' when it has no open event or doesn't
+	 * ship.
 	 *
 	 * @param int $product_id Product id.
 	 * @return string
 	 */
 	private static function product_note_html( $product_id ) {
-		$st = self::product_event_status( (int) $product_id );
+		$product = function_exists( 'wc_get_product' ) ? wc_get_product( (int) $product_id ) : null;
+		if ( ! $product ) {
+			return '';
+		}
+		$st = self::status_for_product( $product );
 		if ( 'active' !== $st['status'] || empty( $st['event_id'] ) ) {
 			return '';
 		}
@@ -558,7 +563,7 @@ class Fe_Cart {
 	 * @return string
 	 */
 	public static function no_rates_html( $html ) {
-		$package = self::$rendering_package;
+		$package                 = self::$rendering_package;
 		self::$rendering_package = null;
 		if ( ! is_array( $package ) || empty( $package['fe_event_id'] ) ) {
 			if ( null !== $package ) {
@@ -621,7 +626,38 @@ class Fe_Cart {
 	}
 
 	/**
-	 * Blocks purchase of products whose events are all closed.
+	 * Pure: events only govern shipping, so a product that doesn't ship
+	 * (virtual, e.g. a class ticket) behaves as if it were in no event, even
+	 * when its category is linked to one.
+	 *
+	 * @param bool  $needs_shipping Whether the product ships.
+	 * @param array $status         Result of product_event_status().
+	 * @return array{status:string, event_id:?int}
+	 */
+	public static function status_for_shipping( $needs_shipping, array $status ) {
+		if ( $needs_shipping ) {
+			return $status;
+		}
+		return array(
+			'status'   => 'none',
+			'event_id' => null,
+		);
+	}
+
+	/**
+	 * Event status for a product object, honoring status_for_shipping().
+	 *
+	 * @param WC_Product $product Product or variation.
+	 * @return array{status:string, event_id:?int}
+	 */
+	private static function status_for_product( $product ) {
+		$id    = $product->is_type( 'variation' ) ? (int) $product->get_parent_id() : (int) $product->get_id();
+		$ships = method_exists( $product, 'needs_shipping' ) ? (bool) $product->needs_shipping() : true;
+		return self::status_for_shipping( $ships, self::product_event_status( $id ) );
+	}
+
+	/**
+	 * Blocks purchase of shippable products whose events are all closed.
 	 *
 	 * @param bool       $purchasable Current value.
 	 * @param WC_Product $product     Product or variation.
@@ -631,8 +667,7 @@ class Fe_Cart {
 		if ( ! $purchasable ) {
 			return $purchasable;
 		}
-		$id = $product->is_type( 'variation' ) ? (int) $product->get_parent_id() : (int) $product->get_id();
-		$st = self::product_event_status( $id );
+		$st = self::status_for_product( $product );
 		return 'closed' === $st['status'] ? false : $purchasable;
 	}
 }
