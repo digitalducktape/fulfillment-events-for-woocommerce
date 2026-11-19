@@ -1,0 +1,26 @@
+/* Fulfillment Events admin. */
+.fe-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0; }
+.fe-header h1, .fe-header__title { margin: 0; font-size: 20px; font-weight: 600; }
+.fe-support { text-decoration: none; font-weight: 600; }
+
+.fe-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; line-height: 1.6; border: 1px solid transparent; white-space: nowrap; }
+.fe-pill--default { background: #f0f0f1; color: #3c434a; border-color: #dcdcde; }
+.fe-pill--override { background: #e5f5fa; color: #045a73; border-color: #9fd3e4; }
+.fe-pill--off { background: #fcf0f1; color: #8a2424; border-color: #f0b8bb; }
+.fe-pill--none { background: transparent; color: #787c82; border: 1px dashed #c3c4c7; }
+.fe-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+
+.fe-grid th, .fe-grid td { vertical-align: top; }
+.fe-grid tbody th { width: 22%; font-weight: 600; }
+.fe-cell-form { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.fe-cell-form select, .fe-cell-form input[type="number"] { max-width: 100%; }
+.fe-cell-form input[type="number"] { width: 5.5em; }
+
+.fe-dates td { vertical-align: top; }
+.fe-dates td input[type="text"] { display: block; margin-top: 4px; width: 100%; }
+
+.fe-form-table th { width: 140px; }
+
+.fe-badge { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 12px; }
+.fe-badge--warn { background: #fcf9e8; color: #6e4b00; border: 1px solid #dba617; }
+.column-fe_events { width: 9em; }

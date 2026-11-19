@@ -22,3 +22,4 @@ require_once $includes . 'domain/class-fe-rate-builder.php';
 require_once $includes . 'domain/class-fe-cart-grouper.php';
 require_once $includes . 'wc/class-fe-cart.php';
 require_once $includes . 'wc/class-fe-order-stamper.php';
+require_once $includes . 'admin/class-fe-event-editor.php';

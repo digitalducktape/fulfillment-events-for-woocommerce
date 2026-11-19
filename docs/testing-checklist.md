@@ -29,6 +29,16 @@ here.
 - [ ] An order with an event package plus a regular package gets `_fe_will_split = yes` and no contract meta.
 - [ ] Rename the event or location after ordering: existing orders keep the name and location they were stamped with.
 
+- [ ] Admin menu: "Fulfillment" (calendar icon) lists Events, Locations, Settings with Events first; the top-level link opens the event list; the "Support this plugin" link opens in a new tab from Settings and the event editor.
+- [ ] Settings: toggle both options, save, reload; values persist. Locations: add, edit, set default, delete; the default stays unique.
+- [ ] Create an event "Holiday pre-order" with 3 dates (mixed delivery and pickup, windows, a non-default location), a sales window, a zone override (for example delivery on, cost 25, "only on" one date) and a turned-off courier cell. Save, reload: every value is identical. Adding and removing date rows works without a page reload.
+- [ ] Zone grid: zones with no delivery/pickup/courier method show "Not in zone" and have no form; pills show "{cost} default"/"Free", "Turned off" and the override cost matching the saved rules; zone "Locations not covered by your other zones" is listed last.
+- [ ] Set sales close before sales open and save: the close time is cleared and a warning appears. After any save, the checkout shipping rates reflect the change without clearing transients by hand.
+- [ ] Event list: "Duplicate for next year" creates a draft "{title} (copy)" with every date, rule date and the sales window one year later (a Feb 29 date is dropped) and the same category links.
+- [ ] Delete an event permanently: its dates and zone rules rows are gone (check the fe_ tables) and products and categories no longer list it.
+- [ ] Product edit, General tab: "Fulfillment events" multiselect saves; category add and edit screens save the same field. A product in two open events shows "In 2 open events" in the Events column of the products list; one in a single event shows a dash.
+- [ ] Shop manager (manage_woocommerce without administrator) can open Events, Locations, Settings and save an event.
+
 ## M2: order split
 
 ## M4: add-ons and polish

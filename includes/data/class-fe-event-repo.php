@@ -34,10 +34,23 @@ class Fe_Event_Repo {
 				),
 				'public'          => false,
 				'show_ui'         => true,
-				'show_in_menu'    => false, // The Fulfillment menu is added by the admin pages.
+				'show_in_menu'    => 'fe-fulfillment', // Parent menu is added by Fe_Admin.
 				'show_in_rest'    => false,
 				'supports'        => array( 'title' ),
 				'capability_type' => 'post',
+				'capabilities'    => array(
+					'edit_posts'             => 'manage_woocommerce',
+					'edit_others_posts'      => 'manage_woocommerce',
+					'edit_private_posts'     => 'manage_woocommerce',
+					'edit_published_posts'   => 'manage_woocommerce',
+					'publish_posts'          => 'manage_woocommerce',
+					'read_private_posts'     => 'manage_woocommerce',
+					'delete_posts'           => 'manage_woocommerce',
+					'delete_others_posts'    => 'manage_woocommerce',
+					'delete_private_posts'   => 'manage_woocommerce',
+					'delete_published_posts' => 'manage_woocommerce',
+					'create_posts'           => 'manage_woocommerce',
+				),
 				'map_meta_cap'    => true,
 				'rewrite'         => false,
 			)
@@ -166,6 +179,16 @@ class Fe_Event_Repo {
 	public static function is_valid_date( $date ) {
 		$dt = DateTime::createFromFormat( '!Y-m-d', (string) $date );
 		return false !== $dt && $dt->format( 'Y-m-d' ) === $date;
+	}
+
+	/**
+	 * Deletes an event's date rows (used when the event post is deleted).
+	 *
+	 * @param int $event_id Event post id.
+	 */
+	public static function delete_children( $event_id ) {
+		global $wpdb;
+		$wpdb->delete( self::dates_table(), array( 'event_id' => (int) $event_id ), array( '%d' ) );
 	}
 
 	/**

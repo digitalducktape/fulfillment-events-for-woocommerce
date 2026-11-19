@@ -92,4 +92,116 @@ class Fe_Product_Links {
 			$ids ? update_post_meta( $object_id, self::META_KEY, $ids ) : delete_post_meta( $object_id, self::META_KEY );
 		}
 	}
+
+	/**
+	 * Term ids whose links include an event.
+	 *
+	 * @param int $event_id Event id.
+	 * @return int[]
+	 */
+	public static function term_ids_for_event( $event_id ) {
+		$terms = get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+				'fields'     => 'ids',
+				'number'     => 1000,
+				'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => self::META_KEY,
+						'value'   => self::needle( $event_id ),
+						'compare' => 'LIKE',
+					),
+				),
+			)
+		);
+		$out = array();
+		foreach ( is_array( $terms ) ? $terms : array() as $term_id ) {
+			if ( in_array( (int) $event_id, self::clean( get_term_meta( (int) $term_id, self::META_KEY, true ) ), true ) ) {
+				$out[] = (int) $term_id;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Product ids whose own links include an event.
+	 *
+	 * @param int $event_id Event id.
+	 * @return int[]
+	 */
+	public static function product_ids_for_event( $event_id ) {
+		$ids = get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+				'posts_per_page' => 1000,
+				'no_found_rows'  => true,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => self::META_KEY,
+						'value'   => self::needle( $event_id ),
+						'compare' => 'LIKE',
+					),
+				),
+			)
+		);
+		$out = array();
+		foreach ( $ids as $id ) {
+			if ( in_array( (int) $event_id, self::clean( get_post_meta( (int) $id, self::META_KEY, true ) ), true ) ) {
+				$out[] = (int) $id;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Serialized form of an int inside a stored array, for a LIKE prefilter.
+	 *
+	 * @param int $event_id Event id.
+	 * @return string
+	 */
+	private static function needle( $event_id ) {
+		return 'i:' . (int) $event_id . ';';
+	}
+
+	/**
+	 * Makes an event's links exactly the given categories and products,
+	 * adding it where missing and removing it everywhere else.
+	 *
+	 * @param int   $event_id     Event id.
+	 * @param int[] $term_ids     Categories that should link the event.
+	 * @param int[] $product_ids  Products that should link the event.
+	 */
+	public static function sync_event( $event_id, array $term_ids, array $product_ids ) {
+		$event_id    = (int) $event_id;
+		$term_ids    = self::clean( $term_ids );
+		$product_ids = self::clean( $product_ids );
+
+		foreach ( array_unique( array_merge( $term_ids, self::term_ids_for_event( $event_id ) ) ) as $term_id ) {
+			$current = self::clean( get_term_meta( (int) $term_id, self::META_KEY, true ) );
+			self::set_for_term( $term_id, self::with_event( $current, $event_id, in_array( (int) $term_id, $term_ids, true ) ) );
+		}
+		foreach ( array_unique( array_merge( $product_ids, self::product_ids_for_event( $event_id ) ) ) as $product_id ) {
+			$current = self::clean( get_post_meta( (int) $product_id, self::META_KEY, true ) );
+			self::set_for_product( $product_id, self::with_event( $current, $event_id, in_array( (int) $product_id, $product_ids, true ) ) );
+		}
+	}
+
+	/**
+	 * Adds or removes an event id in a list.
+	 *
+	 * @param int[] $ids      Current ids.
+	 * @param int   $event_id Event id.
+	 * @param bool  $present  Whether it should be in the list.
+	 * @return int[]
+	 */
+	private static function with_event( array $ids, $event_id, $present ) {
+		$ids = array_values( array_diff( $ids, array( $event_id ) ) );
+		if ( $present ) {
+			$ids[] = $event_id;
+		}
+		return $ids;
+	}
 }

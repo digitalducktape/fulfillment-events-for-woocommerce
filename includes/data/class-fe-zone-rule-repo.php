@@ -97,6 +97,16 @@ class Fe_Zone_Rule_Repo {
 	}
 
 	/**
+	 * Deletes all of an event's rules (used when the event post is deleted).
+	 *
+	 * @param int $event_id Event post id.
+	 */
+	public static function delete_for_event( $event_id ) {
+		global $wpdb;
+		$wpdb->delete( self::table(), array( 'event_id' => (int) $event_id ), array( '%d' ) );
+	}
+
+	/**
 	 * Replaces all of an event's rules. The only writer: deletes the event's
 	 * rows, then inserts the normalized set.
 	 *
