@@ -58,6 +58,28 @@ class Fe_Cart {
 	 * @return array
 	 */
 	public static function packages( $packages ) {
+		return self::build_packages(
+			$packages,
+			function ( $product_id ) {
+				$st = self::product_event_status( (int) $product_id );
+				return $st['event_id'];
+			},
+			function ( $event_id ) {
+				$event = Fe_Event_Repo::get( (int) $event_id );
+				return $event ? (string) $event['title'] : '';
+			}
+		);
+	}
+
+	/**
+	 * Pure package builder behind packages().
+	 *
+	 * @param array    $packages          Packages built by WooCommerce.
+	 * @param callable $event_for_product Product id => event id or null.
+	 * @param callable $event_name        Event id => event name.
+	 * @return array
+	 */
+	public static function build_packages( $packages, $event_for_product, $event_name ) {
 		if ( ! is_array( $packages ) || empty( $packages ) ) {
 			return $packages;
 		}
@@ -70,13 +92,12 @@ class Fe_Cart {
 			}
 		}
 
-		$items    = array();
+		$items     = array();
 		$has_event = false;
 		foreach ( $contents as $key => $item ) {
 			$event_id = null;
 			if ( ! empty( $item['product_id'] ) ) {
-				$st       = self::product_event_status( (int) $item['product_id'] );
-				$event_id = $st['event_id'];
+				$event_id = call_user_func( $event_for_product, (int) $item['product_id'] );
 			}
 			if ( null !== $event_id ) {
 				$has_event = true;
@@ -97,29 +118,45 @@ class Fe_Cart {
 		foreach ( $groups as $group ) {
 			$group_contents = array();
 			$cost           = 0;
+			$subtotal       = 0;
 			foreach ( $group['item_keys'] as $key ) {
-				$group_contents[ $key ] = $contents[ $key ];
-				$cost                  += isset( $contents[ $key ]['line_total'] ) ? (float) $contents[ $key ]['line_total'] : 0;
+				$line                   = $contents[ $key ];
+				$group_contents[ $key ] = $line;
+				$cost                  += isset( $line['line_total'] ) ? (float) $line['line_total'] : 0;
+				$subtotal              += ( isset( $line['line_subtotal'] ) ? (float) $line['line_subtotal'] : 0 ) + ( isset( $line['line_subtotal_tax'] ) ? (float) $line['line_subtotal_tax'] : 0 );
 			}
-			$user    = isset( $first['user'] ) ? $first['user'] : array( 'ID' => get_current_user_id() );
-			$package = array(
-				'contents'        => $group_contents,
-				'contents_cost'   => $cost,
-				'applied_coupons' => isset( $first['applied_coupons'] ) ? $first['applied_coupons'] : array(),
-				'user'            => $user,
-				'destination'     => isset( $first['destination'] ) ? $first['destination'] : array(),
-				'fe_group'        => $group['group'],
-				'fe_event_id'     => $group['event_id'],
-				'fe_event_name'   => '',
-				'fe_customer_id'  => isset( $user['ID'] ) ? (int) $user['ID'] : 0,
-			);
-			if ( null !== $group['event_id'] ) {
-				$event = Fe_Event_Repo::get( (int) $group['event_id'] );
-				$package['fe_event_name'] = $event ? $event['title'] : '';
-			}
-			$result[] = $package;
+			$user    = isset( $first['user'] ) ? $first['user'] : array( 'ID' => function_exists( 'get_current_user_id' ) ? get_current_user_id() : 0 );
+			$package = $first;
+			unset( $package['rates'] );
+			$package['contents']        = $group_contents;
+			$package['contents_cost']   = $cost;
+			$package['cart_subtotal']   = $subtotal;
+			$package['applied_coupons'] = isset( $first['applied_coupons'] ) ? $first['applied_coupons'] : array();
+			$package['user']            = $user;
+			$package['destination']     = isset( $first['destination'] ) ? $first['destination'] : array();
+			$package['fe_group']        = $group['group'];
+			$package['fe_event_id']     = $group['event_id'];
+			$package['fe_event_name']   = null !== $group['event_id'] ? (string) call_user_func( $event_name, $group['event_id'] ) : '';
+			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
+			$result[]                   = $package;
 		}
 		return $result;
+	}
+
+	/**
+	 * Whether a destination is filled in enough to judge rate availability.
+	 *
+	 * @param array $destination Package destination.
+	 * @return bool
+	 */
+	public static function destination_is_complete( $destination ) {
+		if ( ! is_array( $destination ) ) {
+			return false;
+		}
+		$has = function ( $k ) use ( $destination ) {
+			return isset( $destination[ $k ] ) && '' !== trim( (string) $destination[ $k ] );
+		};
+		return $has( 'postcode' ) || ( $has( 'country' ) && $has( 'city' ) );
 	}
 
 	/**
@@ -233,7 +270,10 @@ class Fe_Cart {
 	 */
 	public static function store_api_errors( $errors, $cart ) {
 		foreach ( self::empty_event_packages() as $package ) {
-			$errors->add( 'fe_no_rates', self::message_for( $package ) );
+			if ( ! self::destination_is_complete( isset( $package['destination'] ) ? $package['destination'] : array() ) ) {
+				continue;
+			}
+			$errors->add( 'fe_no_rates_' . (int) $package['fe_event_id'], self::message_for( $package ) );
 		}
 	}
 
