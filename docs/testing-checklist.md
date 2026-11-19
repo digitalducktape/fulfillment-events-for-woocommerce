@@ -10,6 +10,10 @@ here.
 - [ ] Save a location as default, then save another as default: only the second stays default.
 - [ ] Link an event to a product and to a category; a variation of the product resolves to the parent product links and categories.
 
+- [ ] A product linked only to an event whose sales window has ended: the add-to-cart button disappears and the product cannot be added; a variation of it is also unavailable.
+- [ ] A product linked to an open event and a closed event stays purchasable; an unlinked product is unaffected.
+- [ ] A product whose only open event has all dates in the past is not purchasable.
+
 ## M2: order split
 
 ## M4: add-ons and polish
