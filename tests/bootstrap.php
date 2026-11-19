@@ -16,3 +16,4 @@ require_once $includes . 'domain/class-fe-meta.php';
 require_once $includes . 'domain/class-fe-zone-rules.php';
 require_once $includes . 'data/class-fe-event-repo.php';
 require_once $includes . 'data/class-fe-zone-rule-repo.php';
+require_once $includes . 'data/class-fe-location-repo.php';

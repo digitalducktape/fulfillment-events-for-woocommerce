@@ -5,7 +5,7 @@
  * @package Fulfillment_Events
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'FE_TESTING' ) ) {
 	exit;
 }
 
@@ -93,7 +93,7 @@ class Fe_Location_Repo {
 			'name'         => isset( $data['name'] ) ? sanitize_text_field( (string) $data['name'] ) : '',
 			'address'      => isset( $data['address'] ) ? sanitize_textarea_field( (string) $data['address'] ) : '',
 			'instructions' => isset( $data['instructions'] ) ? sanitize_textarea_field( (string) $data['instructions'] ) : '',
-			'is_default'   => ! empty( $data['is_default'] ) ? 1 : 0,
+			'is_default'   => self::resolve_default_flag( ! empty( $data['is_default'] ), self::default_id(), $id ) ? 1 : 0,
 		);
 		$formats = array( '%s', '%s', '%s', '%d' );
 
@@ -117,8 +117,49 @@ class Fe_Location_Repo {
 	 */
 	public static function delete( $id ) {
 		global $wpdb;
-		$id = (int) $id;
+		$id      = (int) $id;
+		$table   = self::table();
+		$current = self::default_id();
 		$wpdb->update( $wpdb->prefix . 'fe_event_dates', array( 'location_id' => null ), array( 'location_id' => $id ), array( '%d' ), array( '%d' ) );
-		$wpdb->delete( self::table(), array( 'id' => $id ), array( '%d' ) );
+		$wpdb->delete( $table, array( 'id' => $id ), array( '%d' ) );
+
+		$remaining = array_map( 'intval', (array) $wpdb->get_col( "SELECT id FROM {$table} ORDER BY id ASC" ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$next      = self::next_default_after_delete( $remaining, $current, $id );
+		if ( null !== $next && $next !== $current ) {
+			$wpdb->update( $table, array( 'is_default' => 1 ), array( 'id' => $next ), array( '%d' ), array( '%d' ) );
+		}
+	}
+
+	/**
+	 * Pure: the is_default value a save should store. There is always exactly
+	 * one default: the first location becomes it, and the only default cannot
+	 * be unset (set another location as default instead).
+	 *
+	 * @param bool     $requested          Whether the caller asked for default.
+	 * @param int|null $current_default_id Current default id, if any.
+	 * @param int      $saving_id          Id being saved (0 for a new row).
+	 * @return bool
+	 */
+	public static function resolve_default_flag( $requested, $current_default_id, $saving_id ) {
+		if ( $requested || null === $current_default_id ) {
+			return true;
+		}
+		return (int) $current_default_id === (int) $saving_id && (int) $saving_id > 0;
+	}
+
+	/**
+	 * Pure: which location is the default after a delete.
+	 *
+	 * @param int[]    $remaining_ids      Ids left after the delete.
+	 * @param int|null $current_default_id Default id before the delete.
+	 * @param int      $deleted_id         Deleted id.
+	 * @return int|null
+	 */
+	public static function next_default_after_delete( array $remaining_ids, $current_default_id, $deleted_id ) {
+		if ( null !== $current_default_id && (int) $current_default_id !== (int) $deleted_id ) {
+			return (int) $current_default_id;
+		}
+		$remaining_ids = array_map( 'intval', $remaining_ids );
+		return $remaining_ids ? min( $remaining_ids ) : null;
 	}
 }
