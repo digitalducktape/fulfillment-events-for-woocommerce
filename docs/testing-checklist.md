@@ -41,4 +41,18 @@ here.
 
 ## M2: order split
 
+- [ ] Analytics filter name: on the installed WooCommerce, confirm `woocommerce_analytics_excluded_order_statuses` is applied (Reports DataStore::get_excluded_report_order_statuses). After activation, WooCommerce > Settings > Analytics "Excluded statuses" lists Split.
+- [ ] Staging with the Square sandbox: a cart with products from two events (two dates) and a regular product. Pay. The parent moves to "Split" with a "Split into #a, #b, #c" note; each child is Processing, has `created_via` = `fe-split`, `_fe_parent_id` = parent id (WooCommerce parent is empty), its own items, its shipping line and the `_fe_*` contract meta for its event (the regular child has only `_fe_parent_id`).
+- [ ] The children's totals sum exactly to the amount Square charged (the parent total); a cent of rounding, if any, sits on the first child with a note.
+- [ ] Fees and fee tax are split across children by item subtotal; a coupon on the parent shows as a note on each child and the line totals are the discounted ones.
+- [ ] Stock is reduced once: product stock drops by the ordered quantities and does not drop again when the children move to Processing. Each child line item carries `_reduced_stock`; the parent's line items do not.
+- [ ] Cancel one child: only that child's items are restocked. Cancel (or fully refund with "restock" ticked) the parent: no stock changes.
+- [ ] An offline gateway (bank transfer, cheque) puts the parent on-hold: it splits immediately and the children are On hold. Moving the children to Processing reduces no stock.
+- [ ] Emails at split: note which customer and staff emails go out for the parent and each child (Task 10 suppresses the per-child customer email; until then each child sends one).
+- [ ] Idempotency: re-send the Square webhook / call payment complete again, and move the parent processing → on-hold → processing: no new children.
+- [ ] With HPOS on, and again with HPOS compatibility mode (sync) on: after checkout returns, the parent is still "Split" in both the orders table and the posts backup, and the children's stock flag is set.
+- [ ] Analytics > Revenue and Orders count the children, not the parent; the legacy Reports do not list the parent.
+- [ ] The parent can't be paid again from My account (no "Pay" button on a Split order).
+- [ ] Two events delivering on the same date: the cart shows a negative "Combined delivery" fee equal to the cheaper delivery cost; picking a different date or pickup for one removes it.
+
 ## M4: add-ons and polish

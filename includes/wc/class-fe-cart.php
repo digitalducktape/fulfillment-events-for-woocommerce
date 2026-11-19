@@ -40,6 +40,60 @@ class Fe_Cart {
 		add_filter( 'woocommerce_cart_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_filter( 'woocommerce_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
+		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'combined_delivery_fee' ) );
+	}
+
+	/**
+	 * Chosen event rates as plain lines for Fe_Fee_Dedupe::credit(). Packages
+	 * the plugin did not build are skipped.
+	 *
+	 * @param array $packages Calculated shipping packages (with rates).
+	 * @param array $chosen   Package key => chosen rate id.
+	 * @return array List of {group, type, date, cost_cents}.
+	 */
+	public static function chosen_rate_lines( $packages, $chosen ) {
+		$lines = array();
+		foreach ( (array) $packages as $key => $package ) {
+			if ( ! is_array( $package ) || empty( $package['fe_group'] ) || ! isset( $chosen[ $key ] ) ) {
+				continue;
+			}
+			$rate_id = (string) $chosen[ $key ];
+			$rate    = isset( $package['rates'][ $rate_id ] ) ? $package['rates'][ $rate_id ] : null;
+			if ( ! is_object( $rate ) || ! method_exists( $rate, 'get_meta_data' ) ) {
+				continue;
+			}
+			$meta = (array) $rate->get_meta_data();
+			if ( empty( $meta['fe_type'] ) || empty( $meta['fe_date'] ) ) {
+				continue;
+			}
+			$lines[] = array(
+				'group'      => (string) $package['fe_group'],
+				'type'       => (string) $meta['fe_type'],
+				'date'       => (string) $meta['fe_date'],
+				'cost_cents' => Fe_Split_Math::to_cents( $rate->get_cost() ),
+			);
+		}
+		return $lines;
+	}
+
+	/**
+	 * Adds a negative "Combined delivery" fee when two packages deliver on the
+	 * same date, so the customer pays that date's delivery once.
+	 *
+	 * @param WC_Cart $cart Cart.
+	 */
+	public static function combined_delivery_fee( $cart ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->session || ! is_object( $cart ) ) {
+			return;
+		}
+		$chosen = WC()->session->get( 'chosen_shipping_methods' );
+		if ( empty( $chosen ) || ! is_array( $chosen ) ) {
+			return;
+		}
+		$credit = Fe_Fee_Dedupe::credit( self::chosen_rate_lines( WC()->shipping()->get_packages(), $chosen ) );
+		if ( $credit > 0 ) {
+			$cart->add_fee( __( 'Combined delivery', 'fulfillment-events-for-woocommerce' ), -$credit / 100, false );
+		}
 	}
 
 	/**

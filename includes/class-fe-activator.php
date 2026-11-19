@@ -79,6 +79,10 @@ class Fe_Activator {
 		}
 
 		update_option( self::DB_VERSION_OPTION, FE_DB_VERSION );
+
+		if ( class_exists( 'Fe_Split_Status' ) ) {
+			Fe_Split_Status::add_to_excluded_report_option();
+		}
 	}
 
 	/**
