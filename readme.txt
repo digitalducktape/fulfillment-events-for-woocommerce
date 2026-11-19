@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.4
+Stable tag: 0.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,14 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.4.5 =
+* Fix: "Add to my order" could be missing at checkout when the same cart had been priced before the customer's order existed. Cached rates now refresh when the customer's open orders change.
+* Fix: the zone grid showed an extra row after every save. Each cell now has one setting for all dates, plus one row per date for multi-date events.
+* Clearer event editor: Delivery and Pickup checkboxes sit next to their times, the pickup place has its own column, and each zone cell shows its state by colour with the price box only shown for a custom price.
+* The Zones box links to WooCommerce's shipping zone settings.
+* The events list shows each event's dates and what they offer.
+* Events have an Internal notes box, shown in the events list and copied by Duplicate.
 
 = 0.4.4 =
 * A product in more than one open event now offers every event's dates, on the product page note and at checkout, instead of only the soonest event's. As each event closes, its dates drop off.

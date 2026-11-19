@@ -28,9 +28,16 @@ class Fe_Event_Editor {
 		add_action( 'before_delete_post', array( __CLASS__, 'cleanup_deleted' ) );
 		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
 		add_action( 'post_submitbox_start', array( __CLASS__, 'render_duplicate_button' ) );
+		add_filter( 'manage_' . Fe_Event_Repo::POST_TYPE . '_posts_columns', array( __CLASS__, 'list_columns' ) );
+		add_action( 'manage_' . Fe_Event_Repo::POST_TYPE . '_posts_custom_column', array( __CLASS__, 'render_list_column' ), 10, 2 );
 		add_action( 'admin_post_fe_duplicate_event', array( __CLASS__, 'handle_duplicate' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'show_notice' ) );
 	}
+
+	/**
+	 * Post meta holding the event's internal notes.
+	 */
+	const NOTES_KEY = '_fe_notes';
 
 	// -------------------------------------------------------------------
 	// Pure helpers.
@@ -163,6 +170,9 @@ class Fe_Event_Editor {
 		Fe_Event_Repo::save_dates( $post_id, $parsed['dates'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $post_id, $parsed['rules'] );
 		Fe_Product_Links::sync_event( $post_id, $parsed['category_ids'], $parsed['product_ids'], $parsed['excluded_ids'] );
+		if ( isset( $_POST['fe_notes'] ) ) {
+			update_post_meta( $post_id, self::NOTES_KEY, sanitize_textarea_field( wp_unslash( $_POST['fe_notes'] ) ) );
+		}
 		Fe_Admin::flush_rate_cache();
 
 		if ( '' !== $parsed['event']['error'] ) {
@@ -268,6 +278,10 @@ class Fe_Event_Editor {
 		Fe_Event_Repo::save_sales_window( $new_id, (string) $event['sales_open'], (string) $event['sales_close'] );
 		Fe_Event_Repo::save_dates( $new_id, $event['dates'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $new_id, Fe_Zone_Rule_Repo::for_event( $id ) );
+		$notes = (string) get_post_meta( $id, self::NOTES_KEY, true );
+		if ( '' !== $notes ) {
+			update_post_meta( $new_id, self::NOTES_KEY, $notes );
+		}
 		Fe_Product_Links::sync_event(
 			$new_id,
 			Fe_Product_Links::term_ids_for_event( $id ),
@@ -293,6 +307,7 @@ class Fe_Event_Editor {
 		add_meta_box( 'fe_dates', __( 'Dates', 'fulfillment-events-for-woocommerce' ), array( __CLASS__, 'box_dates' ), $type, 'normal', 'high' );
 		add_meta_box( 'fe_zones', __( 'Zones', 'fulfillment-events-for-woocommerce' ), array( 'Fe_Zone_Grid', 'render' ), $type, 'normal', 'default' );
 		add_meta_box( 'fe_products', __( 'Products', 'fulfillment-events-for-woocommerce' ), array( __CLASS__, 'box_products' ), $type, 'normal', 'default' );
+		add_meta_box( 'fe_notes', __( 'Internal notes', 'fulfillment-events-for-woocommerce' ), array( __CLASS__, 'box_notes' ), $type, 'side', 'default' );
 	}
 
 	/**
@@ -354,21 +369,21 @@ class Fe_Event_Editor {
 		$rows  = $event ? $event['dates'] : array();
 		$locs  = Fe_Location_Repo::all();
 		?>
-		<p class="description"><?php esc_html_e( 'Each date can offer delivery, pickup or both. A date with neither is not saved. Courier is offered on every date for zones that have it.', 'fulfillment-events-for-woocommerce' ); ?></p>
-		<table class="widefat fe-dates" id="fe-dates">
+		<p class="description"><?php esc_html_e( 'Tick what each date offers. A date with neither is not saved. Courier is offered on every date for zones that have it.', 'fulfillment-events-for-woocommerce' ); ?></p>
+		<div class="fe-dates-wrap"><table class="widefat fe-dates" id="fe-dates">
 			<thead><tr>
-				<th><?php esc_html_e( 'Date', 'fulfillment-events-for-woocommerce' ); ?></th>
-				<th><?php esc_html_e( 'Delivery', 'fulfillment-events-for-woocommerce' ); ?></th>
-				<th><?php esc_html_e( 'Pickup', 'fulfillment-events-for-woocommerce' ); ?></th>
-				<th><?php esc_html_e( 'Pickup location', 'fulfillment-events-for-woocommerce' ); ?></th>
-				<th></th>
+				<th scope="col" class="fe-dates__date"><?php esc_html_e( 'Date', 'fulfillment-events-for-woocommerce' ); ?></th>
+				<th scope="col"><?php esc_html_e( 'Delivery and time', 'fulfillment-events-for-woocommerce' ); ?></th>
+				<th scope="col"><?php esc_html_e( 'Pickup and time', 'fulfillment-events-for-woocommerce' ); ?></th>
+				<th scope="col"><?php esc_html_e( 'Pickup place', 'fulfillment-events-for-woocommerce' ); ?></th>
+				<th scope="col" class="fe-dates__remove"><span class="screen-reader-text"><?php esc_html_e( 'Remove', 'fulfillment-events-for-woocommerce' ); ?></span></th>
 			</tr></thead>
 			<tbody id="fe-dates-rows">
 				<?php foreach ( array_values( $rows ) as $i => $row ) : ?>
 					<?php self::date_row( (string) $i, $row, $locs ); ?>
 				<?php endforeach; ?>
 			</tbody>
-		</table>
+		</table></div>
 		<template id="fe-date-template">
 			<?php self::date_row( '__i__', array(), $locs ); ?>
 		</template>
@@ -384,32 +399,119 @@ class Fe_Event_Editor {
 	 * @param array[] $locs Locations.
 	 */
 	private static function date_row( $i, array $row, array $locs ) {
-		$name = 'fe_dates[' . $i . ']';
-		$get  = function ( $key, $default = '' ) use ( $row ) {
+		$name     = 'fe_dates[' . $i . ']';
+		$get      = function ( $key, $default = '' ) use ( $row ) {
 			return isset( $row[ $key ] ) ? $row[ $key ] : $default;
 		};
+		$delivery = ! empty( $row['delivery'] );
+		$pickup   = ! empty( $row['pickup'] );
 		?>
 		<tr class="fe-date-row">
-			<td><input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $get( 'date' ) ); ?>"></td>
+			<td class="fe-dates__date"><input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $get( 'date' ) ); ?>" aria-label="<?php esc_attr_e( 'Date', 'fulfillment-events-for-woocommerce' ); ?>"></td>
 			<td>
-				<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[delivery]" value="1" <?php checked( ! empty( $row['delivery'] ) ); ?>> <?php esc_html_e( 'Offer', 'fulfillment-events-for-woocommerce' ); ?></label>
-				<input type="text" name="<?php echo esc_attr( $name ); ?>[delivery_window]" value="<?php echo esc_attr( $get( 'delivery_window' ) ); ?>" placeholder="<?php esc_attr_e( 'Window, e.g. 10am to 2pm', 'fulfillment-events-for-woocommerce' ); ?>">
+				<div class="fe-offer<?php echo $delivery ? '' : ' is-off'; ?>">
+					<label class="fe-offer__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[delivery]" value="1" <?php checked( $delivery ); ?>> <?php esc_html_e( 'Delivery', 'fulfillment-events-for-woocommerce' ); ?></label>
+					<input type="text" class="fe-offer__time" name="<?php echo esc_attr( $name ); ?>[delivery_window]" value="<?php echo esc_attr( $get( 'delivery_window' ) ); ?>" placeholder="<?php esc_attr_e( 'e.g. 10am to 2pm', 'fulfillment-events-for-woocommerce' ); ?>" aria-label="<?php esc_attr_e( 'Delivery time', 'fulfillment-events-for-woocommerce' ); ?>">
+				</div>
 			</td>
 			<td>
-				<label><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[pickup]" value="1" <?php checked( ! empty( $row['pickup'] ) ); ?>> <?php esc_html_e( 'Offer', 'fulfillment-events-for-woocommerce' ); ?></label>
-				<input type="text" name="<?php echo esc_attr( $name ); ?>[pickup_window]" value="<?php echo esc_attr( $get( 'pickup_window' ) ); ?>" placeholder="<?php esc_attr_e( 'Window, e.g. 10am to 2pm', 'fulfillment-events-for-woocommerce' ); ?>">
+				<div class="fe-offer<?php echo $pickup ? '' : ' is-off'; ?>">
+					<label class="fe-offer__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[pickup]" value="1" <?php checked( $pickup ); ?>> <?php esc_html_e( 'Pickup', 'fulfillment-events-for-woocommerce' ); ?></label>
+					<input type="text" class="fe-offer__time" name="<?php echo esc_attr( $name ); ?>[pickup_window]" value="<?php echo esc_attr( $get( 'pickup_window' ) ); ?>" placeholder="<?php esc_attr_e( 'e.g. 10am to 2pm', 'fulfillment-events-for-woocommerce' ); ?>" aria-label="<?php esc_attr_e( 'Pickup time', 'fulfillment-events-for-woocommerce' ); ?>">
+				</div>
 			</td>
-			<td>
-				<select name="<?php echo esc_attr( $name ); ?>[location_id]">
-					<option value="0"><?php esc_html_e( 'Default location', 'fulfillment-events-for-woocommerce' ); ?></option>
-					<?php foreach ( $locs as $loc ) : ?>
-						<option value="<?php echo esc_attr( $loc['id'] ); ?>" <?php selected( (int) $get( 'location_id', 0 ), $loc['id'] ); ?>><?php echo esc_html( $loc['name'] ); ?></option>
-					<?php endforeach; ?>
-				</select>
+			<td class="fe-place<?php echo $pickup ? '' : ' is-off'; ?>">
+					<select class="fe-offer__place" name="<?php echo esc_attr( $name ); ?>[location_id]" aria-label="<?php esc_attr_e( 'Pickup location', 'fulfillment-events-for-woocommerce' ); ?>">
+						<option value="0"><?php esc_html_e( 'Default location', 'fulfillment-events-for-woocommerce' ); ?></option>
+						<?php foreach ( $locs as $loc ) : ?>
+							<option value="<?php echo esc_attr( $loc['id'] ); ?>" <?php selected( (int) $get( 'location_id', 0 ), $loc['id'] ); ?>><?php echo esc_html( $loc['name'] ); ?></option>
+						<?php endforeach; ?>
+					</select>
 			</td>
-			<td><button type="button" class="button-link button-link-delete fe-remove-date"><?php esc_html_e( 'Remove', 'fulfillment-events-for-woocommerce' ); ?></button></td>
+			<td class="fe-dates__remove"><button type="button" class="button-link button-link-delete fe-remove-date" aria-label="<?php esc_attr_e( 'Remove this date', 'fulfillment-events-for-woocommerce' ); ?>"><span class="dashicons dashicons-trash" aria-hidden="true"></span></button></td>
 		</tr>
 		<?php
+	}
+
+	/**
+	 * Internal notes box: free text for staff, never shown to customers.
+	 *
+	 * @param WP_Post $post Event post.
+	 */
+	public static function box_notes( $post ) {
+		?>
+		<label for="fe_notes" class="screen-reader-text"><?php esc_html_e( 'Internal notes', 'fulfillment-events-for-woocommerce' ); ?></label>
+		<textarea id="fe_notes" name="fe_notes" rows="6" placeholder="<?php esc_attr_e( 'e.g. Copied from last year, moved the fair pickup to Dec 18', 'fulfillment-events-for-woocommerce' ); ?>"><?php echo esc_textarea( (string) get_post_meta( $post->ID, self::NOTES_KEY, true ) ); ?></textarea>
+		<p class="description"><?php esc_html_e( 'Only staff see these notes.', 'fulfillment-events-for-woocommerce' ); ?></p>
+		<?php
+	}
+
+	// -------------------------------------------------------------------
+	// Events list.
+	// -------------------------------------------------------------------
+
+	/**
+	 * Adds Dates and Notes columns after the title.
+	 *
+	 * @param array $columns Columns.
+	 * @return array
+	 */
+	public static function list_columns( $columns ) {
+		$out = array();
+		foreach ( $columns as $key => $label ) {
+			$out[ $key ] = $label;
+			if ( 'title' === $key ) {
+				$out['fe_dates'] = __( 'Dates', 'fulfillment-events-for-woocommerce' );
+				$out['fe_notes'] = __( 'Internal notes', 'fulfillment-events-for-woocommerce' );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Pure: what a date offers, e.g. "delivery and pickup".
+	 *
+	 * @param array $row Date row.
+	 * @return string
+	 */
+	public static function offer_text( array $row ) {
+		$d = ! empty( $row['delivery'] );
+		$p = ! empty( $row['pickup'] );
+		if ( $d && $p ) {
+			return __( 'delivery and pickup', 'fulfillment-events-for-woocommerce' );
+		}
+		return $d ? __( 'delivery', 'fulfillment-events-for-woocommerce' ) : __( 'pickup', 'fulfillment-events-for-woocommerce' );
+	}
+
+	/**
+	 * Renders the Dates and Notes columns.
+	 *
+	 * @param string $column  Column key.
+	 * @param int    $post_id Event id.
+	 */
+	public static function render_list_column( $column, $post_id ) {
+		if ( 'fe_notes' === $column ) {
+			$notes = (string) get_post_meta( $post_id, self::NOTES_KEY, true );
+			echo '' === $notes ? '<span aria-hidden="true">—</span>' : esc_html( wp_trim_words( $notes, 20 ) );
+			return;
+		}
+		if ( 'fe_dates' !== $column ) {
+			return;
+		}
+		$event = Fe_Event_Repo::get( (int) $post_id );
+		if ( ! $event || empty( $event['dates'] ) ) {
+			echo '<span class="description">' . esc_html__( 'No dates yet', 'fulfillment-events-for-woocommerce' ) . '</span>';
+			return;
+		}
+		$today = wp_date( 'Y-m-d' );
+		echo '<ul class="fe-datelist">';
+		foreach ( $event['dates'] as $row ) {
+			$dt   = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $row['date'], wp_timezone() );
+			$when = $dt ? wp_date( 'D, M j', $dt->getTimestamp() ) : (string) $row['date'];
+			$past = (string) $row['date'] < $today;
+			echo '<li' . ( $past ? ' class="fe-past" title="' . esc_attr__( 'Date has passed', 'fulfillment-events-for-woocommerce' ) . '"' : '' ) . '><strong>' . esc_html( $when ) . '</strong> <span class="fe-kinds">' . esc_html( self::offer_text( $row ) ) . '</span></li>';
+		}
+		echo '</ul>';
 	}
 
 	/**

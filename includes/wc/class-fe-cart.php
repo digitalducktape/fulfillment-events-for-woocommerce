@@ -412,9 +412,48 @@ class Fe_Cart {
 		foreach ( $out as $i => $package ) {
 			if ( isset( $package['fe_group'] ) ) {
 				$out[ $i ]['fe_guest_addon'] = $guest_addon;
+				// WooCommerce caches rates by package contents. Without this, a
+				// cart rated before the customer's order existed keeps rates
+				// with no "Add to my order" option.
+				$out[ $i ]['fe_addon_targets'] = self::addon_targets_key( isset( $package['fe_customer_id'] ) ? (int) $package['fe_customer_id'] : 0 );
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Open orders of a customer, memoised per request.
+	 *
+	 * @var array<int,string>
+	 */
+	private static $addon_targets = array();
+
+	/**
+	 * Ids and statuses of a logged-in customer's open orders, as a string that
+	 * changes whenever an order could become (or stop being) an add-on target.
+	 *
+	 * @param int $customer_id Customer id; 0 for guests.
+	 * @return string
+	 */
+	private static function addon_targets_key( $customer_id ) {
+		if ( $customer_id <= 0 || ! function_exists( 'wc_get_orders' ) ) {
+			return '';
+		}
+		if ( ! isset( self::$addon_targets[ $customer_id ] ) ) {
+			$ids                                 = wc_get_orders(
+				array(
+					'customer_id' => $customer_id,
+					'status'      => Fe_Addon_Rules::OPEN_STATUSES,
+					'limit'       => 20,
+					'orderby'     => 'date',
+					'order'       => 'DESC',
+					'type'        => 'shop_order',
+					'return'      => 'ids',
+				)
+			);
+			self::$addon_targets[ $customer_id ] = implode( ',', array_map( 'intval', (array) $ids ) );
+		}
+		return self::$addon_targets[ $customer_id ];
 	}
 
 	/**

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.4\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-19T21:44:11+00:00\n"
+"POT-Creation-Date: 2026-11-19T22:20:20+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: includes/admin/class-fe-admin.php:123
 #: includes/admin/class-fe-admin.php:157
-#: includes/admin/class-fe-event-editor.php:249
+#: includes/admin/class-fe-event-editor.php:259
 #: includes/admin/class-fe-locations-page.php:30
 msgid "You do not have permission to do this."
 msgstr ""
@@ -95,139 +95,196 @@ msgstr ""
 msgid "Delete events, locations and zone rules when the plugin is deleted"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:182
+#: includes/admin/class-fe-event-editor.php:192
 msgid "Sales close must be after sales open. The close time was cleared."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:213
-#: includes/admin/class-fe-event-editor.php:228
+#: includes/admin/class-fe-event-editor.php:223
+#: includes/admin/class-fe-event-editor.php:238
 msgid "Duplicate"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:228
+#: includes/admin/class-fe-event-editor.php:238
 msgid "Make a draft copy of the saved event"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:253
+#: includes/admin/class-fe-event-editor.php:263
 #: includes/rest/class-fe-rest-controller.php:94
 msgid "Event not found."
 msgstr ""
 
 #. translators: %s: event title
-#: includes/admin/class-fe-event-editor.php:261
+#: includes/admin/class-fe-event-editor.php:271
 #, php-format
 msgid "%s (copy)"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:265
+#: includes/admin/class-fe-event-editor.php:275
 msgid "Could not create the copy."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:292
+#: includes/admin/class-fe-event-editor.php:306
 msgid "Details"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:293
+#: includes/admin/class-fe-event-editor.php:307
+#: includes/admin/class-fe-event-editor.php:464
 msgid "Dates"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:294
+#: includes/admin/class-fe-event-editor.php:308
 msgid "Zones"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:295
+#: includes/admin/class-fe-event-editor.php:309
 msgid "Products"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:307
+#: includes/admin/class-fe-event-editor.php:310
+#: includes/admin/class-fe-event-editor.php:443
+#: includes/admin/class-fe-event-editor.php:465
+msgid "Internal notes"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:322
 #: includes/admin/class-fe-product-fields.php:65
 msgid "Fulfillment event"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:333
+#: includes/admin/class-fe-event-editor.php:348
 msgid "Customers can buy event products while the sales window is open. Leave a field empty for no limit. Times use the store timezone."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:336
+#: includes/admin/class-fe-event-editor.php:351
 msgid "Sales open"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:340
+#: includes/admin/class-fe-event-editor.php:355
 msgid "Sales close"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:357
-msgid "Each date can offer delivery, pickup or both. A date with neither is not saved. Courier is offered on every date for zones that have it."
+#: includes/admin/class-fe-event-editor.php:372
+msgid "Tick what each date offers. A date with neither is not saved. Courier is offered on every date for zones that have it."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:360
+#: includes/admin/class-fe-event-editor.php:375
+#: includes/admin/class-fe-event-editor.php:410
 msgid "Date"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:361
-#: includes/admin/class-fe-zone-grid.php:106
+#: includes/admin/class-fe-event-editor.php:376
+msgid "Delivery and time"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:377
+msgid "Pickup and time"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:378
+msgid "Pickup place"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:379
+msgid "Remove"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:390
+msgid "Add date"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:413
+#: includes/admin/class-fe-zone-grid.php:131
 #: includes/wc/class-fe-emails.php:261
 msgid "Delivery"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:362
-#: includes/admin/class-fe-zone-grid.php:107
+#: includes/admin/class-fe-event-editor.php:414
+#: includes/admin/class-fe-event-editor.php:420
+msgid "e.g. 10am to 2pm"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:414
+msgid "Delivery time"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:419
+#: includes/admin/class-fe-zone-grid.php:132
 #: includes/wc/class-fe-emails.php:262
 msgid "Pickup"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:363
+#: includes/admin/class-fe-event-editor.php:420
+msgid "Pickup time"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:424
 msgid "Pickup location"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:375
-msgid "Add date"
-msgstr ""
-
-#: includes/admin/class-fe-event-editor.php:395
-#: includes/admin/class-fe-event-editor.php:399
-msgid "Offer"
-msgstr ""
-
-#: includes/admin/class-fe-event-editor.php:396
-#: includes/admin/class-fe-event-editor.php:400
-msgid "Window, e.g. 10am to 2pm"
-msgstr ""
-
-#: includes/admin/class-fe-event-editor.php:404
+#: includes/admin/class-fe-event-editor.php:425
 msgid "Default location"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:410
-msgid "Remove"
+#: includes/admin/class-fe-event-editor.php:431
+msgid "Remove this date"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:432
+#: includes/admin/class-fe-event-editor.php:444
+msgid "e.g. Copied from last year, moved the fair pickup to Dec 18"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:445
+msgid "Only staff see these notes."
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:481
+msgid "delivery and pickup"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:483
+#: includes/wc/class-fe-cart.php:185
+msgid "delivery"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:483
+#: includes/wc/class-fe-cart.php:187
+msgid "pickup"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:503
+msgid "No dates yet"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:512
+msgid "Date has passed"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:534
 msgid "Products in these categories, or chosen below, are sold through this event. Only categories a product is directly assigned to count; parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:433
+#: includes/admin/class-fe-event-editor.php:535
 msgid "Categories"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:434
+#: includes/admin/class-fe-event-editor.php:536
 msgid "Choose categories"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:439
+#: includes/admin/class-fe-event-editor.php:541
 msgid "Individual products"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:440
-#: includes/admin/class-fe-event-editor.php:449
+#: includes/admin/class-fe-event-editor.php:542
+#: includes/admin/class-fe-event-editor.php:551
 msgid "Search for a product"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:448
+#: includes/admin/class-fe-event-editor.php:550
 msgid "Exclude products"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:457
+#: includes/admin/class-fe-event-editor.php:559
 msgid "Products listed here are left out of this event even when one of the categories above includes them."
 msgstr ""
 
@@ -413,75 +470,82 @@ msgstr ""
 msgid "Free"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:77
-#: includes/admin/class-fe-zone-grid.php:116
-msgid "Not in zone"
-msgstr ""
-
-#: includes/admin/class-fe-zone-grid.php:82
-#: includes/admin/class-fe-zone-grid.php:115
-msgid "Turned off"
-msgstr ""
-
-#. translators: %s: price
-#: includes/admin/class-fe-zone-grid.php:86
-#, php-format
-msgid "%s for this event"
-msgstr ""
-
-#. translators: %s: price or "Free"
-#: includes/admin/class-fe-zone-grid.php:90
-#, php-format
-msgid "%s default"
-msgstr ""
-
-#: includes/admin/class-fe-zone-grid.php:108
+#: includes/admin/class-fe-zone-grid.php:133
 msgid "Courier"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:111
-msgid "Each cell starts from the shipping zone setting. Turn a type off for this event, or give it a different cost, optionally for one date only. Dates added in this screen show up in the date lists after you save."
+#: includes/admin/class-fe-zone-grid.php:138
+msgid "Each zone starts from its shipping zone price. Change a price or turn a type off for this event only. Dates added above show up here after you save."
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:113
-msgid "Zone default"
+#: includes/admin/class-fe-zone-grid.php:139
+msgid "Edit shipping zones and their prices"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:114
-msgid "Override"
+#: includes/admin/class-fe-zone-grid.php:142
+msgid "Zone price"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:120
+#: includes/admin/class-fe-zone-grid.php:143
+msgid "Changed for this event"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:144
+msgid "Off for this event"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:148
 msgid "Zone"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:169
-msgid "Mode"
+#: includes/admin/class-fe-zone-grid.php:161
+msgid "Not offered in this zone"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:170
-msgid "Use zone default"
+#. translators: 1: zone name, 2: fulfillment type
+#: includes/admin/class-fe-zone-grid.php:167
+#, php-format
+msgid "%1$s, %2$s"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:171
-msgid "On"
+#. translators: %d: number of dates with their own setting
+#: includes/admin/class-fe-zone-grid.php:188
+#, php-format
+msgid "Different on %d date"
+msgid_plural "Different on %d dates"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-fe-zone-grid.php:189
+msgid "Different on one date"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:172
+#: includes/admin/class-fe-zone-grid.php:220
+msgid "All dates"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:233
+msgid "Same as all dates"
+msgstr ""
+
+#. translators: %s: zone price or "Free"
+#: includes/admin/class-fe-zone-grid.php:235
+#, php-format
+msgid "Zone price (%s)"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:239
+msgid "Custom price"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:240
 msgid "Off"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:174
-#: includes/wc/class-fe-shipping-method.php:66
-msgid "Cost"
-msgstr ""
-
-#: includes/admin/class-fe-zone-grid.php:175
-msgid "Only on"
-msgstr ""
-
-#: includes/admin/class-fe-zone-grid.php:176
-msgid "All dates"
+#. translators: %s: zone, type and date
+#: includes/admin/class-fe-zone-grid.php:244
+#, php-format
+msgid "Price for %s"
 msgstr ""
 
 #: includes/class-fe-plugin.php:80
@@ -532,14 +596,6 @@ msgstr ""
 msgid "delivery or pickup"
 msgstr ""
 
-#: includes/wc/class-fe-cart.php:185
-msgid "delivery"
-msgstr ""
-
-#: includes/wc/class-fe-cart.php:187
-msgid "pickup"
-msgstr ""
-
 #. translators: 1: comma-separated dates, 2: last date, e.g. "Dec 3, Dec 10" and "Dec 18".
 #: includes/wc/class-fe-cart.php:193
 #, php-format
@@ -557,13 +613,13 @@ msgid "Combined delivery"
 msgstr ""
 
 #. translators: %s: event name.
-#: includes/wc/class-fe-cart.php:615
+#: includes/wc/class-fe-cart.php:654
 #, php-format
 msgid "%s items aren't available for this address. Try a different address or remove them from your cart."
 msgstr ""
 
 #. translators: 1: event name, 2: postcode.
-#: includes/wc/class-fe-cart.php:618
+#: includes/wc/class-fe-cart.php:657
 #, php-format
 msgid "%1$s items aren't available for %2$s. Try a different address or remove them from your cart."
 msgstr ""
@@ -682,6 +738,10 @@ msgstr ""
 
 #: includes/wc/class-fe-shipping-method.php:63
 msgid "Name shown in the shipping zone list."
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:66
+msgid "Cost"
 msgstr ""
 
 #: includes/wc/class-fe-shipping-method.php:71
