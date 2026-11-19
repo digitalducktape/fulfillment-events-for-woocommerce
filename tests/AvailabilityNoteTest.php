@@ -36,4 +36,12 @@ class AvailabilityNoteTest extends TestCase {
 		$this->assertSame( '', Fe_Cart::availability_note( $event, '2026-11-21' ) );
 		$this->assertSame( '', Fe_Cart::availability_note( array( 'dates' => array() ), '2026-11-21' ) );
 	}
+
+	public function test_price_block_decision() {
+		$this->assertTrue( Fe_Cart::should_append_to_price_block( array( 'postId' => 7 ), array(), 7 ) );
+		$this->assertFalse( Fe_Cart::should_append_to_price_block( array( 'postId' => 9 ), array(), 7 ) );
+		$this->assertFalse( Fe_Cart::should_append_to_price_block( array( 'postId' => 7, 'queryId' => 3 ), array(), 7 ) );
+		$this->assertTrue( Fe_Cart::should_append_to_price_block( array(), array( 'productId' => 7 ), 7 ) );
+		$this->assertFalse( Fe_Cart::should_append_to_price_block( array(), array(), 7 ) );
+	}
 }

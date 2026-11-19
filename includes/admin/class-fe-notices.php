@@ -27,6 +27,7 @@ class Fe_Notices {
 		add_action( 'admin_post_fe_dismiss_ticket_hint', array( __CLASS__, 'handle_dismiss' ) );
 		add_action( 'woocommerce_update_product', array( __CLASS__, 'clear_cache' ) );
 		add_action( 'woocommerce_new_product', array( __CLASS__, 'clear_cache' ) );
+		add_action( 'save_post_fe_event', array( __CLASS__, 'clear_cache' ) );
 		add_action( 'trashed_post', array( __CLASS__, 'clear_cache' ) );
 	}
 

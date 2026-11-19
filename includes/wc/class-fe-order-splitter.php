@@ -519,7 +519,7 @@ class Fe_Order_Splitter {
 		$child->calculate_totals( false );
 		$child->save();
 		if ( method_exists( $child, 'get_last_save_error' ) && null !== $child->get_last_save_error() ) {
-			throw new RuntimeException( 'could not save split order #' . $child->get_id() );
+			throw new RuntimeException( 'could not save split order #' . (int) $child->get_id() ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
 		}
 		return $child;
 	}

@@ -91,7 +91,7 @@ class Fe_Admin {
 	 */
 	public static function enqueue( $hook ) {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-		$is_fe  = $screen && ( Fe_Event_Repo::POST_TYPE === $screen->post_type || 'edit-product' === $screen->id )
+		$is_fe  = ( $screen && ( Fe_Event_Repo::POST_TYPE === $screen->post_type || 'edit-product' === $screen->id ) )
 			|| false !== strpos( (string) $hook, 'fe-locations' ) || false !== strpos( (string) $hook, 'fe-settings' );
 		if ( ! $is_fe ) {
 			return;

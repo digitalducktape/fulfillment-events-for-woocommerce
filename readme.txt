@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,9 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Block checkout on WooCommerce 8.9 to 9.8: the "Adding to an existing order? Order number" field shows on every checkout, because conditional additional fields need WooCommerce 9.9. It is optional and ignored unless the customer picks "Add to an existing order". On 9.9 and later it only appears when that rate is selected.
 
 == Changelog ==
+
+= 0.3.3 =
+* Availability note only on the main product's price block; hint cache clears when an event is saved.
 
 = 0.3.2 =
 * Availability note on product pages, a hint for products that look like tickets or classes, read-only REST endpoints, a translation template and fuller uninstall cleanup.

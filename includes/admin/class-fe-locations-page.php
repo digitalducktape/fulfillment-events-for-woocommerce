@@ -115,7 +115,12 @@ class Fe_Locations_Page {
 				<tbody>
 				<?php foreach ( Fe_Location_Repo::all() as $row ) : ?>
 					<tr>
-						<td><?php echo esc_html( $row['name'] ); ?> <?php if ( $row['is_default'] ) : ?><span class="fe-pill fe-pill--default"><?php esc_html_e( 'Default', 'fulfillment-events-for-woocommerce' ); ?></span><?php endif; ?></td>
+						<td>
+							<?php echo esc_html( $row['name'] ); ?>
+							<?php if ( $row['is_default'] ) : ?>
+								<span class="fe-pill fe-pill--default"><?php esc_html_e( 'Default', 'fulfillment-events-for-woocommerce' ); ?></span>
+							<?php endif; ?>
+						</td>
 						<td><?php echo nl2br( esc_html( $row['address'] ) ); ?></td>
 						<td>
 							<a href="<?php echo esc_url( self::url( array( 'edit' => $row['id'] ) ) ); ?>"><?php esc_html_e( 'Edit', 'fulfillment-events-for-woocommerce' ); ?></a>

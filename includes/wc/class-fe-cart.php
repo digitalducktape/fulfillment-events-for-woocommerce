@@ -42,7 +42,7 @@ class Fe_Cart {
 		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'combined_delivery_fee' ) );
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render_product_note' ), 25 );
-		add_filter( 'render_block_woocommerce/product-price', array( __CLASS__, 'append_note_to_price_block' ), 10, 2 );
+		add_filter( 'render_block_woocommerce/product-price', array( __CLASS__, 'append_note_to_price_block' ), 10, 3 );
 	}
 
 	/**
@@ -141,17 +141,42 @@ class Fe_Cart {
 	 *
 	 * @param string $content Rendered block.
 	 * @param array  $block   Parsed block.
+	 * @param object $instance Block instance (WP_Block).
 	 * @return string
 	 */
-	public static function append_note_to_price_block( $content, $block = array() ) {
+	public static function append_note_to_price_block( $content, $block = array(), $instance = null ) {
 		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
 			return $content;
 		}
-		$product_id = get_queried_object_id();
-		if ( isset( $block['attrs']['productId'] ) && (int) $block['attrs']['productId'] !== (int) $product_id ) {
+		$context = is_object( $instance ) && isset( $instance->context ) && is_array( $instance->context ) ? $instance->context : array();
+		$attrs   = is_array( $block ) && isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
+		$queried = (int) get_queried_object_id();
+		if ( ! self::should_append_to_price_block( $context, $attrs, $queried ) ) {
 			return $content;
 		}
-		return $content . self::product_note_html( (int) $product_id );
+		return $content . self::product_note_html( $queried );
+	}
+
+	/**
+	 * Pure: whether a price block is the main product's (not a related or
+	 * collection card).
+	 *
+	 * @param array $context    Block context (postId, queryId).
+	 * @param array $attrs      Block attributes (productId).
+	 * @param int   $queried_id Product being viewed.
+	 * @return bool
+	 */
+	public static function should_append_to_price_block( array $context, array $attrs, $queried_id ) {
+		if ( ! empty( $context['queryId'] ) || (int) $queried_id <= 0 ) {
+			return false;
+		}
+		$id = 0;
+		if ( ! empty( $context['postId'] ) ) {
+			$id = (int) $context['postId'];
+		} elseif ( ! empty( $attrs['productId'] ) ) {
+			$id = (int) $attrs['productId'];
+		}
+		return $id === (int) $queried_id;
 	}
 
 	/**
