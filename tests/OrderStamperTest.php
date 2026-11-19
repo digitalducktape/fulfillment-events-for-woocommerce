@@ -81,4 +81,46 @@ final class OrderStamperTest extends TestCase {
 		$this->assertSame( 'regular', Fe_Order_Stamper::line_group( true, null ) );
 		$this->assertSame( 'none', Fe_Order_Stamper::line_group( false, 3 ) );
 	}
+
+	private function managed() {
+		return array_merge( Fe_Meta::contract_keys(), array( Fe_Meta::WILL_SPLIT ) );
+	}
+
+	private function stamped_meta( $date = '2026-12-10' ) {
+		$line                         = $this->event_line();
+		$line['rate_meta']['fe_date'] = $date;
+		$plan                         = Fe_Order_Stamper::plan( array( $line ) );
+		return Fe_Meta::to_meta( $plan['fulfillment'] );
+	}
+
+	public function test_cart_has_event() {
+		$this->assertFalse( Fe_Order_Stamper::cart_has_event( array() ) );
+		$this->assertFalse( Fe_Order_Stamper::cart_has_event( array( null, null ) ) );
+		$this->assertTrue( Fe_Order_Stamper::cart_has_event( array( null, 4 ) ) );
+	}
+
+	public function test_split_to_stamp_clears_will_split() {
+		$desired = $this->stamped_meta();
+		$c       = Fe_Order_Stamper::meta_changes( array( Fe_Meta::WILL_SPLIT => 'yes' ), $desired, $this->managed() );
+		$this->assertSame( array( Fe_Meta::WILL_SPLIT ), $c['delete'] );
+		$this->assertSame( $desired, $c['set'] );
+	}
+
+	public function test_stamp_to_none_deletes_contract_keys() {
+		$current = $this->stamped_meta();
+		$c       = Fe_Order_Stamper::meta_changes( $current, array(), $this->managed() );
+		$this->assertEqualsCanonicalizing( array_keys( $current ), $c['delete'] );
+		$this->assertSame( array(), $c['set'] );
+	}
+
+	public function test_stamp_with_new_date_updates() {
+		$c = Fe_Order_Stamper::meta_changes( $this->stamped_meta(), $this->stamped_meta( '2026-12-17' ), $this->managed() );
+		$this->assertSame( array( Fe_Meta::DATE => '2026-12-17' ), $c['set'] );
+		$this->assertSame( array(), $c['delete'] );
+	}
+
+	public function test_identical_meta_has_no_changes() {
+		$m = $this->stamped_meta();
+		$this->assertSame( array( 'set' => array(), 'delete' => array() ), Fe_Order_Stamper::meta_changes( $m, $m, $this->managed() ) );
+	}
 }

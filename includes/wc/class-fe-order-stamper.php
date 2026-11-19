@@ -22,6 +22,13 @@ class Fe_Order_Stamper {
 	const RATE_KEYS = array( 'event_id', 'event_name', 'date', 'type', 'window', 'location', 'addon_of' );
 
 	/**
+	 * Per-request memo for cart_contains_event().
+	 *
+	 * @var bool|null
+	 */
+	private static $cart_has_event = null;
+
+	/**
 	 * Registers the checkout hooks.
 	 */
 	public static function init() {
@@ -46,6 +53,43 @@ class Fe_Order_Stamper {
 	}
 
 	/**
+	 * Whether any resolved event id is present.
+	 *
+	 * @param array $event_ids List of ?int event ids.
+	 * @return bool
+	 */
+	public static function cart_has_event( array $event_ids ) {
+		foreach ( $event_ids as $id ) {
+			if ( null !== $id && '' !== $id && false !== $id && 0 !== $id ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the current cart has an event product (memoised per request).
+	 *
+	 * @return bool
+	 */
+	private static function cart_contains_event() {
+		if ( null === self::$cart_has_event ) {
+			$ids = array();
+			if ( function_exists( 'WC' ) && WC() && WC()->cart ) {
+				foreach ( WC()->cart->get_cart() as $line ) {
+					$product = isset( $line['data'] ) ? $line['data'] : null;
+					if ( $product && method_exists( $product, 'needs_shipping' ) && ! $product->needs_shipping() ) {
+						continue;
+					}
+					$ids[] = Fe_Cart::product_event_status( (int) $line['product_id'] )['event_id'];
+				}
+			}
+			self::$cart_has_event = self::cart_has_event( $ids );
+		}
+		return self::$cart_has_event;
+	}
+
+	/**
 	 * Tags a line item with its group.
 	 *
 	 * @param WC_Order_Item_Product $item          Order item.
@@ -53,6 +97,9 @@ class Fe_Order_Stamper {
 	 * @param array                 $values        Cart item.
 	 */
 	public static function tag_line_item( $item, $cart_item_key, $values ) {
+		if ( ! self::cart_contains_event() ) {
+			return;
+		}
 		$product_id = isset( $values['product_id'] ) ? (int) $values['product_id'] : 0;
 		$product    = isset( $values['data'] ) ? $values['data'] : null;
 		$ships      = $product && method_exists( $product, 'needs_shipping' ) ? (bool) $product->needs_shipping() : true;
@@ -141,12 +188,39 @@ class Fe_Order_Stamper {
 	}
 
 	/**
+	 * Diffs current order meta against the desired managed meta.
+	 *
+	 * @param array    $current      Current meta, key => value.
+	 * @param array    $desired      Desired meta, key => value.
+	 * @param string[] $managed_keys Keys this class owns.
+	 * @return array {set: array, delete: string[]}
+	 */
+	public static function meta_changes( array $current, array $desired, array $managed_keys ) {
+		$set    = array();
+		$delete = array();
+		foreach ( $desired as $key => $value ) {
+			if ( ! array_key_exists( $key, $current ) || (string) $current[ $key ] !== (string) $value ) {
+				$set[ $key ] = $value;
+			}
+		}
+		foreach ( $managed_keys as $key ) {
+			if ( ! array_key_exists( $key, $desired ) && isset( $current[ $key ] ) && '' !== $current[ $key ] ) {
+				$delete[] = $key;
+			}
+		}
+		return array(
+			'set'    => $set,
+			'delete' => $delete,
+		);
+	}
+
+	/**
 	 * Stamps or marks the order once checkout has created it.
 	 *
 	 * @param WC_Order $order Order.
 	 */
 	public static function finalize( $order ) {
-		if ( ! $order || $order->get_meta( Fe_Meta::CONTRACT ) || $order->get_meta( Fe_Meta::WILL_SPLIT ) ) {
+		if ( ! $order || $order->get_meta( Fe_Meta::SPLIT_DONE ) ) {
 			return;
 		}
 		$lines = array();
@@ -163,16 +237,30 @@ class Fe_Order_Stamper {
 				'rate_meta' => $rate_meta,
 			);
 		}
-		$plan = self::plan( $lines );
+		$plan    = self::plan( $lines );
+		$desired = array();
 		if ( 'stamp' === $plan['action'] ) {
-			foreach ( Fe_Meta::to_meta( $plan['fulfillment'] ) as $key => $value ) {
-				$order->update_meta_data( $key, $value );
-			}
-			$order->save();
-			do_action( 'fe_order_stamped', $order );
+			$desired = Fe_Meta::to_meta( $plan['fulfillment'] );
 		} elseif ( 'split' === $plan['action'] ) {
-			$order->update_meta_data( Fe_Meta::WILL_SPLIT, 'yes' );
+			$desired = array( Fe_Meta::WILL_SPLIT => 'yes' );
+		}
+		$managed = array_merge( Fe_Meta::contract_keys(), array( Fe_Meta::WILL_SPLIT ) );
+		$current = array();
+		foreach ( $managed as $key ) {
+			$current[ $key ] = $order->get_meta( $key );
+		}
+		$changes = self::meta_changes( $current, $desired, $managed );
+		foreach ( $changes['delete'] as $key ) {
+			$order->delete_meta_data( $key );
+		}
+		foreach ( $changes['set'] as $key => $value ) {
+			$order->update_meta_data( $key, $value );
+		}
+		if ( ! empty( $changes['delete'] ) || ! empty( $changes['set'] ) ) {
 			$order->save();
+		}
+		if ( 'stamp' === $plan['action'] ) {
+			do_action( 'fe_order_stamped', $order );
 		}
 	}
 }
