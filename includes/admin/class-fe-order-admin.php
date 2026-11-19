@@ -91,7 +91,7 @@ class Fe_Order_Admin {
 		$parts = array();
 		$f     = fe_get_order_fulfillment( $order );
 		if ( $f ) {
-			$parts[] = esc_html( Fe_Email_Split_Confirmation_Labels::type_label( $f['type'] ) );
+			$parts[] = esc_html( Fe_Emails::type_label( $f['type'] ) );
 			if ( '' !== $f['date'] ) {
 				$ts      = strtotime( $f['date'] . ' 12:00:00' );
 				$parts[] = esc_html( $ts ? date_i18n( get_option( 'date_format' ), $ts ) : $f['date'] );
