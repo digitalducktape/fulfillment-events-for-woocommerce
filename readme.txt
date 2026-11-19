@@ -6,7 +6,7 @@ Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,6 +27,9 @@ This is an early development release.
 Support this plugin: https://buymeacoffee.com/digitalducktape
 
 == Changelog ==
+
+= 0.2.1 =
+* Split: hand recorded sales to the children, lock against concurrent splits, roll back a failed split, release on-hold children when payment completes.
 
 = 0.2.0 =
 * Split a paid multi-date order into one order per date, with a new Split status and a combined-delivery credit.

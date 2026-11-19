@@ -22,11 +22,19 @@ class Fe_Order_Splitter {
 	const SPLIT_FROM = array( 'processing', 'on-hold' );
 
 	/**
+	 * Seconds after which a split lock is considered stale.
+	 *
+	 * @var int
+	 */
+	const LOCK_TTL = 600;
+
+	/**
 	 * Registers the split triggers.
 	 */
 	public static function init() {
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_status_changed' ), 10, 4 );
 		add_action( 'woocommerce_payment_complete', array( __CLASS__, 'maybe_split' ), 20 );
+		add_action( 'woocommerce_payment_complete_order_status_' . Fe_Split_Status::STATUS, array( __CLASS__, 'on_split_parent_paid' ), 10, 2 );
 	}
 
 	/**
@@ -127,10 +135,85 @@ class Fe_Order_Splitter {
 
 	/**
 	 * Splits the order when it was marked at checkout and not split yet.
+	 * Serialised per order by a database lock, so a webhook and the checkout
+	 * return can't both split it.
 	 *
 	 * @param int $order_id Order id.
 	 */
 	public static function maybe_split( $order_id ) {
+		$order_id = (int) $order_id;
+		if ( $order_id <= 0 || ! self::acquire_lock( $order_id ) ) {
+			return;
+		}
+		try {
+			self::split_locked( $order_id );
+		} finally {
+			self::release_lock( $order_id );
+		}
+	}
+
+	/**
+	 * Option name of the per-order split lock.
+	 *
+	 * @param int $order_id Order id.
+	 * @return string
+	 */
+	private static function lock_name( $order_id ) {
+		return 'fe_split_lock_' . (int) $order_id;
+	}
+
+	/**
+	 * Takes the per-order lock. add_option() is not atomic (it upserts with
+	 * ON DUPLICATE KEY UPDATE, so two racing requests both "succeed"); an
+	 * INSERT IGNORE on the unique option_name is. A lock older than
+	 * LOCK_TTL seconds is treated as stale, removed and retried once.
+	 *
+	 * @param int $order_id Order id.
+	 * @return bool
+	 */
+	private static function acquire_lock( $order_id ) {
+		global $wpdb;
+		$name   = self::lock_name( $order_id );
+		$insert = function () use ( $wpdb, $name ) {
+			return 1 === (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, (string) time() ) );
+		};
+		if ( $insert() ) {
+			return true;
+		}
+		$since = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+		if ( null !== $since && time() - (int) $since > self::LOCK_TTL ) {
+			// Compare-and-delete, so a lock another request just renewed survives.
+			$wpdb->delete(
+				$wpdb->options,
+				array(
+					'option_name'  => $name,
+					'option_value' => $since,
+				)
+			);
+			return $insert();
+		}
+		return false;
+	}
+
+	/**
+	 * Releases the per-order lock.
+	 *
+	 * @param int $order_id Order id.
+	 */
+	private static function release_lock( $order_id ) {
+		global $wpdb;
+		$wpdb->delete( $wpdb->options, array( 'option_name' => self::lock_name( $order_id ) ) );
+	}
+
+	/**
+	 * The split itself, run while holding the lock. Phase A builds every child
+	 * as a pending order with no side effects and rolls back on failure;
+	 * phase B hands stock and sales over and moves the statuses.
+	 *
+	 * @param int $order_id Order id.
+	 */
+	private static function split_locked( $order_id ) {
+		// Fresh read after taking the lock.
 		$order = wc_get_order( $order_id );
 		if ( ! $order || 'yes' !== $order->get_meta( Fe_Meta::WILL_SPLIT ) || $order->get_meta( Fe_Meta::SPLIT_DONE ) ) {
 			return;
@@ -151,33 +234,49 @@ class Fe_Order_Splitter {
 			return;
 		}
 
-		// Mark first, so a re-entrant or repeated trigger can't split twice.
+		// Mark first, so a repeated trigger can't split twice.
 		$order->update_meta_data( Fe_Meta::SPLIT_DONE, 'yes' );
 		$order->save();
 
+		// Phase A: pending children only. No status change, emails, stock or sales.
 		$children = array();
 		try {
 			foreach ( $plan as $spec ) {
-				$children[] = self::create_child( $order, $spec, $items, $shipping, $fees );
+				self::create_child( $order, $spec, $items, $shipping, $fees, $children );
 			}
 			self::fix_drift( $order, $children );
+		} catch ( Throwable $e ) {
+			self::roll_back( $order, $children, $e );
+			return;
+		}
 
+		// Phase B: hand stock and sales over to the children, then move statuses.
+		$done = array();
+		try {
 			foreach ( $children as $child ) {
-				// Flag stock as already reduced before the status change, so
-				// wc_maybe_reduce_stock_levels() skips the child. Passing the
+				// Flags first, so wc_maybe_reduce_stock_levels() and
+				// wc_update_total_sales_counts() skip the child. Passing the
 				// object keeps this instance in step on both order stores.
-				$child->get_data_store()->set_stock_reduced( $child, true );
+				$store = $child->get_data_store();
+				$store->set_stock_reduced( $child, true );
+				$store->set_recorded_sales( $child, true );
 				/* translators: %s: parent order number. */
-				$child->update_status( $parent_status, sprintf( __( 'Created from split order #%s.', 'fulfillment-events-for-woocommerce' ), $order->get_order_number() ) );
+				$note = sprintf( __( 'Created from split order #%s.', 'fulfillment-events-for-woocommerce' ), $order->get_order_number() );
+				if ( false === $child->update_status( $parent_status, $note ) ) {
+					throw new RuntimeException( sprintf( 'could not move order #%s to %s', $child->get_order_number(), $parent_status ) );
+				}
+				$done[] = $child;
 			}
 
-			// The children now own the reduced stock; the parent must not restore it.
+			// The children now own the reduced stock and recorded sales; the
+			// parent must not restore stock or decrease sales.
 			foreach ( $items as $item ) {
 				if ( '' !== (string) $item->get_meta( '_reduced_stock', true ) ) {
 					$item->delete_meta_data( '_reduced_stock' );
 					$item->save();
 				}
 			}
+			$order->get_data_store()->set_recorded_sales( $order, false );
 
 			$ids     = array();
 			$numbers = array();
@@ -188,13 +287,50 @@ class Fe_Order_Splitter {
 			$order->update_meta_data( Fe_Meta::CHILDREN, implode( ',', $ids ) );
 			/* translators: %s: comma-separated child order numbers. */
 			$order->add_order_note( sprintf( __( 'Split into %s.', 'fulfillment-events-for-woocommerce' ), implode( ', ', $numbers ) ) );
-			$order->update_status( Fe_Split_Status::STATUS );
+			if ( false === $order->update_status( Fe_Split_Status::STATUS ) ) {
+				throw new RuntimeException( 'could not move the parent to Split' );
+			}
 		} catch ( Throwable $e ) {
-			self::report_failure( $order, $children, $e );
+			self::report_partial( $order, $children, $done, $e );
 			return;
 		}
 
 		do_action( 'fe_order_split', $order, $children );
+	}
+
+	/**
+	 * When payment completes on a parent that was split while on-hold,
+	 * WooCommerce only fires woocommerce_payment_complete_order_status_fe-split.
+	 * Moves the on-hold children to processing and records the payment date.
+	 *
+	 * @param int    $order_id       Parent order id.
+	 * @param string $transaction_id Transaction id, if any.
+	 */
+	public static function on_split_parent_paid( $order_id, $transaction_id = '' ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+		$changed = false;
+		if ( ! $order->get_date_paid() ) {
+			$order->set_date_paid( time() );
+			$changed = true;
+		}
+		if ( '' !== (string) $transaction_id && '' === (string) $order->get_transaction_id() ) {
+			$order->set_transaction_id( (string) $transaction_id );
+			$changed = true;
+		}
+		if ( $changed ) {
+			$order->save();
+		}
+		$ids = array_filter( array_map( 'intval', explode( ',', (string) $order->get_meta( Fe_Meta::CHILDREN ) ) ) );
+		foreach ( $ids as $id ) {
+			$child = wc_get_order( $id );
+			if ( $child && 'on-hold' === $child->get_status() ) {
+				/* translators: %s: parent order number. */
+				$child->update_status( 'processing', sprintf( __( 'Payment completed on #%s.', 'fulfillment-events-for-woocommerce' ), $order->get_order_number() ) );
+			}
+		}
 	}
 
 	/**
@@ -288,15 +424,22 @@ class Fe_Order_Splitter {
 	 * @param array    $items    Parent line items keyed by id.
 	 * @param array    $shipping Parent shipping items keyed by id.
 	 * @param array    $fees     Parent fee items keyed by id.
+	 * @param array    $created  Children created so far; the new child is appended
+	 *                           as soon as it exists, so a rollback can delete it.
 	 * @return WC_Order
+	 * @throws RuntimeException When the child can't be saved.
 	 */
-	private static function create_child( $parent, array $spec, $items, $shipping, $fees ) {
+	private static function create_child( $parent, array $spec, $items, $shipping, $fees, array &$created ) {
 		$props = apply_filters( 'fe_child_order_args', self::child_props( $parent ), $spec['group'], $parent );
 
 		$child = new WC_Order();
 		$child->set_props( $props );
 		$child->set_status( 'pending' );
 		$child->save();
+		if ( ! $child->get_id() ) {
+			throw new RuntimeException( 'could not create a split order' );
+		}
+		$created[] = $child;
 
 		foreach ( $spec['item_ids'] as $id ) {
 			$src  = $items[ $id ];
@@ -375,6 +518,9 @@ class Fe_Order_Splitter {
 		$child->update_taxes();
 		$child->calculate_totals( false );
 		$child->save();
+		if ( method_exists( $child, 'get_last_save_error' ) && null !== $child->get_last_save_error() ) {
+			throw new RuntimeException( 'could not save split order #' . $child->get_id() );
+		}
 		return $child;
 	}
 
@@ -405,32 +551,68 @@ class Fe_Order_Splitter {
 	}
 
 	/**
-	 * Logs and notes a failed split. The parent keeps `_fe_split_done` so the
-	 * split is not retried on top of partial children; staff finish by hand.
+	 * Phase A failed: deletes the pending children and clears the split mark,
+	 * so the parent stays a valid single order.
 	 *
 	 * @param WC_Order   $parent   Parent order.
 	 * @param WC_Order[] $children Children created before the failure.
 	 * @param Throwable  $e        Error.
 	 */
-	private static function report_failure( $parent, array $children, $e ) {
-		$numbers = array();
+	private static function roll_back( $parent, array $children, $e ) {
 		foreach ( $children as $child ) {
-			$numbers[] = '#' . $child->get_order_number();
+			try {
+				$child->delete( true );
+			} catch ( Throwable $ignored ) {
+				self::log( sprintf( 'Could not delete pending split order #%d: %s', $child->get_id(), $ignored->getMessage() ) );
+			}
 		}
-		if ( function_exists( 'wc_get_logger' ) ) {
-			wc_get_logger()->error(
-				sprintf( 'Split of order #%d failed: %s', $parent->get_id(), $e->getMessage() ),
-				array( 'source' => 'fulfillment-events' )
-			);
+		$parent->delete_meta_data( Fe_Meta::SPLIT_DONE );
+		$parent->save();
+		self::log( sprintf( 'Split of order #%d failed and was rolled back: %s', $parent->get_id(), $e->getMessage() ) );
+		/* translators: %s: error message. */
+		$parent->add_order_note( sprintf( __( 'Splitting this order failed and nothing was changed: %s. It stays one order.', 'fulfillment-events-for-woocommerce' ), $e->getMessage() ) );
+		do_action( 'fe_order_split_failed', $parent, array(), $e );
+	}
+
+	/**
+	 * Phase B failed partway. Nothing is undone automatically (some children
+	 * may already hold stock and sales); staff must review.
+	 *
+	 * @param WC_Order   $parent   Parent order.
+	 * @param WC_Order[] $children All children.
+	 * @param WC_Order[] $done     Children whose status was moved.
+	 * @param Throwable  $e        Error.
+	 */
+	private static function report_partial( $parent, array $children, array $done, $e ) {
+		$all   = array();
+		$moved = array();
+		foreach ( $children as $child ) {
+			$all[] = '#' . $child->get_order_number();
 		}
+		foreach ( $done as $child ) {
+			$moved[] = '#' . $child->get_order_number();
+		}
+		self::log( sprintf( 'Split of order #%d NEEDS MANUAL REVIEW: %s', $parent->get_id(), $e->getMessage() ) );
 		$parent->add_order_note(
 			sprintf(
-				/* translators: 1: error message, 2: child order numbers or a dash. */
-				__( 'Splitting this order failed: %1$s. Orders created before the failure: %2$s. Check stock and finish the split by hand.', 'fulfillment-events-for-woocommerce' ),
+				/* translators: 1: error message, 2: all child order numbers, 3: child order numbers already moved, or a dash. */
+				__( 'Split needs manual review: %1$s. Split orders: %2$s. Already moved out of pending: %3$s. Check stock, sales and statuses on this order and those.', 'fulfillment-events-for-woocommerce' ),
 				$e->getMessage(),
-				empty( $numbers ) ? '-' : implode( ', ', $numbers )
+				implode( ', ', $all ),
+				empty( $moved ) ? '-' : implode( ', ', $moved )
 			)
 		);
 		do_action( 'fe_order_split_failed', $parent, $children, $e );
+	}
+
+	/**
+	 * Writes to the WooCommerce log when available.
+	 *
+	 * @param string $message Message.
+	 */
+	private static function log( $message ) {
+		if ( function_exists( 'wc_get_logger' ) ) {
+			wc_get_logger()->error( $message, array( 'source' => 'fulfillment-events' ) );
+		}
 	}
 }

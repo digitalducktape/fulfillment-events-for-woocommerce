@@ -53,6 +53,9 @@ here.
 - [ ] With HPOS on, and again with HPOS compatibility mode (sync) on: after checkout returns, the parent is still "Split" in both the orders table and the posts backup, and the children's stock flag is set.
 - [ ] Analytics > Revenue and Orders count the children, not the parent; the legacy Reports do not list the parent.
 - [ ] The parent can't be paid again from My account (no "Pay" button on a Split order).
+- [ ] Product "total sales" counts rise once per item (not twice) after a split; cancelling a child lowers only its items' counts; trashing the parent changes nothing.
+- [ ] Send the Square webhook at the same moment as the checkout return (or replay it quickly): exactly one set of children; no `fe_split_lock_*` row is left in wp_options afterwards.
+- [ ] Parent on-hold (bank transfer) split into on-hold children, then mark payment complete on the parent (or the gateway confirms): every on-hold child moves to Processing with a "Payment completed on #parent" note, and the parent gets a paid date.
 - [ ] Two events delivering on the same date: the cart shows a negative "Combined delivery" fee equal to the cheaper delivery cost; picking a different date or pickup for one removes it.
 
 ## M4: add-ons and polish

@@ -88,6 +88,7 @@ final class SplitPlanTest extends TestCase {
 		$GLOBALS['fe_test_orders']  = array();
 		$GLOBALS['fe_test_actions'] = array();
 		$GLOBALS['fe_test_filters'] = array();
+		$GLOBALS['wpdb']->rows      = array();
 	}
 
 	private function product( $name, $group, $total, $tax, $reduced ) {
@@ -155,6 +156,8 @@ final class SplitPlanTest extends TestCase {
 		// 35 items + 2.50 tax + 14 shipping + 1.01 fee + 0.07 fee tax = 52.58; one cent of drift on top.
 		$order->set_total( 52.59 );
 		$order->update_meta_data( Fe_Meta::WILL_SPLIT, 'yes' );
+		$order->recorded_sales = true;
+		$order->stock_reduced  = true;
 		return $order;
 	}
 
@@ -224,7 +227,7 @@ final class SplitPlanTest extends TestCase {
 		foreach ( $children as $child ) {
 			$this->assertTrue( $child->stock_reduced );
 			// The flag is set before the status change that would reduce stock.
-			$this->assertSame( array( 'stock_reduced:yes', 'status:processing' ), $child->log );
+			$this->assertSame( array( 'stock_reduced:yes', 'recorded_sales:yes', 'status:processing' ), $child->log );
 			foreach ( $child->get_items() as $item ) {
 				$reduced[ $item->get_name() ] = $item->get_meta( '_reduced_stock' );
 			}
@@ -268,6 +271,107 @@ final class SplitPlanTest extends TestCase {
 		foreach ( $this->children_of( $order ) as $child ) {
 			$this->assertSame( 'on-hold', $child->get_status() );
 		}
+	}
+
+	private function count_actions( $hook ) {
+		$n = 0;
+		foreach ( $GLOBALS['fe_test_actions'] as $a ) {
+			if ( $hook === $a[0] ) {
+				$n++;
+			}
+		}
+		return $n;
+	}
+
+	public function test_recorded_sales_move_from_parent_to_children() {
+		$order = $this->parent_order();
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$this->assertFalse( $order->recorded_sales );
+		$this->assertTrue( $order->stock_reduced );
+		foreach ( $this->children_of( $order ) as $child ) {
+			$this->assertTrue( $child->recorded_sales );
+			$this->assertTrue( $child->stock_reduced );
+		}
+	}
+
+	public function test_concurrent_call_returns_without_splitting() {
+		$order = $this->parent_order();
+		$lock  = 'fe_split_lock_' . $order->get_id();
+		$GLOBALS['wpdb']->rows[ $lock ] = (string) time();
+
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$this->assertSame( '', $order->get_meta( Fe_Meta::SPLIT_DONE ) );
+		$this->assertSame( 'processing', $order->get_status() );
+		// The other request's lock is left alone.
+		$this->assertArrayHasKey( $lock, $GLOBALS['wpdb']->rows );
+	}
+
+	public function test_stale_lock_is_taken_over_and_lock_is_released() {
+		$order = $this->parent_order();
+		$lock  = 'fe_split_lock_' . $order->get_id();
+		$GLOBALS['wpdb']->rows[ $lock ] = (string) ( time() - 700 );
+
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$this->assertSame( Fe_Split_Status::STATUS, $order->get_status() );
+		$this->assertArrayNotHasKey( $lock, $GLOBALS['wpdb']->rows );
+	}
+
+	public function test_phase_a_failure_rolls_back() {
+		$order = $this->parent_order();
+		$calls = 0;
+		$GLOBALS['fe_test_filters']['fe_child_order_args'] = function ( $args ) use ( &$calls ) {
+			if ( ++$calls > 1 ) {
+				throw new RuntimeException( 'boom' );
+			}
+			return $args;
+		};
+		$before = array_keys( $GLOBALS['fe_test_orders'] );
+
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+
+		$this->assertSame( $before, array_keys( $GLOBALS['fe_test_orders'] ), 'created children are deleted' );
+		$this->assertSame( '', $order->get_meta( Fe_Meta::SPLIT_DONE ) );
+		$this->assertSame( 'processing', $order->get_status() );
+		$this->assertTrue( $order->recorded_sales );
+		foreach ( $order->get_items() as $item ) {
+			if ( 'Gift card' !== $item->get_name() ) {
+				$this->assertSame( 2, $item->get_meta( '_reduced_stock' ) );
+			}
+		}
+		$this->assertSame( 1, $this->count_actions( 'fe_order_split_failed' ) );
+		$this->assertSame( 0, $this->count_actions( 'fe_order_split' ) );
+		$this->assertSame( array(), $GLOBALS['wpdb']->rows, 'lock released' );
+
+		// The order can still be split later.
+		unset( $GLOBALS['fe_test_filters']['fe_child_order_args'] );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$this->assertSame( Fe_Split_Status::STATUS, $order->get_status() );
+	}
+
+	public function test_phase_b_failure_is_flagged_for_review() {
+		$order              = $this->parent_order();
+		$order->fail_status = true;
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+
+		$this->assertSame( 'yes', $order->get_meta( Fe_Meta::SPLIT_DONE ) );
+		$this->assertSame( 0, $this->count_actions( 'fe_order_split' ) );
+		$this->assertSame( 1, $this->count_actions( 'fe_order_split_failed' ) );
+		$this->assertStringContainsString( 'manual review', end( $order->notes ) );
+	}
+
+	public function test_payment_on_split_parent_releases_on_hold_children() {
+		$order = $this->parent_order();
+		$order->set_status( 'on-hold' );
+		Fe_Order_Splitter::maybe_split( $order->get_id() );
+		$children = $this->children_of( $order );
+		$children[1]->set_status( 'cancelled' );
+
+		Fe_Order_Splitter::on_split_parent_paid( $order->get_id(), 'tx-1' );
+
+		$this->assertSame( 'processing', $children[0]->get_status() );
+		$this->assertSame( 'cancelled', $children[1]->get_status() );
+		$this->assertNotSame( '', $order->get_date_paid() );
+		$this->assertSame( 'tx-1', $order->get_transaction_id() );
 	}
 }
 

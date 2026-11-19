@@ -135,6 +135,11 @@ if ( ! class_exists( 'WC_Order' ) ) {
 			$order->stock_reduced = (bool) $set;
 			$order->log[]         = 'stock_reduced:' . ( $set ? 'yes' : 'no' );
 		}
+		public function set_recorded_sales( $order, $set ) {
+			$order = is_object( $order ) ? $order : wc_get_order( $order );
+			$order->recorded_sales = (bool) $set;
+			$order->log[]          = 'recorded_sales:' . ( $set ? 'yes' : 'no' );
+		}
 		public function get_stock_reduced( $order ) {
 			$order = is_object( $order ) ? $order : wc_get_order( $order );
 			return $order->stock_reduced;
@@ -151,8 +156,11 @@ if ( ! class_exists( 'WC_Order' ) ) {
 		public $items         = array();
 		public $notes         = array();
 		public $log           = array();
-		public $stock_reduced = false;
-		public $saves         = 0;
+		public $stock_reduced  = false;
+		public $recorded_sales = false;
+		public $saves          = 0;
+		public $deleted        = false;
+		public $fail_status    = false;
 		public function __call( $name, $args ) {
 			$prop = substr( $name, 4 );
 			if ( 0 === strpos( $name, 'set_' ) ) {
@@ -219,10 +227,20 @@ if ( ! class_exists( 'WC_Order' ) ) {
 			return $this->props['total'];
 		}
 		public function update_status( $status, $note = '' ) {
+			if ( $this->fail_status ) {
+				return false;
+			}
 			$this->props['status'] = $status;
+			$this->notes[]         = $note;
 			$this->log[]           = 'status:' . $status;
 			$this->save();
 			do_action( 'woocommerce_order_status_changed', $this->id, '', $status, $this );
+			return true;
+		}
+		public function delete( $force = false ) {
+			$this->deleted = true;
+			unset( $GLOBALS['fe_test_orders'][ $this->id ] );
+			return true;
 		}
 		public function save() {
 			if ( ! $this->id ) {
@@ -234,3 +252,43 @@ if ( ! class_exists( 'WC_Order' ) ) {
 		}
 	}
 }
+
+if ( ! class_exists( 'FeFakeWpdb' ) ) {
+	/**
+	 * Fake $wpdb covering the split lock: INSERT IGNORE / SELECT / delete on options.
+	 */
+	class FeFakeWpdb {
+		public $options = 'wp_options';
+		public $rows    = array();
+		public function prepare( $sql, ...$args ) {
+			return array( $sql, $args );
+		}
+		public function query( $prepared ) {
+			list( $sql, $args ) = $prepared;
+			if ( 0 === strpos( $sql, 'INSERT IGNORE' ) ) {
+				if ( isset( $this->rows[ $args[0] ] ) ) {
+					return 0;
+				}
+				$this->rows[ $args[0] ] = $args[1];
+				return 1;
+			}
+			return false;
+		}
+		public function get_var( $prepared ) {
+			list( $sql, $args ) = $prepared;
+			return isset( $this->rows[ $args[0] ] ) ? $this->rows[ $args[0] ] : null;
+		}
+		public function delete( $table, $where ) {
+			$name = $where['option_name'];
+			if ( ! isset( $this->rows[ $name ] ) ) {
+				return 0;
+			}
+			if ( isset( $where['option_value'] ) && (string) $this->rows[ $name ] !== (string) $where['option_value'] ) {
+				return 0;
+			}
+			unset( $this->rows[ $name ] );
+			return 1;
+		}
+	}
+}
+$GLOBALS['wpdb'] = new FeFakeWpdb();
