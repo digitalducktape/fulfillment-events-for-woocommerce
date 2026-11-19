@@ -21,3 +21,9 @@ if ( ! function_exists( 'update_option' ) ) {
 	}
 }
 $GLOBALS['fe_test_options'] = array();
+
+if ( ! function_exists( '__' ) ) {
+	function __( $text, $domain = 'default' ) {
+		return $text;
+	}
+}

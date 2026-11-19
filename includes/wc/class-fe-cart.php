@@ -5,7 +5,7 @@
  * @package Fulfillment_Events
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'FE_TESTING' ) ) {
 	exit;
 }
 
@@ -34,6 +34,207 @@ class Fe_Cart {
 	public static function init() {
 		add_filter( 'woocommerce_is_purchasable', array( __CLASS__, 'filter_purchasable' ), 10, 2 );
 		add_filter( 'woocommerce_variation_is_purchasable', array( __CLASS__, 'filter_purchasable' ), 10, 2 );
+		add_filter( 'woocommerce_cart_shipping_packages', array( __CLASS__, 'packages' ) );
+		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'filter_rates' ), 10, 2 );
+		add_filter( 'woocommerce_shipping_package_name', array( __CLASS__, 'package_name' ), 10, 3 );
+		add_filter( 'woocommerce_cart_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
+		add_filter( 'woocommerce_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
+		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
+	}
+
+	/**
+	 * Package last passed to the package-name filter, i.e. the one the classic
+	 * templates are rendering.
+	 *
+	 * @var array|null
+	 */
+	private static $rendering_package = null;
+
+	/**
+	 * Splits the cart into one package per event plus a regular package.
+	 * Returns the input untouched when no item resolves to an event.
+	 *
+	 * @param array $packages Packages built by WooCommerce.
+	 * @return array
+	 */
+	public static function packages( $packages ) {
+		if ( ! is_array( $packages ) || empty( $packages ) ) {
+			return $packages;
+		}
+
+		$contents = array();
+		foreach ( $packages as $package ) {
+			if ( ! empty( $package['contents'] ) && is_array( $package['contents'] ) ) {
+				// Union by key; later packages never overwrite earlier ones.
+				$contents = $contents + $package['contents'];
+			}
+		}
+
+		$items    = array();
+		$has_event = false;
+		foreach ( $contents as $key => $item ) {
+			$event_id = null;
+			if ( ! empty( $item['product_id'] ) ) {
+				$st       = self::product_event_status( (int) $item['product_id'] );
+				$event_id = $st['event_id'];
+			}
+			if ( null !== $event_id ) {
+				$has_event = true;
+			}
+			$items[] = array(
+				'key'            => (string) $key,
+				'needs_shipping' => isset( $item['data'] ) && is_object( $item['data'] ) && $item['data']->needs_shipping(),
+				'event_id'       => $event_id,
+			);
+		}
+		if ( ! $has_event ) {
+			return $packages;
+		}
+
+		$first  = reset( $packages );
+		$groups = Fe_Cart_Grouper::group( $items );
+		$result = array();
+		foreach ( $groups as $group ) {
+			$group_contents = array();
+			$cost           = 0;
+			foreach ( $group['item_keys'] as $key ) {
+				$group_contents[ $key ] = $contents[ $key ];
+				$cost                  += isset( $contents[ $key ]['line_total'] ) ? (float) $contents[ $key ]['line_total'] : 0;
+			}
+			$user    = isset( $first['user'] ) ? $first['user'] : array( 'ID' => get_current_user_id() );
+			$package = array(
+				'contents'        => $group_contents,
+				'contents_cost'   => $cost,
+				'applied_coupons' => isset( $first['applied_coupons'] ) ? $first['applied_coupons'] : array(),
+				'user'            => $user,
+				'destination'     => isset( $first['destination'] ) ? $first['destination'] : array(),
+				'fe_group'        => $group['group'],
+				'fe_event_id'     => $group['event_id'],
+				'fe_event_name'   => '',
+				'fe_customer_id'  => isset( $user['ID'] ) ? (int) $user['ID'] : 0,
+			);
+			if ( null !== $group['event_id'] ) {
+				$event = Fe_Event_Repo::get( (int) $group['event_id'] );
+				$package['fe_event_name'] = $event ? $event['title'] : '';
+			}
+			$result[] = $package;
+		}
+		return $result;
+	}
+
+	/**
+	 * Keeps only this plugin's rates on event packages, and only other rates on
+	 * the regular package. Packages the plugin did not build are untouched.
+	 *
+	 * @param array $rates   Rates keyed by id.
+	 * @param array $package Package being rated.
+	 * @return array
+	 */
+	public static function filter_rates( $rates, $package ) {
+		if ( ! is_array( $rates ) || ! is_array( $package ) || empty( $package['fe_group'] ) ) {
+			return $rates;
+		}
+		$is_event = ! empty( $package['fe_event_id'] );
+		foreach ( $rates as $id => $rate ) {
+			$method = is_object( $rate ) && method_exists( $rate, 'get_method_id' ) ? (string) $rate->get_method_id() : '';
+			$ours   = 0 === strpos( $method, 'fe_' );
+			if ( $is_event !== $ours ) {
+				unset( $rates[ $id ] );
+			}
+		}
+		return $rates;
+	}
+
+	/**
+	 * Names event packages after their event.
+	 *
+	 * @param string $name    Default name.
+	 * @param int    $i       Package index.
+	 * @param array  $package Package.
+	 * @return string
+	 */
+	public static function package_name( $name, $i, $package ) {
+		self::$rendering_package = is_array( $package ) ? $package : null;
+		if ( is_array( $package ) && ! empty( $package['fe_event_name'] ) ) {
+			return $package['fe_event_name'];
+		}
+		return $name;
+	}
+
+	/**
+	 * Message shown when an event package has no rates.
+	 *
+	 * @param string $event_name Event name.
+	 * @param string $postcode   Destination postcode, may be empty.
+	 * @return string
+	 */
+	public static function zero_rates_message( $event_name, $postcode ) {
+		if ( '' === trim( (string) $postcode ) ) {
+			/* translators: %s: event name. */
+			return sprintf( __( "%s items aren't available for this address. Try a different address or remove them from your cart.", 'fulfillment-events-for-woocommerce' ), $event_name );
+		}
+		/* translators: 1: event name, 2: postcode. */
+		return sprintf( __( "%1\$s items aren't available for %2\$s. Try a different address or remove them from your cart.", 'fulfillment-events-for-woocommerce' ), $event_name, $postcode );
+	}
+
+	/**
+	 * Event packages that ended up with no rates.
+	 *
+	 * @return array[]
+	 */
+	private static function empty_event_packages() {
+		$out = array();
+		foreach ( (array) WC()->shipping()->get_packages() as $package ) {
+			if ( ! empty( $package['fe_event_id'] ) && empty( $package['rates'] ) ) {
+				$out[] = $package;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Message for a package, using its destination postcode.
+	 *
+	 * @param array $package Event package.
+	 * @return string
+	 */
+	private static function message_for( array $package ) {
+		$postcode = isset( $package['destination']['postcode'] ) ? (string) $package['destination']['postcode'] : '';
+		return self::zero_rates_message( (string) $package['fe_event_name'], $postcode );
+	}
+
+	/**
+	 * Classic cart/checkout "no shipping available" text for event packages.
+	 *
+	 * @param string $html Default markup.
+	 * @return string
+	 */
+	public static function no_rates_html( $html ) {
+		$package = self::$rendering_package;
+		self::$rendering_package = null;
+		if ( ! is_array( $package ) || empty( $package['fe_event_id'] ) ) {
+			if ( null !== $package ) {
+				return $html;
+			}
+			$empty = self::empty_event_packages();
+			if ( empty( $empty ) ) {
+				return $html;
+			}
+			$package = $empty[0];
+		}
+		return wp_kses_post( wpautop( esc_html( self::message_for( $package ) ) ) );
+	}
+
+	/**
+	 * Blocks checkout: one error per event package with no rates.
+	 *
+	 * @param WP_Error $errors Errors collector.
+	 * @param WC_Cart  $cart   Cart.
+	 */
+	public static function store_api_errors( $errors, $cart ) {
+		foreach ( self::empty_event_packages() as $package ) {
+			$errors->add( 'fe_no_rates', self::message_for( $package ) );
+		}
 	}
 
 	/**

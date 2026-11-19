@@ -19,6 +19,11 @@ here.
 - [ ] After checkout, the shipping line item carries fe_event_id, fe_event_name, fe_date, fe_type, fe_window and fe_location meta.
 - [ ] A cart with no event product shows none of these rates.
 
+- [ ] Block checkout, cart with products from two events: two shipping packages named after the events, each showing only Event rates.
+- [ ] Add a regular (no-event) product to that cart: a third package shows only the store's stock shipping methods.
+- [ ] A cart with only a non-event product is byte-identical to before: compare the Store API /cart response with the plugin on and off.
+- [ ] Enter an address in a zone with no rates for an event: a notice reads "{event} items aren't available for {postcode}. Try a different address or remove them from your cart." in classic cart/checkout and blocks, and blocks checkout is blocked. With no postcode entered, the notice omits it.
+
 ## M2: order split
 
 ## M4: add-ons and polish

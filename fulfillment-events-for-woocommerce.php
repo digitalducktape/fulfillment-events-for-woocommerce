@@ -3,7 +3,7 @@
  * Plugin Name:          Fulfillment Events for WooCommerce
  * Plugin URI:           https://github.com/digitalducktape/fulfillment-events-for-woocommerce
  * Description:          Sell products tied to dated fulfillment events (pickup, delivery, courier), check out several dates in one payment, and split the paid order into one order per date.
- * Version:              0.1.5
+ * Version:              0.1.6
  * Requires at least:    6.0
  * Requires PHP:         7.4
  * Requires Plugins:     woocommerce
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'FE_VERSION' ) ) {
-	define( 'FE_VERSION', '0.1.5' );
+	define( 'FE_VERSION', '0.1.6' );
 }
 if ( ! defined( 'FE_DB_VERSION' ) ) {
 	define( 'FE_DB_VERSION', 1 );
@@ -58,6 +58,7 @@ require_once FE_PLUGIN_DIR . 'includes/data/class-fe-zone-rule-repo.php';
 require_once FE_PLUGIN_DIR . 'includes/data/class-fe-product-links.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-event-resolver.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-rate-builder.php';
+require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-cart-grouper.php';
 require_once FE_PLUGIN_DIR . 'includes/functions.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-cart.php';
 require_once FE_PLUGIN_DIR . 'includes/class-fe-plugin.php';

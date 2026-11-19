@@ -19,3 +19,5 @@ require_once $includes . 'data/class-fe-event-repo.php';
 require_once $includes . 'data/class-fe-zone-rule-repo.php';
 require_once $includes . 'data/class-fe-location-repo.php';
 require_once $includes . 'domain/class-fe-rate-builder.php';
+require_once $includes . 'domain/class-fe-cart-grouper.php';
+require_once $includes . 'wc/class-fe-cart.php';
