@@ -22,15 +22,23 @@ class Fe_Addon_Rules {
 	const OPEN_STATUSES = array( 'processing', 'on-hold' );
 
 	/**
+	 * Status of a split parent (without the wc- prefix).
+	 *
+	 * @var string
+	 */
+	const SPLIT_STATUS = 'fe-split';
+
+	/**
 	 * Whether a target order can take an add-on for this event and customer.
 	 *
-	 * @param array  $target        {event_id, status, is_addon:bool, customer_id, billing_email}.
+	 * @param array  $target        {event_id, status, is_addon:bool, customer_id, billing_email, date?}.
 	 * @param int    $event_id      Event of the package being added.
 	 * @param string $billing_email Billing email of the new order ('' when unknown).
 	 * @param int    $customer_id   Logged-in customer id (0 for guests).
+	 * @param string $today         Store-local Y-m-d; when set, targets dated before it are not eligible.
 	 * @return bool
 	 */
-	public static function eligible( array $target, $event_id, $billing_email, $customer_id ) {
+	public static function eligible( array $target, $event_id, $billing_email, $customer_id, $today = '' ) {
 		$event_id = (int) $event_id;
 		if ( $event_id <= 0 || (int) ( isset( $target['event_id'] ) ? $target['event_id'] : 0 ) !== $event_id ) {
 			return false;
@@ -40,6 +48,10 @@ class Fe_Addon_Rules {
 			return false;
 		}
 		if ( ! empty( $target['is_addon'] ) ) {
+			return false;
+		}
+		$date = isset( $target['date'] ) ? (string) $target['date'] : '';
+		if ( '' !== (string) $today && ( '' === $date || $date < (string) $today ) ) {
 			return false;
 		}
 		$customer_id = (int) $customer_id;
@@ -66,15 +78,19 @@ class Fe_Addon_Rules {
 	}
 
 	/**
-	 * Resolves a guest's typed order number to an eligible target.
+	 * Resolves a guest's typed order number to an eligible target. A split
+	 * parent (the number in the split confirmation email) resolves to its
+	 * child for the package's event.
 	 *
 	 * @param string   $input         Typed order number.
 	 * @param int      $event_id      Package event.
 	 * @param string   $billing_email New order's billing email.
-	 * @param callable $lookup        int order id => ?array target (see eligible()).
+	 * @param callable $lookup        int order id => ?array target (see eligible()); a split
+	 *                                parent is {status: SPLIT_STATUS, children: int[]}.
+	 * @param string   $today         Store-local Y-m-d, see eligible().
 	 * @return int Target order id, or 0.
 	 */
-	public static function resolve_guest( $input, $event_id, $billing_email, $lookup ) {
+	public static function resolve_guest( $input, $event_id, $billing_email, $lookup, $today = '' ) {
 		$id = self::order_id_from_input( $input );
 		if ( $id <= 0 ) {
 			return 0;
@@ -83,7 +99,18 @@ class Fe_Addon_Rules {
 		if ( ! is_array( $target ) ) {
 			return 0;
 		}
-		return self::eligible( $target, $event_id, $billing_email, 0 ) ? $id : 0;
+		if ( isset( $target['status'] ) && self::SPLIT_STATUS === $target['status'] ) {
+			$children = isset( $target['children'] ) ? (array) $target['children'] : array();
+			foreach ( $children as $child_id ) {
+				$child_id = (int) $child_id;
+				$child    = $child_id > 0 ? call_user_func( $lookup, $child_id ) : null;
+				if ( is_array( $child ) && self::eligible( $child, $event_id, $billing_email, 0, $today ) ) {
+					return $child_id;
+				}
+			}
+			return 0;
+		}
+		return self::eligible( $target, $event_id, $billing_email, 0, $today ) ? $id : 0;
 	}
 
 	/**
@@ -115,15 +142,16 @@ class Fe_Addon_Rules {
 	 * @param string   $input         Typed order number.
 	 * @param string   $billing_email Billing email.
 	 * @param callable $lookup        See resolve_guest().
+	 * @param string   $today         Store-local Y-m-d, see eligible().
 	 * @return array|null Null when fine, else {number, event_name} for the message.
 	 */
-	public static function guest_error( array $rate_metas, $input, $billing_email, $lookup ) {
+	public static function guest_error( array $rate_metas, $input, $billing_email, $lookup, $today = '' ) {
 		foreach ( $rate_metas as $meta ) {
 			if ( ! is_array( $meta ) || ! isset( $meta['fe_addon_guest'] ) || 'yes' !== $meta['fe_addon_guest'] ) {
 				continue;
 			}
 			$event_id = isset( $meta['fe_event_id'] ) ? (int) $meta['fe_event_id'] : 0;
-			if ( 0 === self::resolve_guest( $input, $event_id, $billing_email, $lookup ) ) {
+			if ( 0 === self::resolve_guest( $input, $event_id, $billing_email, $lookup, $today ) ) {
 				return array(
 					'number'     => trim( ltrim( trim( (string) $input ), '#' ) ),
 					'event_name' => isset( $meta['fe_event_name'] ) ? (string) $meta['fe_event_name'] : '',

@@ -221,4 +221,109 @@ class AddonRulesTest extends TestCase {
 		$this->assertSame( '', $item->get_meta( 'fe_date' ) );
 		$this->assertSame( '', $item->get_meta( 'fe_addon_of' ) );
 	}
+
+	public function test_not_eligible_past_date() {
+		$t = $this->target( array( 'date' => '2026-12-05' ) );
+		$this->assertTrue( Fe_Addon_Rules::eligible( $t, 12, '', 7, '2026-12-04' ) );
+		$this->assertTrue( Fe_Addon_Rules::eligible( $t, 12, '', 7, '2026-12-05' ), 'today counts' );
+		$this->assertFalse( Fe_Addon_Rules::eligible( $t, 12, '', 7, '2026-12-06' ) );
+		$this->assertFalse( Fe_Addon_Rules::eligible( $this->target(), 12, '', 7, '2026-12-04' ), 'no date with today set' );
+		$this->assertTrue( Fe_Addon_Rules::eligible( $t, 12, '', 7 ), 'no today: no date check' );
+	}
+
+	public function test_resolve_guest_maps_split_parent_to_child_for_event() {
+		$guest   = array( 'customer_id' => 0, 'date' => '2026-12-05' );
+		$targets = array(
+			300 => array( 'status' => 'fe-split', 'children' => array( 301, 302 ) ),
+			301 => $this->target( array_merge( $guest, array( 'event_id' => 13 ) ) ),
+			302 => $this->target( $guest ),
+			400 => array( 'status' => 'fe-split', 'children' => array( 301 ) ),
+		);
+		$lookup  = function ( $id ) use ( $targets ) {
+			return isset( $targets[ $id ] ) ? $targets[ $id ] : null;
+		};
+		$this->assertSame( 302, Fe_Addon_Rules::resolve_guest( '#300', 12, 'pat@example.com', $lookup, '2026-11-19' ) );
+		$this->assertSame( 301, Fe_Addon_Rules::resolve_guest( '300', 13, 'pat@example.com', $lookup, '2026-11-19' ) );
+		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '400', 12, 'pat@example.com', $lookup, '2026-11-19' ), 'no child for event' );
+		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '300', 12, 'x@example.com', $lookup, '2026-11-19' ), 'email' );
+		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '300', 12, 'pat@example.com', $lookup, '2026-12-06' ), 'past' );
+	}
+
+	public function test_hydrate_from_split_parent_number_targets_child() {
+		$child  = $this->stamped_order(
+			Fe_Meta::to_meta(
+				array(
+					'event_id'   => 12,
+					'event_name' => 'Winter market',
+					'date'       => '2026-12-05',
+					'type'       => 'delivery',
+					'window'     => '',
+					'location'   => '',
+					'parent_id'  => 1,
+				)
+			),
+			array( 'status' => 'processing', 'customer_id' => 0, 'billing_email' => 'pat@example.com' )
+		);
+		$parent = $this->stamped_order( array( Fe_Meta::CHILDREN => '999,' . $child->get_id() ), array( 'status' => 'fe-split', 'billing_email' => 'pat@example.com' ) );
+		$new    = $this->stamped_order( array( Fe_Addon_Field::INPUT_META => '#' . $parent->get_id() ), array( 'billing_email' => 'pat@example.com' ) );
+		$item   = new WC_Order_Item_Shipping();
+		$item->add_meta_data( 'fe_event_id', 12 );
+		$item->add_meta_data( 'fe_addon_guest', 'yes' );
+		$new->add_item( $item );
+
+		Fe_Addon_Field::hydrate( $new );
+
+		$this->assertSame( $child->get_id(), $item->get_meta( 'fe_addon_of' ) );
+		$this->assertSame( '2026-12-05', $item->get_meta( 'fe_date' ) );
+	}
+
+	public function test_target_data_carries_date() {
+		$order = $this->stamped_order(
+			Fe_Meta::to_meta(
+				array(
+					'event_id'   => 12,
+					'event_name' => 'Winter market',
+					'date'       => '2026-12-05',
+					'type'       => 'pickup',
+					'window'     => '',
+					'location'   => 'Zone A',
+				)
+			),
+			array( 'status' => 'on-hold', 'customer_id' => 7, 'billing_email' => 'pat@example.com' )
+		);
+		$data  = Fe_Addon_Field::target_data( $order );
+		$this->assertSame( '2026-12-05', $data['target']['date'] );
+	}
+
+	public function test_strip_fe_meta_removes_plugin_item_meta() {
+		$formatted = array(
+			1 => (object) array( 'key' => 'fe_date', 'value' => '2026-12-05' ),
+			2 => (object) array( 'key' => 'Items', 'value' => 'Pie × 1' ),
+			3 => (object) array( 'key' => 'fe_addon_guest', 'value' => 'yes' ),
+			4 => (object) array( 'key' => 'coffee_size', 'value' => 'Large' ),
+		);
+		$this->assertSame( array( 2, 4 ), array_keys( Fe_Order_Stamper::strip_fe_meta( $formatted ) ) );
+
+		$hidden = Fe_Order_Stamper::hidden_item_meta( array( '_qty' ) );
+		foreach ( array( '_qty', 'fe_event_id', 'fe_event_name', 'fe_date', 'fe_type', 'fe_window', 'fe_location', 'fe_addon_of', 'fe_addon_guest' ) as $key ) {
+			$this->assertContains( $key, $hidden );
+		}
+	}
+
+	public function test_block_field_is_conditional_on_9_9_and_plain_before() {
+		$old = Fe_Addon_Field::block_field_args( '9.8.5' );
+		$this->assertFalse( $old['required'] );
+		$this->assertArrayNotHasKey( 'hidden', $old );
+		$this->assertSame( 'order', $old['location'] );
+		$this->assertSame( 'fulfillment-events/addon-order', $old['id'] );
+
+		$new     = Fe_Addon_Field::block_field_args( '9.9.0' );
+		$rates   = $new['required']['properties']['cart']['properties']['shipping_rates'];
+		$pattern = '/' . $rates['contains']['pattern'] . '/u';
+		$this->assertSame( 1, preg_match( $pattern, 'fe_addon:3:guest' ) );
+		$this->assertSame( 0, preg_match( $pattern, 'fe_addon:3:345' ) );
+		$this->assertSame( 0, preg_match( $pattern, 'flat_rate:1' ) );
+		$this->assertSame( $rates, $new['hidden']['properties']['cart']['properties']['shipping_rates']['not'] );
+		$this->assertSame( array( 'shipping_rates' ), $new['required']['properties']['cart']['required'] );
+	}
 }

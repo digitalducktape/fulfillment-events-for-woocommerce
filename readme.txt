@@ -6,7 +6,7 @@ Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,7 +26,15 @@ This is an early development release.
 
 Support this plugin: https://buymeacoffee.com/digitalducktape
 
+== Known limitations ==
+
+* Block checkout on WooCommerce 8.9 to 9.8: the "Adding to an existing order? Order number" field shows on every checkout, because conditional additional fields need WooCommerce 9.9. It is optional and ignored unless the customer picks "Add to an existing order". On 9.9 and later it only appears when that rate is selected.
+
 == Changelog ==
+
+= 0.3.1 =
+* Add-ons: orders whose date has passed are no longer offered; a split confirmation's order number resolves to the right child; the block checkout field only appears when needed (WooCommerce 9.9+). The plugin's shipping line details are hidden from customers and order screens.
+
 
 = 0.3.0 =
 * Add on to an existing order: logged-in customers pick one of their open orders for the event; guests enter the order number, checked against the billing email at place-order.

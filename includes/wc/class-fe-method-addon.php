@@ -88,9 +88,10 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 				'type'        => 'shop_order',
 			)
 		);
+		$today = wp_date( 'Y-m-d' );
 		foreach ( (array) $orders as $order ) {
 			$data = Fe_Addon_Field::target_data( $order );
-			if ( ! $data || ! Fe_Addon_Rules::eligible( $data['target'], $event_id, '', $customer_id ) ) {
+			if ( ! $data || ! Fe_Addon_Rules::eligible( $data['target'], $event_id, '', $customer_id, $today ) ) {
 				continue;
 			}
 			$meta = Fe_Addon_Rules::rate_meta( $data['fulfillment'], $order->get_id() );

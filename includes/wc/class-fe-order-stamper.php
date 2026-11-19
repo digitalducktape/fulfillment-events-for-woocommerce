@@ -36,6 +36,51 @@ class Fe_Order_Stamper {
 		add_action( 'woocommerce_checkout_create_order_shipping_item', array( __CLASS__, 'tag_shipping_item' ), 10, 3 );
 		add_action( 'woocommerce_checkout_order_processed', array( __CLASS__, 'on_classic_processed' ), 10, 3 );
 		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'finalize' ) );
+		add_filter( 'woocommerce_order_item_get_formatted_meta_data', array( __CLASS__, 'strip_fe_meta' ) );
+		add_filter( 'woocommerce_hidden_order_itemmeta', array( __CLASS__, 'hidden_item_meta' ) );
+	}
+
+	/**
+	 * Shipping item meta keys the plugin writes (rate meta).
+	 *
+	 * @return string[]
+	 */
+	public static function item_meta_keys() {
+		$keys = array( 'fe_addon_guest' );
+		foreach ( self::RATE_KEYS as $key ) {
+			$keys[] = 'fe_' . $key;
+		}
+		return $keys;
+	}
+
+	/**
+	 * Drops fe_* entries from formatted item meta (emails, My Account,
+	 * thank-you page, order admin).
+	 *
+	 * @param array $formatted Formatted meta, id => {key, value, display_key, display_value}.
+	 * @return array
+	 */
+	public static function strip_fe_meta( $formatted ) {
+		if ( ! is_array( $formatted ) ) {
+			return $formatted;
+		}
+		foreach ( $formatted as $id => $meta ) {
+			$key = is_object( $meta ) && isset( $meta->key ) ? (string) $meta->key : ( is_array( $meta ) && isset( $meta['key'] ) ? (string) $meta['key'] : '' );
+			if ( 0 === strpos( $key, 'fe_' ) ) {
+				unset( $formatted[ $id ] );
+			}
+		}
+		return $formatted;
+	}
+
+	/**
+	 * Hides the fe_* item meta in the order admin.
+	 *
+	 * @param string[] $keys Hidden keys.
+	 * @return string[]
+	 */
+	public static function hidden_item_meta( $keys ) {
+		return array_values( array_unique( array_merge( (array) $keys, self::item_meta_keys() ) ) );
 	}
 
 	/**

@@ -51,6 +51,69 @@ class Fe_Addon_Field {
 	}
 
 	/**
+	 * Selected guest add-on rate ids look like fe_addon:{instance}:guest.
+	 */
+	const GUEST_RATE_PATTERN = '^fe_addon:[0-9]+:guest$';
+
+	/**
+	 * Blocks field definition. On WooCommerce 9.9+ the field uses the
+	 * JSON-schema conditions (evaluated against the checkout document, where
+	 * cart.shipping_rates lists the selected rate ids) to stay hidden unless a
+	 * guest add-on rate is selected, and to be required when it is. Older
+	 * versions get an unconditional optional field.
+	 *
+	 * @param string $wc_version WooCommerce version.
+	 * @return array
+	 */
+	public static function block_field_args( $wc_version ) {
+		$args = array(
+			'id'            => self::FIELD_ID,
+			'label'         => self::label(),
+			'optionalLabel' => self::label(),
+			'location'      => 'order',
+			'type'          => 'text',
+			'required'      => false,
+		);
+		if ( '' === (string) $wc_version || version_compare( (string) $wc_version, '9.9', '<' ) ) {
+			return $args;
+		}
+		$selected         = array(
+			'type'       => 'object',
+			'required'   => array( 'cart' ),
+			'properties' => array(
+				'cart' => array(
+					'type'       => 'object',
+					'required'   => array( 'shipping_rates' ),
+					'properties' => array(
+						'shipping_rates' => array(
+							'type'     => 'array',
+							'contains' => array(
+								'type'    => 'string',
+								'pattern' => self::GUEST_RATE_PATTERN,
+							),
+						),
+					),
+				),
+			),
+		);
+		$not_selected     = array(
+			'type'       => 'object',
+			'properties' => array(
+				'cart' => array(
+					'properties' => array(
+						'shipping_rates' => array(
+							'not' => $selected['properties']['cart']['properties']['shipping_rates'],
+						),
+					),
+				),
+			),
+		);
+		$args['required'] = $selected;
+		$args['hidden']   = $not_selected;
+		return $args;
+	}
+
+	/**
 	 * Registers the blocks checkout field (WooCommerce 8.9+).
 	 */
 	public static function register_block_field() {
@@ -58,16 +121,7 @@ class Fe_Addon_Field {
 			return;
 		}
 		try {
-			woocommerce_register_additional_checkout_field(
-				array(
-					'id'            => self::FIELD_ID,
-					'label'         => self::label(),
-					'optionalLabel' => self::label(),
-					'location'      => 'order',
-					'type'          => 'text',
-					'required'      => false,
-				)
-			);
+			woocommerce_register_additional_checkout_field( self::block_field_args( defined( 'WC_VERSION' ) ? WC_VERSION : '' ) );
 		} catch ( Exception $e ) {
 			// Registration failed (field API changed); classic still works.
 			return;
@@ -140,20 +194,38 @@ class Fe_Addon_Field {
 				'is_addon'      => null !== $fulfillment['addon_of'],
 				'customer_id'   => (int) $order->get_customer_id(),
 				'billing_email' => (string) $order->get_billing_email(),
+				'date'          => (string) $fulfillment['date'],
 			),
 			'fulfillment' => $fulfillment,
 		);
 	}
 
 	/**
-	 * Lookup for Fe_Addon_Rules: order id => target array.
+	 * Lookup for Fe_Addon_Rules: order id => target array. A split parent
+	 * comes back as {status, children} so the rules can pick its child.
 	 *
 	 * @param int $id Order id.
 	 * @return array|null
 	 */
 	public static function lookup( $id ) {
-		$data = self::target_data( wc_get_order( absint( $id ) ) );
+		$order = wc_get_order( absint( $id ) );
+		if ( $order instanceof WC_Order && Fe_Addon_Rules::SPLIT_STATUS === (string) $order->get_status() ) {
+			return array(
+				'status'   => Fe_Addon_Rules::SPLIT_STATUS,
+				'children' => array_values( array_filter( array_map( 'intval', explode( ',', (string) $order->get_meta( Fe_Meta::CHILDREN ) ) ) ) ),
+			);
+		}
+		$data = self::target_data( $order );
 		return $data ? $data['target'] : null;
+	}
+
+	/**
+	 * Store-local today, Y-m-d.
+	 *
+	 * @return string
+	 */
+	public static function today() {
+		return function_exists( 'wp_date' ) ? (string) wp_date( 'Y-m-d' ) : '';
 	}
 
 	/**
@@ -238,7 +310,7 @@ class Fe_Addon_Field {
 		if ( '' === $input ) {
 			$input = self::clean( self::saved_block_value( $order ) );
 		}
-		$error = Fe_Addon_Rules::guest_error( $metas, $input, (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ) );
+		$error = Fe_Addon_Rules::guest_error( $metas, $input, (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ), self::today() );
 		if ( $error ) {
 			// The Store API returns the message as JSON text; the blocks UI escapes it when rendering.
 			throw new Automattic\WooCommerce\StoreApi\Exceptions\RouteException( 'fe_addon_invalid', self::error_message( $error ), 400 ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
@@ -279,7 +351,7 @@ class Fe_Addon_Field {
 		}
 		$input = isset( $data[ self::CLASSIC_KEY ] ) ? self::clean( $data[ self::CLASSIC_KEY ] ) : '';
 		$email = isset( $data['billing_email'] ) ? (string) $data['billing_email'] : '';
-		$error = Fe_Addon_Rules::guest_error( $metas, $input, $email, array( __CLASS__, 'lookup' ) );
+		$error = Fe_Addon_Rules::guest_error( $metas, $input, $email, array( __CLASS__, 'lookup' ), self::today() );
 		if ( $error ) {
 			$errors->add( 'fe_addon_invalid', esc_html( self::error_message( $error ) ) );
 		}
@@ -339,7 +411,7 @@ class Fe_Addon_Field {
 					$input = self::clean( self::saved_block_value( $order ) );
 				}
 			}
-			$target_id = Fe_Addon_Rules::resolve_guest( $input, (int) $item->get_meta( 'fe_event_id' ), (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ) );
+			$target_id = Fe_Addon_Rules::resolve_guest( $input, (int) $item->get_meta( 'fe_event_id' ), (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ), self::today() );
 			$data      = $target_id ? self::target_data( wc_get_order( $target_id ) ) : null;
 			if ( ! $data ) {
 				continue;
