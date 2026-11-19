@@ -27,3 +27,4 @@ require_once $includes . 'wc/class-fe-order-stamper.php';
 require_once $includes . 'wc/class-fe-split-status.php';
 require_once $includes . 'wc/class-fe-order-splitter.php';
 require_once $includes . 'admin/class-fe-event-editor.php';
+require_once $includes . 'wc/class-fe-emails.php';

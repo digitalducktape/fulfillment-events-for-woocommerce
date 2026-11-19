@@ -31,8 +31,10 @@ class Fe_Plugin {
 		Fe_Order_Stamper::init();
 		Fe_Split_Status::init();
 		Fe_Order_Splitter::init();
+		Fe_Emails::init();
 		if ( is_admin() ) {
 			Fe_Admin::init();
+			Fe_Order_Admin::init();
 		}
 		add_action( 'woocommerce_shipping_init', array( __CLASS__, 'load_shipping_methods' ) );
 		add_filter( 'woocommerce_shipping_methods', array( __CLASS__, 'register_shipping_methods' ) );

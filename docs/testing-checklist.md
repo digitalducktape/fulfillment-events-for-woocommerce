@@ -48,7 +48,12 @@ here.
 - [ ] Stock is reduced once: product stock drops by the ordered quantities and does not drop again when the children move to Processing. Each child line item carries `_reduced_stock`; the parent's line items do not.
 - [ ] Cancel one child: only that child's items are restocked. Cancel (or fully refund with "restock" ticked) the parent: no stock changes.
 - [ ] An offline gateway (bank transfer, cheque) puts the parent on-hold: it splits immediately and the children are On hold. Moving the children to Processing reduces no stock.
-- [ ] Emails at split: note which customer and staff emails go out for the parent and each child (Task 10 suppresses the per-child customer email; until then each child sends one).
+- [ ] Emails at split (two-event order): the customer receives exactly one email, the split confirmation, listing every child with event, type, date, window, pickup location and items; no per-child processing or on-hold emails and none for the parent.
+- [ ] Staff new-order emails: one per child with "per child" ticked in Settings; none at all with it unticked; never one for the parent.
+- [ ] Single-event and regular orders: stock WooCommerce emails are unchanged (customer processing/on-hold and staff new order).
+- [ ] WooCommerce > Settings > Emails lists "Split order confirmation" with editable subject, heading and additional content; a theme copy at woocommerce/emails/split-confirmation.php overrides the template; plain text format renders.
+- [ ] Orders list shows a Fulfillment column with HPOS on and again with legacy storage: children read "Type · date · part of #N", the parent reads "Split into #a, #b", and the links open the right order.
+- [ ] Child edit screen shows "Refunds for this order are made on #N" linking to the parent; the parent edit screen links to each child.
 - [ ] Idempotency: re-send the Square webhook / call payment complete again, and move the parent processing → on-hold → processing: no new children.
 - [ ] With HPOS on, and again with HPOS compatibility mode (sync) on: after checkout returns, the parent is still "Split" in both the orders table and the posts backup, and the children's stock flag is set.
 - [ ] Analytics > Revenue and Orders count the children, not the parent; the legacy Reports do not list the parent.
