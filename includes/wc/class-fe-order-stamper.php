@@ -223,6 +223,7 @@ class Fe_Order_Stamper {
 		if ( ! $order || $order->get_meta( Fe_Meta::SPLIT_DONE ) ) {
 			return;
 		}
+		Fe_Addon_Field::hydrate( $order );
 		$lines = array();
 		foreach ( $order->get_items( 'shipping' ) as $item ) {
 			$rate_meta = array();

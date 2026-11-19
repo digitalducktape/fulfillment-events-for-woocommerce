@@ -292,3 +292,9 @@ if ( ! class_exists( 'FeFakeWpdb' ) ) {
 	}
 }
 $GLOBALS['wpdb'] = new FeFakeWpdb();
+
+if ( ! function_exists( 'absint' ) ) {
+	function absint( $maybeint ) {
+		return abs( (int) $maybeint );
+	}
+}

@@ -29,6 +29,7 @@ class Fe_Plugin {
 		add_action( 'init', array( 'Fe_Event_Repo', 'register_post_type' ) );
 		Fe_Cart::init();
 		Fe_Order_Stamper::init();
+		Fe_Addon_Field::init();
 		Fe_Split_Status::init();
 		Fe_Order_Splitter::init();
 		Fe_Emails::init();

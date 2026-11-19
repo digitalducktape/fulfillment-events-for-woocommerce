@@ -66,3 +66,11 @@ here.
 - [ ] Two events delivering on the same date: the cart shows a negative "Combined delivery" fee equal to the cheaper delivery cost; picking a different date or pickup for one removes it.
 
 ## M4: add-ons and polish
+
+- [ ] Add Event add-on to the zone. Logged in as a customer with an open (processing/on-hold) order for an event, add that event's product: the rates list "Add to my order #N — {Type} · {date} · no extra fee" at 0 cost, only for that customer's own orders for this event (not completed or cancelled ones, not other customers', not orders that are themselves add-ons). Log in as another customer: none of the first customer's orders appear.
+- [ ] As a guest, the same cart shows one rate "Add to an existing order" (cost 0) and never lists an order number. The order notes area shows "Adding to an existing order? Order number" in block and classic checkout.
+- [ ] Guest picks the add-on rate and enters a valid order number with a different billing email: checkout is blocked with "We couldn't find an open order #N for {event} with this email." in blocks and classic; an empty number shows "Enter the number of the order you are adding to."; a number for another event or a completed order is blocked the same way. Typing in the field (before Place order) shows no error.
+- [ ] Guest with the matching billing email (any letter case) places the order: the shipping line carries the target's fe_date, fe_type, fe_window, fe_location and fe_addon_of; the order carries `_fe_addon_of` = target id plus the target's `_fe_date`/`_fe_type`/`_fe_window`/`_fe_location`, and `_fe_addon_order_input`.
+- [ ] Logged-in add-on order (single package): stamped with the target's fulfillment and `_fe_addon_of`; `fe_get_order_fulfillment()` returns addon_of.
+- [ ] Mixed cart (add-on for one event plus a second event package): the order splits; the add-on child carries `_fe_addon_of` and the target's date/type; the other child has none.
+- [ ] Block checkout: with WooCommerce's additional fields API, confirm the field value is stored on the order (WooCommerce's own `_wc_other/fulfillment-events/addon-order` meta) and that `_fe_addon_order_input` matches.
