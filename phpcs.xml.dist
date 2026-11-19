@@ -4,6 +4,7 @@
 
 	<file>.</file>
 	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/.superpowers/*</exclude-pattern>
 	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<exclude-pattern>/dist/*</exclude-pattern>
 	<exclude-pattern>/languages/*</exclude-pattern>
@@ -26,6 +27,19 @@
 				<element value="fulfillment-events-for-woocommerce"/>
 			</property>
 		</properties>
+	</rule>
+
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The plugin's prefix is the two-letter "fe"; the sniff's minimum is three. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals.ShortPrefixPassed">
+		<severity>0</severity>
 	</rule>
 
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">

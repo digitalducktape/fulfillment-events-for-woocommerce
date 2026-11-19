@@ -41,6 +41,117 @@ class Fe_Cart {
 		add_filter( 'woocommerce_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'combined_delivery_fee' ) );
+		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render_product_note' ), 25 );
+		add_filter( 'render_block_woocommerce/product-price', array( __CLASS__, 'append_note_to_price_block' ), 10, 2 );
+	}
+
+	/**
+	 * Pure: one-line availability note for an event, e.g.
+	 * "Available for delivery or pickup on Dec 10 or Dec 18". Courier pickup is
+	 * implied and not listed. Dates before $today are skipped; returns '' when
+	 * no offered date is left.
+	 *
+	 * @param array       $event Event from Fe_Event_Repo::get().
+	 * @param string|null $today Y-m-d, store-local. Defaults to today.
+	 * @return string
+	 */
+	public static function availability_note( array $event, $today = null ) {
+		if ( null === $today ) {
+			$today = function_exists( 'current_time' ) ? current_time( 'Y-m-d' ) : gmdate( 'Y-m-d' );
+		}
+		$delivery = false;
+		$pickup   = false;
+		$labels   = array();
+		foreach ( isset( $event['dates'] ) ? (array) $event['dates'] : array() as $row ) {
+			$date = isset( $row['date'] ) ? (string) $row['date'] : '';
+			$d    = ! empty( $row['delivery'] );
+			$p    = ! empty( $row['pickup'] );
+			if ( '' === $date || $date < $today || ( ! $d && ! $p ) ) {
+				continue;
+			}
+			$delivery = $delivery || $d;
+			$pickup   = $pickup || $p;
+			$labels[] = self::short_date( $date );
+		}
+		if ( ! $labels ) {
+			return '';
+		}
+		if ( $delivery && $pickup ) {
+			$types = __( 'delivery or pickup', 'fulfillment-events-for-woocommerce' );
+		} elseif ( $delivery ) {
+			$types = __( 'delivery', 'fulfillment-events-for-woocommerce' );
+		} else {
+			$types = __( 'pickup', 'fulfillment-events-for-woocommerce' );
+		}
+		$last = array_pop( $labels );
+		if ( $labels ) {
+			$dates = sprintf(
+				/* translators: 1: comma-separated dates, 2: last date, e.g. "Dec 3, Dec 10" and "Dec 18". */
+				__( '%1$s or %2$s', 'fulfillment-events-for-woocommerce' ),
+				implode( ', ', $labels ),
+				$last
+			);
+		} else {
+			$dates = $last;
+		}
+		/* translators: 1: fulfillment types, e.g. "delivery or pickup", 2: dates, e.g. "Dec 10 or Dec 18". */
+		return sprintf( __( 'Available for %1$s on %2$s', 'fulfillment-events-for-woocommerce' ), $types, $dates );
+	}
+
+	/**
+	 * Month and day, e.g. "Dec 10".
+	 *
+	 * @param string $ymd Y-m-d.
+	 * @return string
+	 */
+	private static function short_date( $ymd ) {
+		$dt = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $ymd );
+		return $dt ? $dt->format( 'M j' ) : (string) $ymd;
+	}
+
+	/**
+	 * Note markup for a product, or '' when it has no open event.
+	 *
+	 * @param int $product_id Product id.
+	 * @return string
+	 */
+	private static function product_note_html( $product_id ) {
+		$st = self::product_event_status( (int) $product_id );
+		if ( 'active' !== $st['status'] || empty( $st['event_id'] ) ) {
+			return '';
+		}
+		$event = Fe_Event_Repo::get( (int) $st['event_id'] );
+		$note  = $event ? self::availability_note( $event ) : '';
+		return '' === $note ? '' : '<p class="fe-availability">' . esc_html( $note ) . '</p>';
+	}
+
+	/**
+	 * Classic themes: prints the note under the price.
+	 */
+	public static function render_product_note() {
+		global $product;
+		if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) {
+			return;
+		}
+		echo wp_kses_post( self::product_note_html( (int) $product->get_id() ) );
+	}
+
+	/**
+	 * Block themes: appends the note to the main product's price block.
+	 *
+	 * @param string $content Rendered block.
+	 * @param array  $block   Parsed block.
+	 * @return string
+	 */
+	public static function append_note_to_price_block( $content, $block = array() ) {
+		if ( ! function_exists( 'is_product' ) || ! is_product() ) {
+			return $content;
+		}
+		$product_id = get_queried_object_id();
+		if ( isset( $block['attrs']['productId'] ) && (int) $block['attrs']['productId'] !== (int) $product_id ) {
+			return $content;
+		}
+		return $content . self::product_note_html( (int) $product_id );
 	}
 
 	/**

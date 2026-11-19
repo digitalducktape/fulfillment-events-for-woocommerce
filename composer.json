@@ -13,7 +13,8 @@
     "phpunit/phpunit": "^9.6",
     "wp-coding-standards/wpcs": "^3.0",
     "phpcompatibility/phpcompatibility-wp": "^2.1",
-    "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "wp-cli/i18n-command": "^2.7"
   },
   "scripts": {
     "test": "bin/test.sh",

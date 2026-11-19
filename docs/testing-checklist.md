@@ -79,3 +79,12 @@ here.
 - [ ] WooCommerce 9.9+ block checkout: the order number field is hidden until "Add to an existing order" is selected, appears and is required when it is, and disappears again when another rate is picked. Confirms the `cart.shipping_rates` schema path and the `fe_addon:{instance}:guest` id match. A cart with no event product never shows it.
 - [ ] WooCommerce 8.9–9.8 block checkout: the field shows unconditionally (see readme Known limitations). Place a non-event order with it left empty and check whether WooCommerce writes an empty `_wc_other/fulfillment-events/addon-order` meta on the order; note the result.
 - [ ] Shipping lines of event orders show no `fe_*` keys (fe_event_id, fe_date, fe_addon_of, fe_addon_guest…) in the customer emails, My Account order view, thank-you page, or the order admin item list.
+
+## M3: storefront, hint, REST, release
+
+- [ ] Classic theme: a product in an active event shows "Available for delivery or pickup on {dates}" under the price; past dates are omitted; a product whose event is closed or not in any event shows no note.
+- [ ] Block theme (for example Twenty Twenty-Five): the same note appears under the price on the single product page, and not on related-products price blocks or the shop archive.
+- [ ] Create a physical product named "Sourdough workshop" in no event: the Fulfillment screens and Products list show the hint listing it (at most 10); "Dismiss this hint" hides it for that user only; another admin still sees it. Marking the product virtual or adding it to an event clears it after saving the product.
+- [ ] While logged in as a shop manager, GET /wp-json/fe/v1/events and /wp-json/fe/v1/events/{id} return events and zone rules; logged out or as a customer both return 401/403; POST is rejected.
+- [ ] Uninstall: with "Delete events, locations and zone rules" on, delete the plugin: the fe_ tables, event posts, `_fe_events` product and category meta, `fe_split_lock_*` options, the ticket-hint transient and the `fe_dismissed_ticket_hint` user meta are gone. With it off, nothing is removed.
+- [ ] Load the .pot file in Loco Translate or Poedit and confirm strings appear.

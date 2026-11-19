@@ -33,7 +33,9 @@ class Fe_Plugin {
 		Fe_Split_Status::init();
 		Fe_Order_Splitter::init();
 		Fe_Emails::init();
+		Fe_Rest_Controller::init();
 		if ( is_admin() ) {
+			Fe_Notices::init();
 			Fe_Admin::init();
 			Fe_Order_Admin::init();
 		}
