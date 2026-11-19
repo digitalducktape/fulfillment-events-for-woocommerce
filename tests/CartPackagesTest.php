@@ -158,4 +158,24 @@ final class CartPackagesTest extends TestCase {
 			Fe_Cart::chosen_fe_metas( $packages, array( 0 => 'fe_delivery:3:5-2026-12-09', 1 => 'flat_rate:1' ) )
 		);
 	}
+
+	public function test_product_in_two_events_gets_one_package_offering_both() {
+		$out = Fe_Cart::build_packages(
+			array( $this->package() ),
+			function ( $pid ) {
+				return 1 === $pid ? array( 5, 9 ) : array();
+			},
+			function ( $id ) {
+				return 'Event ' . $id;
+			}
+		);
+		$this->assertSame( 'event:5,9', $out[0]['fe_group'] );
+		$this->assertSame( 5, $out[0]['fe_event_id'] );
+		$this->assertSame( array( 5, 9 ), $out[0]['fe_event_ids'] );
+		$this->assertSame( 'Event 5 / Event 9', $out[0]['fe_event_name'] );
+		$this->assertSame( array( 5, 9 ), Fe_Cart::package_event_ids( $out[0] ) );
+		$this->assertSame( array( 7 ), Fe_Cart::package_event_ids( array( 'fe_event_id' => 7 ) ) );
+		$this->assertSame( '2026-12-10', Fe_Cart::rate_suffix( 5, '2026-12-10', 1 ) );
+		$this->assertSame( '5-2026-12-10', Fe_Cart::rate_suffix( 5, '2026-12-10', 2 ) );
+	}
 }

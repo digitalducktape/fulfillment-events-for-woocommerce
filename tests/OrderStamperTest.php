@@ -80,6 +80,9 @@ final class OrderStamperTest extends TestCase {
 		$this->assertSame( 'event:3', Fe_Order_Stamper::line_group( true, 3 ) );
 		$this->assertSame( 'regular', Fe_Order_Stamper::line_group( true, null ) );
 		$this->assertSame( 'none', Fe_Order_Stamper::line_group( false, 3 ) );
+		// Same key as Fe_Cart_Grouper gives the package of a two-event product.
+		$this->assertSame( 'event:3,8', Fe_Order_Stamper::line_group( true, array( 3, 8 ) ) );
+		$this->assertSame( 'regular', Fe_Order_Stamper::line_group( true, array() ) );
 	}
 
 	private function managed() {

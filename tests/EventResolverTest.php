@@ -124,4 +124,16 @@ class EventResolverTest extends TestCase {
 		// Dec 10 date has passed while its sales window is still open: Dec 18 applies.
 		$this->assertSame( 18, Fe_Event_Resolver::resolve( array( 10, 18 ), array( $dec10, $dec18 ), '2026-12-11' ) );
 	}
+
+	public function test_open_ids_lists_every_open_event_soonest_first() {
+		$open = array(
+			array( 'id' => 18, 'dates' => array( array( 'date' => '2026-12-18' ) ) ),
+			array( 'id' => 10, 'dates' => array( array( 'date' => '2026-12-10' ) ) ),
+			array( 'id' => 3, 'dates' => array( array( 'date' => '2026-12-03' ) ) ),
+		);
+		$this->assertSame( array( 10, 18 ), Fe_Event_Resolver::open_ids( array( 18, 10 ), $open, '2026-12-01' ) );
+		$this->assertSame( array( 18 ), Fe_Event_Resolver::open_ids( array( 18, 10 ), $open, '2026-12-11' ) );
+		$this->assertSame( array(), Fe_Event_Resolver::open_ids( array( 3 ), $open, '2026-12-04' ) );
+		$this->assertSame( 10, Fe_Event_Resolver::resolve( array( 18, 10 ), $open, '2026-12-01' ) );
+	}
 }

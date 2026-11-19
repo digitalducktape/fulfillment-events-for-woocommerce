@@ -27,6 +27,7 @@ class Fe_Event_Editor {
 		add_action( 'save_post_' . Fe_Event_Repo::POST_TYPE, array( __CLASS__, 'save' ), 10, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'cleanup_deleted' ) );
 		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
+		add_action( 'post_submitbox_start', array( __CLASS__, 'render_duplicate_button' ) );
 		add_action( 'admin_post_fe_duplicate_event', array( __CLASS__, 'handle_duplicate' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'show_notice' ) );
 	}
@@ -209,10 +210,32 @@ class Fe_Event_Editor {
 	 */
 	public static function row_actions( $actions, $post ) {
 		if ( Fe_Event_Repo::POST_TYPE === $post->post_type && current_user_can( 'manage_woocommerce' ) ) {
-			$url                     = wp_nonce_url( admin_url( 'admin-post.php?action=fe_duplicate_event&event=' . (int) $post->ID ), 'fe_duplicate_event_' . (int) $post->ID );
-			$actions['fe_duplicate'] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Duplicate', 'fulfillment-events-for-woocommerce' ) . '</a>';
+			$actions['fe_duplicate'] = '<a href="' . esc_url( self::duplicate_url( (int) $post->ID ) ) . '">' . esc_html__( 'Duplicate', 'fulfillment-events-for-woocommerce' ) . '</a>';
 		}
 		return $actions;
+	}
+
+	/**
+	 * "Duplicate" button in the event edit screen's Publish box. Shown once
+	 * the event has been saved; the copy is made from the saved event.
+	 *
+	 * @param WP_Post|null $post Post being edited.
+	 */
+	public static function render_duplicate_button( $post = null ) {
+		if ( ! $post instanceof WP_Post || Fe_Event_Repo::POST_TYPE !== $post->post_type || 'auto-draft' === $post->post_status || ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		echo '<div class="fe-duplicate-action" style="margin-bottom:8px"><a class="button" href="' . esc_url( self::duplicate_url( (int) $post->ID ) ) . '" title="' . esc_attr__( 'Make a draft copy of the saved event', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html__( 'Duplicate', 'fulfillment-events-for-woocommerce' ) . '</a></div>';
+	}
+
+	/**
+	 * Nonced admin-post URL that duplicates an event.
+	 *
+	 * @param int $event_id Event id.
+	 * @return string
+	 */
+	private static function duplicate_url( $event_id ) {
+		return wp_nonce_url( admin_url( 'admin-post.php?action=fe_duplicate_event&event=' . (int) $event_id ), 'fe_duplicate_event_' . (int) $event_id );
 	}
 
 	/**

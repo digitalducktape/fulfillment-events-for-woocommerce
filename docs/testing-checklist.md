@@ -8,6 +8,7 @@ here.
 - [ ] Activate on a fresh site: the three fe_ tables exist; re-activating or bumping the plugin does not re-ALTER columns (check the debug log for dbDelta queries).
 - [ ] The fe_event post type is registered (no menu yet): wp-admin/edit.php?post_type=fe_event lists events and the editor opens.
 - [ ] Save a location as default, then save another as default: only the second stays default.
+- [ ] A product in two open events (Dec 10 and Dec 18): the product page says "… on Dec 10 or Dec 18" and checkout offers both events' dates in one shipping section headed "Event A / Event B". Choosing a Dec 18 rate makes the order (or split child) a Dec 18 event order. Close the Dec 10 event: only Dec 18 remains.
 - [ ] Link an event to a product and to a category; a variation of the product resolves to the parent product links and categories.
 
 - [ ] A product linked only to an event whose sales window has ended: the add-to-cart button disappears and the product cannot be added; a variation of it is also unavailable.
@@ -35,10 +36,12 @@ here.
 - [ ] Create an event "Holiday pre-order" with 3 dates (mixed delivery and pickup, windows, a non-default location), a sales window, a zone override (for example delivery on, cost 25, "only on" one date) and a turned-off courier cell. Save, reload: every value is identical. Adding and removing date rows works without a page reload.
 - [ ] Zone grid: zones with no delivery/pickup/courier method show "Not in zone" and have no form; pills show "{cost} default"/"Free", "Turned off" and the override cost matching the saved rules; zone "Locations not covered by your other zones" is listed last.
 - [ ] Set sales close before sales open and save: the close time is cleared and a warning appears. After any save, the checkout shipping rates reflect the change without clearing transients by hand.
+- [ ] Event edit screen: the Publish box has a Duplicate button (not on a brand-new unsaved event); it copies the saved event like the list action.
 - [ ] Event list: "Duplicate" creates a draft "{title} (copy)" with the same dates, sales window, zone rules, categories, individual products and excluded products. Publishing nothing yet: the original still sells as before.
 - [ ] Exclusions: link a category to an event, then add one of its products under "Exclude products" and save. That product no longer shows the event's rates or availability note (and is unpurchasable if that was its only event); the rest of the category is unchanged. The product edit screen shows the event under "Excluded from events". Removing the exclusion there restores it. Picking the same event in both fields on a product keeps only the exclusion.
 - [ ] Delete an event permanently: its dates and zone rules rows are gone (check the fe_ tables) and products and categories no longer list it.
 - [ ] Product edit, General tab: "Fulfillment events" multiselect saves; category add and edit screens save the same field. The Events column of the products list names each event the product is in (excluded ones struck through) and adds "In 2 open events" when two are open; a product in no event shows a dash.
+- [ ] Products list bulk edit: tick two events in the Events checklist with "Add to event": every selected product lists both.
 - [ ] Products list bulk edit: select several products, Edit, Fulfillment event → "Add to event" + an event, Update: each now lists the event (its own link) and any exclusion of it is gone. "Exclude from event" strikes it through and the products lose that event's rates. "Remove from event (follow categories)" clears both, so a product whose category is in the event is back in it. "— No change —" leaves links alone; other bulk-edit fields still save. A shop manager can use it; the field doesn't appear for users without manage_woocommerce.
 - [ ] Shop manager (manage_woocommerce without administrator) can open Events, Locations, Settings and save an event.
 

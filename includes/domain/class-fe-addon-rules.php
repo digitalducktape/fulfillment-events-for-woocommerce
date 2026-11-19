@@ -82,8 +82,9 @@ class Fe_Addon_Rules {
 	 * parent (the number in the split confirmation email) resolves to its
 	 * child for the package's event.
 	 *
-	 * @param string   $input         Typed order number.
-	 * @param int      $event_id      Package event.
+	 * @param string    $input         Typed order number.
+	 * @param int|int[] $event_id      Package event, or every event the package offers;
+	 *                                 the target must be in one of them.
 	 * @param string   $billing_email New order's billing email.
 	 * @param callable $lookup        int order id => ?array target (see eligible()); a split
 	 *                                parent is {status: SPLIT_STATUS, children: int[]}.
@@ -99,18 +100,41 @@ class Fe_Addon_Rules {
 		if ( ! is_array( $target ) ) {
 			return 0;
 		}
+		$event_ids = array_map( 'intval', (array) $event_id );
 		if ( isset( $target['status'] ) && self::SPLIT_STATUS === $target['status'] ) {
 			$children = isset( $target['children'] ) ? (array) $target['children'] : array();
-			foreach ( $children as $child_id ) {
-				$child_id = (int) $child_id;
-				$child    = $child_id > 0 ? call_user_func( $lookup, $child_id ) : null;
-				if ( is_array( $child ) && self::eligible( $child, $event_id, $billing_email, 0, $today ) ) {
-					return $child_id;
+			foreach ( $event_ids as $eid ) {
+				foreach ( $children as $child_id ) {
+					$child_id = (int) $child_id;
+					$child    = $child_id > 0 ? call_user_func( $lookup, $child_id ) : null;
+					if ( is_array( $child ) && self::eligible( $child, $eid, $billing_email, 0, $today ) ) {
+						return $child_id;
+					}
 				}
 			}
 			return 0;
 		}
-		return self::eligible( $target, $event_id, $billing_email, 0, $today ) ? $id : 0;
+		foreach ( $event_ids as $eid ) {
+			if ( self::eligible( $target, $eid, $billing_email, 0, $today ) ) {
+				return $id;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Event ids a guest add-on line may target: the comma-separated
+	 * fe_event_ids of a multi-event package, else fe_event_id.
+	 *
+	 * @param array $meta Rate or item meta.
+	 * @return int[]
+	 */
+	public static function meta_event_ids( array $meta ) {
+		$ids = isset( $meta['fe_event_ids'] ) ? array_filter( array_map( 'intval', explode( ',', (string) $meta['fe_event_ids'] ) ) ) : array();
+		if ( ! $ids && ! empty( $meta['fe_event_id'] ) ) {
+			$ids = array( (int) $meta['fe_event_id'] );
+		}
+		return array_values( $ids );
 	}
 
 	/**
@@ -150,8 +174,7 @@ class Fe_Addon_Rules {
 			if ( ! is_array( $meta ) || ! isset( $meta['fe_addon_guest'] ) || 'yes' !== $meta['fe_addon_guest'] ) {
 				continue;
 			}
-			$event_id = isset( $meta['fe_event_id'] ) ? (int) $meta['fe_event_id'] : 0;
-			if ( 0 === self::resolve_guest( $input, $event_id, $billing_email, $lookup, $today ) ) {
+			if ( 0 === self::resolve_guest( $input, self::meta_event_ids( $meta ), $billing_email, $lookup, $today ) ) {
 				return array(
 					'number'     => trim( ltrim( trim( (string) $input ), '#' ) ),
 					'event_name' => isset( $meta['fe_event_name'] ) ? (string) $meta['fe_event_name'] : '',

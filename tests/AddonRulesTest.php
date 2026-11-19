@@ -339,4 +339,14 @@ class AddonRulesTest extends TestCase {
 		$this->assertFalse( Fe_Addon_Field::blocks_field_supported( '' ) );
 		$this->assertTrue( Fe_Addon_Field::blocks_field_supported( '9.9.0' ) );
 	}
+
+	public function test_guest_addon_matches_any_event_of_the_package() {
+		$this->assertSame( array( 5, 9 ), Fe_Addon_Rules::meta_event_ids( array( 'fe_event_id' => 5, 'fe_event_ids' => '5,9' ) ) );
+		$this->assertSame( array( 5 ), Fe_Addon_Rules::meta_event_ids( array( 'fe_event_id' => 5 ) ) );
+		$lookup = function ( $id ) {
+			return 42 === $id ? array( 'event_id' => 9, 'status' => 'processing', 'is_addon' => false, 'customer_id' => 0, 'billing_email' => 'a@b.c' ) : null;
+		};
+		$this->assertSame( 42, Fe_Addon_Rules::resolve_guest( '42', array( 5, 9 ), 'a@b.c', $lookup ) );
+		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '42', array( 5 ), 'a@b.c', $lookup ) );
+	}
 }

@@ -185,7 +185,8 @@ that type isn't offered there (e.g. Zone C has no Event Delivery).
    "Fulfillment events" box on the product edit screen and a field on the
    category edit screen.
 4. **Fulfillment → Locations**: manage pickup locations.
-5. "Duplicate" action: an exact draft copy (dates, sales window, rules,
+5. "Duplicate" (event list row action and a button in the edit screen's
+   Publish box): an exact draft copy (dates, sales window, rules,
    category and product links, exclusions) that staff then edit.
 6. Exclusions: an event's Products box and the product edit screen can
    exclude a product from an event; an exclusion wins over every link.
@@ -200,9 +201,11 @@ that type isn't offered there (e.g. Zone C has no Event Delivery).
   - Virtual / no-shipping items → no package (stock behavior).
   - Items with no event → one "regular" package, rated by the zone's
     ordinary (non-Event) methods exactly as today.
-  - Items with events → one package per event. *If a product belongs to
-    several open events, it joins the event with the earliest next date;*
-    admin sees a warning badge on such products (builder's call, see §9).
+  - Items with events → one package per set of open events. A product in
+    several open events gets one package offering every one of those
+    events' dates (rates from each event, soonest event first); the chosen
+    rate decides which event the order belongs to. As an event closes its
+    dates drop off. Admin sees a badge with the count on such products.
 - **Rate filtering** (`woocommerce_package_rates`): event packages show only
   Event-method rates; the regular package shows only non-Event rates.
 - Package names come from the event title ("Winter market — Dec 3").
@@ -390,7 +393,7 @@ orders already placed keep their `_fe_*` meta.
 ## 9. Design calls
 
 - One shipping fee **per date** (two delivery dates = two fees).
-- Multi-event product → joins the event with the **earliest next date**.
+- Multi-event product → offered **every open event's dates**; the chosen rate picks the event.
 - Split = **one child order per event group**; a non-event shippable group is
   its own child; duplicate same-date fees are credited back.
 - Customer gets **one** confirmation email (stock processing email suppressed

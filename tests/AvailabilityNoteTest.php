@@ -48,7 +48,7 @@ class AvailabilityNoteTest extends TestCase {
 	public function test_non_shipping_product_is_treated_as_in_no_event() {
 		$active = array( 'status' => 'active', 'event_id' => 4 );
 		$closed = array( 'status' => 'closed', 'event_id' => null );
-		$none   = array( 'status' => 'none', 'event_id' => null );
+		$none   = array( 'status' => 'none', 'event_id' => null, 'event_ids' => array() );
 		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $active ) );
 		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $closed ) );
 	}
@@ -58,5 +58,21 @@ class AvailabilityNoteTest extends TestCase {
 		$closed = array( 'status' => 'closed', 'event_id' => null );
 		$this->assertSame( $active, Fe_Cart::status_for_shipping( true, $active ) );
 		$this->assertSame( $closed, Fe_Cart::status_for_shipping( true, $closed ) );
+	}
+
+	public function test_note_lists_dates_from_every_event() {
+		$merged = Fe_Cart::merged_dates(
+			array(
+				array( 'dates' => array( array( 'date' => '2026-12-18', 'delivery' => true, 'pickup' => false ) ) ),
+				array(
+					'dates' => array(
+						array( 'date' => '2026-12-10', 'delivery' => true, 'pickup' => false ),
+						array( 'date' => '2026-12-18', 'delivery' => false, 'pickup' => true ),
+					),
+				),
+			)
+		);
+		$this->assertSame( 'Available for delivery or pickup on Dec 10 or Dec 18', Fe_Cart::availability_note( $merged, '2026-12-01' ) );
+		$this->assertSame( 'Available for delivery or pickup on Dec 18', Fe_Cart::availability_note( $merged, '2026-12-11' ) );
 	}
 }

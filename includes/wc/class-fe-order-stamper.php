@@ -46,7 +46,7 @@ class Fe_Order_Stamper {
 	 * @return string[]
 	 */
 	public static function item_meta_keys() {
-		$keys = array( 'fe_addon_guest' );
+		$keys = array( 'fe_addon_guest', 'fe_event_ids' );
 		foreach ( self::RATE_KEYS as $key ) {
 			$keys[] = 'fe_' . $key;
 		}
@@ -87,15 +87,19 @@ class Fe_Order_Stamper {
 	/**
 	 * Group label for a line item.
 	 *
-	 * @param bool     $needs_shipping Whether the product ships.
-	 * @param int|null $event_id       Resolved event, if any.
-	 * @return string 'event:{id}', 'regular' or 'none'.
+	 * Matches Fe_Cart_Grouper's package group, so a product in two open
+	 * events is tagged 'event:{a},{b}' like its package.
+	 *
+	 * @param bool           $needs_shipping Whether the product ships.
+	 * @param int|int[]|null $event_ids      Open events, soonest first (or one id), if any.
+	 * @return string 'event:{ids}', 'regular' or 'none'.
 	 */
-	public static function line_group( $needs_shipping, $event_id ) {
+	public static function line_group( $needs_shipping, $event_ids ) {
 		if ( ! $needs_shipping ) {
 			return 'none';
 		}
-		return $event_id ? 'event:' . (int) $event_id : 'regular';
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', (array) $event_ids ) ) ) );
+		return $ids ? 'event:' . implode( ',', $ids ) : 'regular';
 	}
 
 	/**
@@ -149,8 +153,8 @@ class Fe_Order_Stamper {
 		$product_id = isset( $values['product_id'] ) ? (int) $values['product_id'] : 0;
 		$product    = isset( $values['data'] ) ? $values['data'] : null;
 		$ships      = $product && method_exists( $product, 'needs_shipping' ) ? (bool) $product->needs_shipping() : true;
-		$event_id   = $ships ? Fe_Cart::product_event_status( $product_id )['event_id'] : null;
-		$item->update_meta_data( Fe_Meta::GROUP, self::line_group( $ships, $event_id ) );
+		$event_ids  = $ships ? Fe_Cart::product_event_status( $product_id )['event_ids'] : array();
+		$item->update_meta_data( Fe_Meta::GROUP, self::line_group( $ships, $event_ids ) );
 	}
 
 	/**
@@ -184,7 +188,7 @@ class Fe_Order_Stamper {
 	 * @return array
 	 */
 	public static function fulfillment_from_rate_meta( array $rate_meta ) {
-		$get = function ( $key ) use ( $rate_meta ) {
+		$get   = function ( $key ) use ( $rate_meta ) {
 			return isset( $rate_meta[ 'fe_' . $key ] ) ? (string) $rate_meta[ 'fe_' . $key ] : '';
 		};
 		$addon = $get( 'addon_of' );

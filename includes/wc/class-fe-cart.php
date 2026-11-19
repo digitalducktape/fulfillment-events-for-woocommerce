@@ -202,6 +202,36 @@ class Fe_Cart {
 	}
 
 	/**
+	 * Pure: one pseudo-event holding every date of the given events, sorted,
+	 * with a date's delivery and pickup flags combined when events share it.
+	 *
+	 * @param array[] $events Events from Fe_Event_Repo::get().
+	 * @return array{dates:array[]}
+	 */
+	public static function merged_dates( array $events ) {
+		$by_date = array();
+		foreach ( $events as $event ) {
+			foreach ( isset( $event['dates'] ) ? (array) $event['dates'] : array() as $row ) {
+				$date = isset( $row['date'] ) ? (string) $row['date'] : '';
+				if ( '' === $date ) {
+					continue;
+				}
+				if ( ! isset( $by_date[ $date ] ) ) {
+					$by_date[ $date ] = array(
+						'date'     => $date,
+						'delivery' => false,
+						'pickup'   => false,
+					);
+				}
+				$by_date[ $date ]['delivery'] = $by_date[ $date ]['delivery'] || ! empty( $row['delivery'] );
+				$by_date[ $date ]['pickup']   = $by_date[ $date ]['pickup'] || ! empty( $row['pickup'] );
+			}
+		}
+		ksort( $by_date );
+		return array( 'dates' => array_values( $by_date ) );
+	}
+
+	/**
 	 * Month and day, e.g. "Dec 10".
 	 *
 	 * @param string $ymd Y-m-d.
@@ -225,11 +255,17 @@ class Fe_Cart {
 			return '';
 		}
 		$st = self::status_for_product( $product );
-		if ( 'active' !== $st['status'] || empty( $st['event_id'] ) ) {
+		if ( 'active' !== $st['status'] || empty( $st['event_ids'] ) ) {
 			return '';
 		}
-		$event = Fe_Event_Repo::get( (int) $st['event_id'] );
-		$note  = $event ? self::availability_note( $event ) : '';
+		$events = array();
+		foreach ( $st['event_ids'] as $id ) {
+			$event = Fe_Event_Repo::get( (int) $id );
+			if ( $event ) {
+				$events[] = $event;
+			}
+		}
+		$note = self::availability_note( self::merged_dates( $events ) );
 		return '' === $note ? '' : '<p class="fe-availability">' . esc_html( $note ) . '</p>';
 	}
 
@@ -360,7 +396,7 @@ class Fe_Cart {
 			$packages,
 			function ( $product_id ) {
 				$st = self::product_event_status( (int) $product_id );
-				return $st['event_id'];
+				return $st['event_ids'];
 			},
 			function ( $event_id ) {
 				$event = Fe_Event_Repo::get( (int) $event_id );
@@ -385,7 +421,7 @@ class Fe_Cart {
 	 * Pure package builder behind packages().
 	 *
 	 * @param array    $packages          Packages built by WooCommerce.
-	 * @param callable $event_for_product Product id => event id or null.
+	 * @param callable $event_for_product Product id => event ids (soonest first), a single id, or null.
 	 * @param callable $event_name        Event id => event name.
 	 * @param string   $today             Y-m-d, store-local; defaults to today. Stored on
 	 *                                    each package so WooCommerce's rate cache rolls daily.
@@ -410,17 +446,18 @@ class Fe_Cart {
 		$items     = array();
 		$has_event = false;
 		foreach ( $contents as $key => $item ) {
-			$event_id = null;
+			$event_ids = array();
 			if ( ! empty( $item['product_id'] ) ) {
-				$event_id = call_user_func( $event_for_product, (int) $item['product_id'] );
+				$found     = call_user_func( $event_for_product, (int) $item['product_id'] );
+				$event_ids = is_array( $found ) ? $found : ( null === $found ? array() : array( $found ) );
 			}
-			if ( null !== $event_id ) {
+			if ( $event_ids ) {
 				$has_event = true;
 			}
 			$items[] = array(
 				'key'            => (string) $key,
 				'needs_shipping' => isset( $item['data'] ) && is_object( $item['data'] ) && $item['data']->needs_shipping(),
-				'event_id'       => $event_id,
+				'event_ids'      => $event_ids,
 			);
 		}
 		if ( ! $has_event ) {
@@ -451,12 +488,63 @@ class Fe_Cart {
 			$package['destination']     = isset( $first['destination'] ) ? $first['destination'] : array();
 			$package['fe_group']        = $group['group'];
 			$package['fe_event_id']     = $group['event_id'];
-			$package['fe_event_name']   = null !== $group['event_id'] ? (string) call_user_func( $event_name, $group['event_id'] ) : '';
+			$package['fe_event_ids']    = $group['event_ids'];
+			$package['fe_event_name']   = self::joined_names( $group['event_ids'], $event_name );
 			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
 			$package['fe_today']        = (string) $today;
 			$result[]                   = $package;
 		}
 		return $result;
+	}
+
+	/**
+	 * Pure: event ids a package offers, soonest first. Reads fe_event_ids and
+	 * falls back to the single fe_event_id of older packages.
+	 *
+	 * @param array $package Package.
+	 * @return int[]
+	 */
+	public static function package_event_ids( $package ) {
+		if ( ! is_array( $package ) ) {
+			return array();
+		}
+		if ( ! empty( $package['fe_event_ids'] ) && is_array( $package['fe_event_ids'] ) ) {
+			return array_values( array_unique( array_filter( array_map( 'intval', $package['fe_event_ids'] ) ) ) );
+		}
+		return empty( $package['fe_event_id'] ) ? array() : array( (int) $package['fe_event_id'] );
+	}
+
+	/**
+	 * Pure: the rate-id suffix for an event date. A package with one event
+	 * keeps the plain date, as before; with several, the event id is added
+	 * so two events on the same date don't collide.
+	 *
+	 * @param int    $event_id    Event id.
+	 * @param string $suffix      Date (or other spec id).
+	 * @param int    $event_count Events in the package.
+	 * @return string
+	 */
+	public static function rate_suffix( $event_id, $suffix, $event_count ) {
+		return $event_count > 1 ? (int) $event_id . '-' . $suffix : (string) $suffix;
+	}
+
+	/**
+	 * Package heading for one or more events, e.g. "Holiday Pre-order 2026"
+	 * or "Christmas Eve / Christmas Day".
+	 *
+	 * @param int[]    $event_ids  Event ids.
+	 * @param callable $event_name Event id => event name.
+	 * @return string
+	 */
+	private static function joined_names( array $event_ids, $event_name ) {
+		$names = array();
+		foreach ( $event_ids as $id ) {
+			$name = (string) call_user_func( $event_name, $id );
+			if ( '' !== $name ) {
+				$names[] = $name;
+			}
+		}
+		return implode( ' / ', array_unique( $names ) );
 	}
 
 	/**
@@ -597,7 +685,7 @@ class Fe_Cart {
 	 * Event status of a product, computed once per request.
 	 *
 	 * @param int $product_id Product id (a variation id resolves via its parent in the links layer).
-	 * @return array{status:string, event_id:?int}
+	 * @return array{status:string, event_id:?int, event_ids:int[]}
 	 */
 	public static function product_event_status( $product_id ) {
 		$product_id = (int) $product_id;
@@ -608,17 +696,20 @@ class Fe_Cart {
 		$ids = Fe_Product_Links::event_ids_for_product( $product_id );
 		if ( empty( $ids ) ) {
 			$result = array(
-				'status'   => 'none',
-				'event_id' => null,
+				'status'    => 'none',
+				'event_id'  => null,
+				'event_ids' => array(),
 			);
 		} else {
 			if ( null === self::$open_events ) {
 				self::$open_events = Fe_Event_Repo::open_events( current_time( 'mysql' ) );
 			}
-			$resolved = Fe_Event_Resolver::resolve( $ids, self::$open_events, current_time( 'Y-m-d' ) );
+			$open     = Fe_Event_Resolver::open_ids( $ids, self::$open_events, current_time( 'Y-m-d' ) );
+			$resolved = $open ? $open[0] : null;
 			$result   = array(
-				'status'   => Fe_Event_Resolver::status( $ids, $resolved ),
-				'event_id' => $resolved,
+				'status'    => Fe_Event_Resolver::status( $ids, $resolved ),
+				'event_id'  => $resolved,
+				'event_ids' => $open,
 			);
 		}
 		self::$status_cache[ $product_id ] = $result;
@@ -639,8 +730,9 @@ class Fe_Cart {
 			return $status;
 		}
 		return array(
-			'status'   => 'none',
-			'event_id' => null,
+			'status'    => 'none',
+			'event_id'  => null,
+			'event_ids' => array(),
 		);
 	}
 

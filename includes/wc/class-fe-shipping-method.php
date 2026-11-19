@@ -81,16 +81,16 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 	}
 
 	/**
-	 * Adds one rate per event date.
+	 * Adds one rate per date of each event the package offers.
 	 *
 	 * @param array $package WooCommerce package.
 	 */
 	public function calculate_shipping( $package = array() ) {
-		if ( empty( $package['fe_event_id'] ) || '' === $this->fe_type || 'addon' === $this->fe_type ) {
+		if ( '' === $this->fe_type || 'addon' === $this->fe_type ) {
 			return;
 		}
-		$event = Fe_Event_Repo::get( (int) $package['fe_event_id'] );
-		if ( ! $event || 'publish' !== $event['status'] ) {
+		$event_ids = Fe_Cart::package_event_ids( $package );
+		if ( ! $event_ids ) {
 			return;
 		}
 
@@ -102,36 +102,43 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 			$locations[ (int) $loc['id'] ] = $loc;
 		}
 
-		$specs = Fe_Rate_Builder::build(
-			$event,
-			$this->fe_type,
-			$zone_id,
-			Fe_Zone_Rule_Repo::for_event( $event['id'] ),
-			(float) $this->get_option( 'cost', 0 ),
-			Fe_Event_Repo::clean_window( (string) $this->get_option( 'window', '' ) ),
-			$locations,
-			Fe_Location_Repo::default_id(),
-			! empty( $package['fe_today'] ) ? (string) $package['fe_today'] : wp_date( 'Y-m-d' ),
-			array( __CLASS__, 'format_date' ),
-			__( "We'll coordinate the time with you", 'fulfillment-events-for-woocommerce' )
-		);
+		foreach ( $event_ids as $event_id ) {
+			$event = Fe_Event_Repo::get( (int) $event_id );
+			if ( ! $event || 'publish' !== $event['status'] ) {
+				continue;
+			}
 
-		foreach ( $specs as $i => $spec ) {
-			$specs[ $i ]['label'] = apply_filters( 'fe_rate_label', $this->translated_label( $spec ), $spec, $event, $this->id );
-		}
-
-		$specs = apply_filters( 'fe_package_rates_for_event', $specs, $event, $package, $this );
-
-		foreach ( $specs as $spec ) {
-			$this->add_rate(
-				array(
-					'id'        => $this->id . ':' . $this->instance_id . ':' . $spec['id'],
-					'label'     => $spec['label'],
-					'cost'      => $spec['cost'],
-					'package'   => $package,
-					'meta_data' => $spec['meta'],
-				)
+			$specs = Fe_Rate_Builder::build(
+				$event,
+				$this->fe_type,
+				$zone_id,
+				Fe_Zone_Rule_Repo::for_event( $event['id'] ),
+				(float) $this->get_option( 'cost', 0 ),
+				Fe_Event_Repo::clean_window( (string) $this->get_option( 'window', '' ) ),
+				$locations,
+				Fe_Location_Repo::default_id(),
+				! empty( $package['fe_today'] ) ? (string) $package['fe_today'] : wp_date( 'Y-m-d' ),
+				array( __CLASS__, 'format_date' ),
+				__( "We'll coordinate the time with you", 'fulfillment-events-for-woocommerce' )
 			);
+
+			foreach ( $specs as $i => $spec ) {
+				$specs[ $i ]['label'] = apply_filters( 'fe_rate_label', $this->translated_label( $spec ), $spec, $event, $this->id );
+			}
+
+			$specs = apply_filters( 'fe_package_rates_for_event', $specs, $event, $package, $this );
+
+			foreach ( $specs as $spec ) {
+				$this->add_rate(
+					array(
+						'id'        => $this->id . ':' . $this->instance_id . ':' . Fe_Cart::rate_suffix( $event['id'], $spec['id'], count( $event_ids ) ),
+						'label'     => $spec['label'],
+						'cost'      => $spec['cost'],
+						'package'   => $package,
+						'meta_data' => $spec['meta'],
+					)
+				);
+			}
 		}
 	}
 

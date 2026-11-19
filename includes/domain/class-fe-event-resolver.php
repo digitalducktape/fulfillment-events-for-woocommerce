@@ -23,13 +23,27 @@ class Fe_Event_Resolver {
 	 * @return int|null Event id, or null when none qualifies.
 	 */
 	public static function resolve( array $product_event_ids, array $open_events, $today ) {
+		$ids = self::open_ids( $product_event_ids, $open_events, $today );
+		return $ids ? $ids[0] : null;
+	}
+
+	/**
+	 * Every open event of the product that still has a date on or after
+	 * today, soonest next date first (ties by id). A product in a Dec 10 and
+	 * a Dec 18 event is offered both until one of them closes.
+	 *
+	 * @param int[]   $product_event_ids Event ids linked to the product.
+	 * @param array[] $open_events       Open events, each with a `dates` list.
+	 * @param string  $today             Store-local Y-m-d.
+	 * @return int[]
+	 */
+	public static function open_ids( array $product_event_ids, array $open_events, $today ) {
 		$by_id = array();
 		foreach ( $open_events as $event ) {
 			$by_id[ (int) $event['id'] ] = $event;
 		}
 
-		$best_id   = null;
-		$best_date = null;
+		$next_by_id = array();
 		foreach ( array_unique( array_map( 'intval', $product_event_ids ) ) as $id ) {
 			if ( ! isset( $by_id[ $id ] ) ) {
 				continue;
@@ -41,15 +55,19 @@ class Fe_Event_Resolver {
 					$next = $date;
 				}
 			}
-			if ( null === $next ) {
-				continue;
-			}
-			if ( null === $best_date || $next < $best_date || ( $next === $best_date && $id < $best_id ) ) {
-				$best_date = $next;
-				$best_id   = $id;
+			if ( null !== $next ) {
+				$next_by_id[ $id ] = $next;
 			}
 		}
-		return $best_id;
+		$ids = array_keys( $next_by_id );
+		usort(
+			$ids,
+			function ( $a, $b ) use ( $next_by_id ) {
+				$cmp = strcmp( $next_by_id[ $a ], $next_by_id[ $b ] );
+				return 0 !== $cmp ? $cmp : $a - $b;
+			}
+		);
+		return $ids;
 	}
 
 	/**

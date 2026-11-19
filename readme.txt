@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.3
+Stable tag: 0.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.4.4 =
+* A product in more than one open event now offers every event's dates, on the product page note and at checkout, instead of only the soonest event's. As each event closes, its dates drop off.
+* Products list bulk edit takes several events at once.
+* The event edit screen has a Duplicate button in the Publish box.
 
 = 0.4.3 =
 * Products that don't need shipping (virtual, e.g. class tickets) ignore events: no "Available for delivery or pickup" note, and a closed event no longer makes them unpurchasable, even when their category is in the event.

@@ -22,9 +22,9 @@ final class CartGrouperTest extends TestCase {
 		);
 		$this->assertSame(
 			array(
-				array( 'group' => 'event:5', 'event_id' => 5, 'item_keys' => array( 'b', 'd' ) ),
-				array( 'group' => 'event:9', 'event_id' => 9, 'item_keys' => array( 'c' ) ),
-				array( 'group' => 'regular', 'event_id' => null, 'item_keys' => array( 'a' ) ),
+				array( 'group' => 'event:5', 'event_id' => 5, 'event_ids' => array( 5 ), 'item_keys' => array( 'b', 'd' ) ),
+				array( 'group' => 'event:9', 'event_id' => 9, 'event_ids' => array( 9 ), 'item_keys' => array( 'c' ) ),
+				array( 'group' => 'regular', 'event_id' => null, 'event_ids' => array(), 'item_keys' => array( 'a' ) ),
 			),
 			$groups
 		);
@@ -40,5 +40,21 @@ final class CartGrouperTest extends TestCase {
 		$this->assertCount( 1, $groups );
 		$this->assertSame( 'regular', $groups[0]['group'] );
 		$this->assertSame( array( 'a', 'b' ), $groups[0]['item_keys'] );
+	}
+
+	public function test_item_in_two_events_gets_one_group_offering_both() {
+		$groups = Fe_Cart_Grouper::group(
+			array(
+				array( 'key' => 'a', 'needs_shipping' => true, 'event_ids' => array( 5, 9 ) ),
+				array( 'key' => 'b', 'needs_shipping' => true, 'event_ids' => array( 5 ) ),
+				array( 'key' => 'c', 'needs_shipping' => true, 'event_ids' => array( 5, 9 ) ),
+			)
+		);
+		$this->assertCount( 2, $groups );
+		$this->assertSame( 'event:5,9', $groups[0]['group'] );
+		$this->assertSame( 5, $groups[0]['event_id'] );
+		$this->assertSame( array( 5, 9 ), $groups[0]['event_ids'] );
+		$this->assertSame( array( 'a', 'c' ), $groups[0]['item_keys'] );
+		$this->assertSame( array( 'b' ), $groups[1]['item_keys'] );
 	}
 }

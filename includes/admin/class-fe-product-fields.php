@@ -66,11 +66,11 @@ class Fe_Product_Fields {
 		foreach ( self::bulk_actions() as $value => $label ) {
 			echo '<option value="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</option>';
 		}
-		echo '</select></span></label><label class="alignleft"><span class="input-text-wrap"><select name="fe_bulk_event"><option value="">' . esc_html__( 'Choose an event', 'fulfillment-events-for-woocommerce' ) . '</option>';
+		echo '</select></span></label><br class="clear" /><span class="title inline-edit-categories-label">' . esc_html__( 'Events', 'fulfillment-events-for-woocommerce' ) . '</span><ul class="cat-checklist fe-bulk-event-list">';
 		foreach ( self::event_choices() as $event_id => $title ) {
-			echo '<option value="' . esc_attr( $event_id ) . '">' . esc_html( $title ) . '</option>';
+			echo '<li><label class="selectit"><input type="checkbox" name="fe_bulk_events[]" value="' . esc_attr( $event_id ) . '" /> ' . esc_html( $title ) . '</label></li>';
 		}
-		echo '</select></span></label></div>';
+		echo '</ul></div>';
 	}
 
 	/**
@@ -81,26 +81,33 @@ class Fe_Product_Fields {
 	 */
 	public static function save_bulk( $product ) {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- bulk-posts nonce checked by core.
-		$action   = isset( $_REQUEST['fe_bulk_action'] ) ? sanitize_key( wp_unslash( $_REQUEST['fe_bulk_action'] ) ) : '';
-		$event_id = isset( $_REQUEST['fe_bulk_event'] ) ? absint( $_REQUEST['fe_bulk_event'] ) : 0;
+		$action    = isset( $_REQUEST['fe_bulk_action'] ) ? sanitize_key( wp_unslash( $_REQUEST['fe_bulk_action'] ) ) : '';
+		$event_ids = isset( $_REQUEST['fe_bulk_events'] ) ? array_map( 'absint', (array) wp_unslash( $_REQUEST['fe_bulk_events'] ) ) : array();
 		// phpcs:enable
-		if ( ! in_array( $action, array( 'add', 'exclude', 'remove' ), true ) || $event_id <= 0 ) {
+		if ( ! in_array( $action, array( 'add', 'exclude', 'remove' ), true ) ) {
 			return;
 		}
-		if ( Fe_Event_Repo::POST_TYPE !== get_post_type( $event_id ) ) {
+		$event_ids = array_values(
+			array_filter(
+				array_unique( $event_ids ),
+				function ( $id ) {
+					return $id > 0 && Fe_Event_Repo::POST_TYPE === get_post_type( $id );
+				}
+			)
+		);
+		if ( ! $event_ids ) {
 			return;
 		}
 		$product_id = (int) $product->get_id();
 		if ( ! current_user_can( 'manage_woocommerce' ) || ! current_user_can( 'edit_post', $product_id ) ) {
 			return;
 		}
-		$own                    = get_post_meta( $product_id, Fe_Product_Links::META_KEY, true );
-		list( $own, $excluded ) = Fe_Event_Resolver::apply_bulk(
-			is_array( $own ) ? $own : array(),
-			Fe_Product_Links::excluded_for_product( $product_id ),
-			$action,
-			$event_id
-		);
+		$own      = get_post_meta( $product_id, Fe_Product_Links::META_KEY, true );
+		$own      = is_array( $own ) ? $own : array();
+		$excluded = Fe_Product_Links::excluded_for_product( $product_id );
+		foreach ( $event_ids as $event_id ) {
+			list( $own, $excluded ) = Fe_Event_Resolver::apply_bulk( $own, $excluded, $action, $event_id );
+		}
 		Fe_Product_Links::set_for_product( $product_id, $own );
 		Fe_Product_Links::set_excluded_for_product( $product_id, $excluded );
 		Fe_Admin::flush_rate_cache();
