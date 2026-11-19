@@ -12,3 +12,4 @@ require_once __DIR__ . '/wc-stubs.php';
 
 $includes = __DIR__ . '/../includes/';
 require_once $includes . 'class-fe-activator.php';
+require_once $includes . 'domain/class-fe-meta.php';
