@@ -160,14 +160,29 @@ class Fe_Event_Repo {
 			$by_date[ $date ] = array(
 				'date'            => $date,
 				'delivery'        => $delivery,
-				'delivery_window' => $delivery && isset( $row['delivery_window'] ) ? trim( (string) $row['delivery_window'] ) : '',
+				'delivery_window' => $delivery && isset( $row['delivery_window'] ) ? self::clean_window( (string) $row['delivery_window'] ) : '',
 				'pickup'          => $pickup,
-				'pickup_window'   => $pickup && isset( $row['pickup_window'] ) ? trim( (string) $row['pickup_window'] ) : '',
+				'pickup_window'   => $pickup && isset( $row['pickup_window'] ) ? self::clean_window( (string) $row['pickup_window'] ) : '',
 				'location_id'     => $location > 0 ? $location : null,
 			);
 		}
 		ksort( $by_date );
 		return array_values( $by_date );
+	}
+
+	/**
+	 * Pure: cleans a time-window label. Strips tags, collapses whitespace to
+	 * single spaces, trims and caps at 100 characters (the column width).
+	 *
+	 * @param string $text Raw window text.
+	 * @return string
+	 */
+	public static function clean_window( $text ) {
+		$text = trim( preg_replace( '/\s+/u', ' ', strip_tags( (string) $text ) ) );
+		if ( function_exists( 'mb_substr' ) ) {
+			return trim( mb_substr( $text, 0, 100, 'UTF-8' ) );
+		}
+		return trim( substr( $text, 0, 100 ) );
 	}
 
 	/**

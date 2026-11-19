@@ -108,7 +108,7 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 			$zone_id,
 			Fe_Zone_Rule_Repo::for_event( $event['id'] ),
 			(float) $this->get_option( 'cost', 0 ),
-			(string) $this->get_option( 'window', '' ),
+			Fe_Event_Repo::clean_window( (string) $this->get_option( 'window', '' ) ),
 			$locations,
 			Fe_Location_Repo::default_id(),
 			wp_date( 'Y-m-d' ),

@@ -45,4 +45,28 @@ final class EventRepoNormalizeTest extends TestCase {
 		$this->assertSame( '2026-12-10', $out[1]['date'] );
 		$this->assertNull( $out[1]['cost'] );
 	}
+
+	public function test_clean_window_strips_markup() {
+		$out = Fe_Event_Repo::clean_window( '<b>9am</b> – 6pm<script>x</script>' );
+		$this->assertStringNotContainsString( '<', $out );
+		$this->assertStringNotContainsString( '>', $out );
+		$this->assertStringStartsWith( '9am – 6pm', $out );
+	}
+
+	public function test_clean_window_collapses_whitespace() {
+		$this->assertSame( '10 to 2 pm', Fe_Event_Repo::clean_window( "  10\n\tto \r\n 2   pm " ) );
+	}
+
+	public function test_clean_window_caps_length_without_breaking_multibyte() {
+		$this->assertSame( 100, strlen( Fe_Event_Repo::clean_window( str_repeat( 'a', 150 ) ) ) );
+		$out = Fe_Event_Repo::clean_window( str_repeat( '–', 150 ) );
+		$this->assertSame( 100, mb_strlen( $out, 'UTF-8' ) );
+		$this->assertTrue( mb_check_encoding( $out, 'UTF-8' ) );
+		$this->assertSame( '9am – 6pm', Fe_Event_Repo::clean_window( '9am – 6pm' ) );
+	}
+
+	public function test_normalize_dates_cleans_windows() {
+		$out = Fe_Event_Repo::normalize_dates( array( array( 'date' => '2026-12-10', 'delivery' => 1, 'delivery_window' => '<i>9</i>-12' ) ) );
+		$this->assertSame( '9-12', $out[0]['delivery_window'] );
+	}
 }
