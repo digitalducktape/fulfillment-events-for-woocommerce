@@ -95,21 +95,14 @@ final class EventEditorInputTest extends TestCase {
 		$this->assertSame( array( 9, 12 ), $out['product_ids'] );
 	}
 
-	public function test_shift_dates_one_year_moves_dates_and_drops_leap_day() {
-		$rows = array(
-			array( 'date' => '2027-12-10', 'delivery' => true ),
-			array( 'date' => '2028-02-29', 'delivery' => true ),
-			array( 'date' => null, 'mode' => 'on' ),
-		);
-		$out = Fe_Event_Editor::shift_dates_one_year( $rows );
-		$this->assertCount( 2, $out );
-		$this->assertSame( '2028-12-10', $out[0]['date'] );
-		$this->assertTrue( $out[0]['delivery'] );
-		$this->assertNull( $out[1]['date'] );
+	public function test_parse_post_collects_excluded_products_and_drops_them_from_links() {
+		$out = Fe_Event_Editor::parse_post( $this->base( array( 'fe_product_ids' => array( '9', '12' ), 'fe_excluded_ids' => array( '12', '15', '15', '0' ) ) ) );
+		$this->assertSame( array( 12, 15 ), $out['excluded_ids'] );
+		$this->assertSame( array( 9 ), $out['product_ids'] );
 	}
 
-	public function test_shift_dates_one_year_keeps_ordinary_dates() {
-		$out = Fe_Event_Editor::shift_dates_one_year( array( array( 'date' => '2026-12-10' ), array( 'date' => '2026-12-18' ) ) );
-		$this->assertSame( array( '2027-12-10', '2027-12-18' ), array_column( $out, 'date' ) );
+	public function test_parse_post_without_exclusions_gives_empty_list() {
+		$out = Fe_Event_Editor::parse_post( $this->base() );
+		$this->assertSame( array(), $out['excluded_ids'] );
 	}
 }

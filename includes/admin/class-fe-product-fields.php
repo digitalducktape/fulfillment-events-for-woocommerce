@@ -70,11 +70,12 @@ class Fe_Product_Fields {
 	/**
 	 * Prints the multiselect.
 	 *
-	 * @param int[] $selected Selected event ids.
-	 * @param string $id      Element id.
+	 * @param int[]  $selected Selected event ids.
+	 * @param string $id       Element id.
+	 * @param string $name     Field name, without the brackets.
 	 */
-	private static function select( array $selected, $id ) {
-		echo '<select id="' . esc_attr( $id ) . '" name="fe_events[]" class="wc-enhanced-select" multiple style="width:50%;" data-placeholder="' . esc_attr__( 'No event', 'fulfillment-events-for-woocommerce' ) . '">';
+	private static function select( array $selected, $id, $name = 'fe_events' ) {
+		echo '<select id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '[]" class="wc-enhanced-select" multiple style="width:50%;" data-placeholder="' . esc_attr__( 'No event', 'fulfillment-events-for-woocommerce' ) . '">';
 		foreach ( self::event_choices() as $event_id => $title ) {
 			echo '<option value="' . esc_attr( $event_id ) . '"' . selected( in_array( $event_id, $selected, true ), true, false ) . '>' . esc_html( $title ) . '</option>';
 		}
@@ -91,6 +92,9 @@ class Fe_Product_Fields {
 		echo '<div class="options_group"><p class="form-field"><label for="fe_events">' . esc_html__( 'Fulfillment events', 'fulfillment-events-for-woocommerce' ) . '</label>';
 		self::select( is_array( $own ) ? array_map( 'intval', $own ) : array(), 'fe_events' );
 		echo wc_help_tip( __( 'Events this product is sold through. Categories can link events too. Only categories the product is directly assigned to count; parent categories are not inherited.', 'fulfillment-events-for-woocommerce' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '</p><p class="form-field"><label for="fe_excluded_events">' . esc_html__( 'Excluded from events', 'fulfillment-events-for-woocommerce' ) . '</label>';
+		self::select( Fe_Product_Links::excluded_for_product( $post->ID ), 'fe_excluded_events', 'fe_excluded_events' );
+		echo wc_help_tip( __( 'Events this product is left out of, even when one of its categories is in them.', 'fulfillment-events-for-woocommerce' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</p></div>';
 	}
 
@@ -106,17 +110,20 @@ class Fe_Product_Fields {
 		if ( ! current_user_can( 'manage_woocommerce' ) || ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
 		}
-		Fe_Product_Links::set_for_product( $post_id, self::posted_ids() );
+		$excluded = self::posted_ids( 'fe_excluded_events' );
+		Fe_Product_Links::set_for_product( $post_id, array_diff( self::posted_ids(), $excluded ) );
+		Fe_Product_Links::set_excluded_for_product( $post_id, $excluded );
 		Fe_Admin::flush_rate_cache();
 	}
 
 	/**
-	 * Event ids from the posted multiselect.
+	 * Event ids from a posted multiselect.
 	 *
+	 * @param string $name Field name.
 	 * @return int[]
 	 */
-	private static function posted_ids() {
-		$raw = isset( $_POST['fe_events'] ) ? (array) wp_unslash( $_POST['fe_events'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- verified by callers; cast to int below.
+	private static function posted_ids( $name = 'fe_events' ) {
+		$raw = isset( $_POST[ $name ] ) ? (array) wp_unslash( $_POST[ $name ] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- verified by callers; cast to int below.
 		return array_values( array_unique( array_filter( array_map( 'absint', $raw ) ) ) );
 	}
 

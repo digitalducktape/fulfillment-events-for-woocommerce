@@ -53,6 +53,20 @@ class Fe_Event_Resolver {
 	}
 
 	/**
+	 * Events a product belongs to once its exclusions are applied. An
+	 * exclusion wins over every link, including the product's own.
+	 *
+	 * @param int[] $linked   Event ids from the product and its categories.
+	 * @param int[] $excluded Event ids the product is excluded from.
+	 * @return int[]
+	 */
+	public static function effective_ids( array $linked, array $excluded ) {
+		$linked   = array_unique( array_map( 'intval', $linked ) );
+		$excluded = array_map( 'intval', $excluded );
+		return array_values( array_diff( $linked, $excluded ) );
+	}
+
+	/**
 	 * Purchase status for a product.
 	 *
 	 * @param int[]    $product_event_ids Event ids linked to the product.

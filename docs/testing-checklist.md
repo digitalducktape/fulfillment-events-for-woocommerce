@@ -14,7 +14,7 @@ here.
 - [ ] A product linked to an open event and a closed event stays purchasable; an unlinked product is unaffected.
 - [ ] A product whose only open event has all dates in the past is not purchasable.
 
-- [ ] WooCommerce > Settings > Shipping: add Event delivery, Event pickup, Event courier and Event add-on to a zone; each saves its title, cost and default window in the modal.
+- [ ] WooCommerce > Settings > Shipping: add Event delivery, Event pickup, Event courier and Event add-on to a zone; delivery, pickup and courier save their title, cost and default window in the modal; Event add-on shows only a title.
 - [ ] For a package carrying a published event, the zone shows one rate per date, labelled like "Delivery · Thu, Dec 10" and "Pickup at {location} · Sun, Dec 13"; past dates and dates switched off for the zone are absent; a draft event yields no rates.
 - [ ] After checkout, the shipping line item carries fe_event_id, fe_event_name, fe_date, fe_type, fe_window and fe_location meta.
 - [ ] A cart with no event product shows none of these rates.
@@ -34,7 +34,8 @@ here.
 - [ ] Create an event "Holiday pre-order" with 3 dates (mixed delivery and pickup, windows, a non-default location), a sales window, a zone override (for example delivery on, cost 25, "only on" one date) and a turned-off courier cell. Save, reload: every value is identical. Adding and removing date rows works without a page reload.
 - [ ] Zone grid: zones with no delivery/pickup/courier method show "Not in zone" and have no form; pills show "{cost} default"/"Free", "Turned off" and the override cost matching the saved rules; zone "Locations not covered by your other zones" is listed last.
 - [ ] Set sales close before sales open and save: the close time is cleared and a warning appears. After any save, the checkout shipping rates reflect the change without clearing transients by hand.
-- [ ] Event list: "Duplicate for next year" creates a draft "{title} (copy)" with every date, rule date and the sales window one year later (a Feb 29 date is dropped) and the same category links.
+- [ ] Event list: "Duplicate" creates a draft "{title} (copy)" with the same dates, sales window, zone rules, categories, individual products and excluded products. Publishing nothing yet: the original still sells as before.
+- [ ] Exclusions: link a category to an event, then add one of its products under "Exclude products" and save. That product no longer shows the event's rates or availability note (and is unpurchasable if that was its only event); the rest of the category is unchanged. The product edit screen shows the event under "Excluded from events". Removing the exclusion there restores it. Picking the same event in both fields on a product keeps only the exclusion.
 - [ ] Delete an event permanently: its dates and zone rules rows are gone (check the fe_ tables) and products and categories no longer list it.
 - [ ] Product edit, General tab: "Fulfillment events" multiselect saves; category add and edit screens save the same field. A product in two open events shows "In 2 open events" in the Events column of the products list; one in a single event shows a dash.
 - [ ] Shop manager (manage_woocommerce without administrator) can open Events, Locations, Settings and save an event.

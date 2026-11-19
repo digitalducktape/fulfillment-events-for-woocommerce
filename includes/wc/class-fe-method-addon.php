@@ -47,6 +47,15 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 	}
 
 	/**
+	 * Only a title: add-on rates are always free and take the date, window
+	 * and location of the order they are added to.
+	 */
+	public function init_form_fields() {
+		parent::init_form_fields();
+		$this->instance_form_fields = array( 'title' => $this->instance_form_fields['title'] );
+	}
+
+	/**
 	 * Logged-in customers get one rate per eligible order of theirs; guests
 	 * get one generic rate that requires the order number field.
 	 *
@@ -91,14 +100,14 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 				'type'        => 'shop_order',
 			)
 		);
-		$today = wp_date( 'Y-m-d' );
+		$today  = wp_date( 'Y-m-d' );
 		foreach ( (array) $orders as $order ) {
 			$data = Fe_Addon_Field::target_data( $order );
 			if ( ! $data || ! Fe_Addon_Rules::eligible( $data['target'], $event_id, '', $customer_id, $today ) ) {
 				continue;
 			}
-			$meta = Fe_Addon_Rules::rate_meta( $data['fulfillment'], $order->get_id() );
-			$spec = array(
+			$meta  = Fe_Addon_Rules::rate_meta( $data['fulfillment'], $order->get_id() );
+			$spec  = array(
 				'id'    => (string) $order->get_id(),
 				'cost'  => 0,
 				'when'  => self::format_date( $meta['fe_date'] ),

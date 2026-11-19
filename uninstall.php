@@ -26,7 +26,7 @@ $fe_event_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} W
 foreach ( $fe_event_ids as $fe_event_id ) {
 	wp_delete_post( (int) $fe_event_id, true );
 }
-$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s", '_fe_events' ) );
+$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN ( %s, %s )", '_fe_events', '_fe_excluded_events' ) );
 $wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->termmeta} WHERE meta_key = %s", '_fe_events' ) );
 
 // Split locks (fe_split_lock_{order id}) are options; remove them all.

@@ -66,4 +66,26 @@ class EventResolverTest extends TestCase {
 		$this->assertSame( 'closed', Fe_Event_Resolver::status( array( 1 ), $resolved ) );
 		$this->assertSame( 'active', Fe_Event_Resolver::status( array( 2 ), 2 ) );
 	}
+
+	public function test_exclusion_removes_a_category_event() {
+		$this->assertSame( array( 1, 3 ), Fe_Event_Resolver::effective_ids( array( 1, 2, 3, 2 ), array( 2 ) ) );
+	}
+
+	public function test_exclusion_wins_over_a_direct_link() {
+		$this->assertSame( array(), Fe_Event_Resolver::effective_ids( array( 5 ), array( 5 ) ) );
+	}
+
+	public function test_exclusion_of_an_unlinked_event_changes_nothing() {
+		$this->assertSame( array( 1 ), Fe_Event_Resolver::effective_ids( array( 1 ), array( 9 ) ) );
+	}
+
+	public function test_excluded_product_resolves_to_its_other_event() {
+		$open = array(
+			$this->event( 1, array( '2026-12-03' ) ),
+			$this->event( 2, array( '2026-12-10' ) ),
+		);
+		$ids  = Fe_Event_Resolver::effective_ids( array( 1, 2 ), array( 1 ) );
+		$this->assertSame( 2, Fe_Event_Resolver::resolve( $ids, $open, '2026-12-01' ) );
+		$this->assertSame( 'closed', Fe_Event_Resolver::status( array( 9 ), Fe_Event_Resolver::resolve( array(), $open, '2026-12-01' ) ) );
+	}
 }

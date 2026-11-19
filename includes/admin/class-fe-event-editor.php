@@ -39,7 +39,7 @@ class Fe_Event_Editor {
 	 * Pure: turns an already-unslashed form post into clean event data.
 	 *
 	 * @param array $post Posted fields.
-	 * @return array{event:array, dates:array, rules:array, category_ids:int[], product_ids:int[]}
+	 * @return array{event:array, dates:array, rules:array, category_ids:int[], product_ids:int[], excluded_ids:int[]}
 	 */
 	public static function parse_post( array $post ) {
 		$open  = self::parse_datetime( isset( $post['fe_sales_open'] ) ? $post['fe_sales_open'] : '' );
@@ -50,6 +50,9 @@ class Fe_Event_Editor {
 			$error = 'close_before_open';
 		}
 
+		$excluded = self::clean_ids( isset( $post['fe_excluded_ids'] ) ? $post['fe_excluded_ids'] : array() );
+		$products = array_values( array_diff( self::clean_ids( isset( $post['fe_product_ids'] ) ? $post['fe_product_ids'] : array() ), $excluded ) );
+
 		return array(
 			'event'        => array(
 				'sales_open'  => $open,
@@ -59,7 +62,8 @@ class Fe_Event_Editor {
 			'dates'        => Fe_Event_Repo::normalize_dates( isset( $post['fe_dates'] ) && is_array( $post['fe_dates'] ) ? array_values( $post['fe_dates'] ) : array() ),
 			'rules'        => Fe_Zone_Rule_Repo::normalize_rules( self::rules_from_grid( isset( $post['fe_rules'] ) ? $post['fe_rules'] : array() ) ),
 			'category_ids' => self::clean_ids( isset( $post['fe_category_ids'] ) ? $post['fe_category_ids'] : array() ),
-			'product_ids'  => self::clean_ids( isset( $post['fe_product_ids'] ) ? $post['fe_product_ids'] : array() ),
+			'product_ids'  => $products,
+			'excluded_ids' => $excluded,
 		);
 	}
 
@@ -130,31 +134,6 @@ class Fe_Event_Editor {
 		return array_values( array_unique( array_filter( array_map( 'intval', $value ) ) ) );
 	}
 
-	/**
-	 * Pure: moves rows with a `date` one year later. Rows whose shifted date
-	 * does not exist (Feb 29) are dropped; rows without a date are kept.
-	 *
-	 * @param array[] $rows Rows with a 'date' key (Y-m-d, '' or null).
-	 * @return array[]
-	 */
-	public static function shift_dates_one_year( array $rows ) {
-		$out = array();
-		foreach ( $rows as $row ) {
-			$date = isset( $row['date'] ) ? (string) $row['date'] : '';
-			if ( '' === $date ) {
-				$out[] = $row;
-				continue;
-			}
-			$parts = explode( '-', $date );
-			if ( 3 !== count( $parts ) || ! checkdate( (int) $parts[1], (int) $parts[2], (int) $parts[0] + 1 ) ) {
-				continue;
-			}
-			$row['date'] = sprintf( '%04d-%02d-%02d', (int) $parts[0] + 1, (int) $parts[1], (int) $parts[2] );
-			$out[]       = $row;
-		}
-		return $out;
-	}
-
 	// -------------------------------------------------------------------
 	// Save.
 	// -------------------------------------------------------------------
@@ -182,7 +161,7 @@ class Fe_Event_Editor {
 		Fe_Event_Repo::save_sales_window( $post_id, $parsed['event']['sales_open'], $parsed['event']['sales_close'] );
 		Fe_Event_Repo::save_dates( $post_id, $parsed['dates'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $post_id, $parsed['rules'] );
-		Fe_Product_Links::sync_event( $post_id, $parsed['category_ids'], $parsed['product_ids'] );
+		Fe_Product_Links::sync_event( $post_id, $parsed['category_ids'], $parsed['product_ids'], $parsed['excluded_ids'] );
 		Fe_Admin::flush_rate_cache();
 
 		if ( '' !== $parsed['event']['error'] ) {
@@ -213,7 +192,7 @@ class Fe_Event_Editor {
 		}
 		Fe_Event_Repo::delete_children( $post_id );
 		Fe_Zone_Rule_Repo::delete_for_event( $post_id );
-		Fe_Product_Links::sync_event( $post_id, array(), array() );
+		Fe_Product_Links::sync_event( $post_id, array(), array(), array() );
 		Fe_Admin::flush_rate_cache();
 	}
 
@@ -222,7 +201,7 @@ class Fe_Event_Editor {
 	// -------------------------------------------------------------------
 
 	/**
-	 * Adds "Duplicate for next year" to the event list.
+	 * Adds "Duplicate" to the event list.
 	 *
 	 * @param array   $actions Row actions.
 	 * @param WP_Post $post    Row post.
@@ -230,14 +209,15 @@ class Fe_Event_Editor {
 	 */
 	public static function row_actions( $actions, $post ) {
 		if ( Fe_Event_Repo::POST_TYPE === $post->post_type && current_user_can( 'manage_woocommerce' ) ) {
-			$url                          = wp_nonce_url( admin_url( 'admin-post.php?action=fe_duplicate_event&event=' . (int) $post->ID ), 'fe_duplicate_event_' . (int) $post->ID );
-			$actions['fe_duplicate_year'] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Duplicate for next year', 'fulfillment-events-for-woocommerce' ) . '</a>';
+			$url                     = wp_nonce_url( admin_url( 'admin-post.php?action=fe_duplicate_event&event=' . (int) $post->ID ), 'fe_duplicate_event_' . (int) $post->ID );
+			$actions['fe_duplicate'] = '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Duplicate', 'fulfillment-events-for-woocommerce' ) . '</a>';
 		}
 		return $actions;
 	}
 
 	/**
-	 * Creates a draft copy of an event with dates one year later.
+	 * Creates a draft copy of an event: same dates, sales window, zone rules,
+	 * categories, products and exclusions. Staff edit the dates afterwards.
 	 */
 	public static function handle_duplicate() {
 		$id = isset( $_GET['event'] ) ? absint( $_GET['event'] ) : 0;
@@ -262,18 +242,15 @@ class Fe_Event_Editor {
 			wp_die( esc_html__( 'Could not create the copy.', 'fulfillment-events-for-woocommerce' ) );
 		}
 
-		$shifted = array();
-		foreach ( array( 'sales_open', 'sales_close' ) as $key ) {
-			$shifted[ $key ] = '';
-			if ( ! empty( $event[ $key ] ) ) {
-				$dt              = new DateTime( $event[ $key ] );
-				$shifted[ $key ] = $dt->modify( '+1 year' )->format( 'Y-m-d H:i:s' );
-			}
-		}
-		Fe_Event_Repo::save_sales_window( $new_id, $shifted['sales_open'], $shifted['sales_close'] );
-		Fe_Event_Repo::save_dates( $new_id, self::shift_dates_one_year( $event['dates'] ) );
-		Fe_Zone_Rule_Repo::replace_for_event( $new_id, self::shift_dates_one_year( Fe_Zone_Rule_Repo::for_event( $id ) ) );
-		Fe_Product_Links::sync_event( $new_id, Fe_Product_Links::term_ids_for_event( $id ), array() );
+		Fe_Event_Repo::save_sales_window( $new_id, (string) $event['sales_open'], (string) $event['sales_close'] );
+		Fe_Event_Repo::save_dates( $new_id, $event['dates'] );
+		Fe_Zone_Rule_Repo::replace_for_event( $new_id, Fe_Zone_Rule_Repo::for_event( $id ) );
+		Fe_Product_Links::sync_event(
+			$new_id,
+			Fe_Product_Links::term_ids_for_event( $id ),
+			Fe_Product_Links::product_ids_for_event( $id ),
+			Fe_Product_Links::product_ids_for_event( $id, Fe_Product_Links::EXCLUDE_KEY )
+		);
 		Fe_Admin::flush_rate_cache();
 
 		wp_safe_redirect( admin_url( 'post.php?action=edit&post=' . (int) $new_id ) );
@@ -420,6 +397,7 @@ class Fe_Event_Editor {
 	public static function box_products( $post ) {
 		$selected_cats = Fe_Product_Links::term_ids_for_event( $post->ID );
 		$selected_prod = Fe_Product_Links::product_ids_for_event( $post->ID );
+		$excluded_prod = Fe_Product_Links::product_ids_for_event( $post->ID, Fe_Product_Links::EXCLUDE_KEY );
 		$cats          = get_terms(
 			array(
 				'taxonomy'   => 'product_cat',
@@ -444,6 +422,16 @@ class Fe_Event_Editor {
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</select></p>
+		<p><label for="fe_excluded_ids"><strong><?php esc_html_e( 'Exclude products', 'fulfillment-events-for-woocommerce' ); ?></strong></label><br>
+			<select id="fe_excluded_ids" name="fe_excluded_ids[]" class="wc-product-search" multiple style="width:100%;" data-placeholder="<?php esc_attr_e( 'Search for a product', 'fulfillment-events-for-woocommerce' ); ?>" data-action="woocommerce_json_search_products">
+				<?php foreach ( $excluded_prod as $pid ) : ?>
+					<?php $product = wc_get_product( $pid ); ?>
+					<?php if ( $product ) : ?>
+						<option value="<?php echo esc_attr( $pid ); ?>" selected="selected"><?php echo esc_html( wp_strip_all_tags( $product->get_formatted_name() ) ); ?></option>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</select></p>
+		<p class="description"><?php esc_html_e( 'Products listed here are left out of this event even when one of the categories above includes them.', 'fulfillment-events-for-woocommerce' ); ?></p>
 		<?php
 	}
 }

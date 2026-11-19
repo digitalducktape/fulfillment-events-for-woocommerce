@@ -185,8 +185,10 @@ that type isn't offered there (e.g. Zone C has no Event Delivery).
    "Fulfillment events" box on the product edit screen and a field on the
    category edit screen.
 4. **Fulfillment → Locations**: manage pickup locations.
-5. "Duplicate event" action for next year (copies dates shifted by a year,
-   rules, category links).
+5. "Duplicate" action: an exact draft copy (dates, sales window, rules,
+   category and product links, exclusions) that staff then edit.
+6. Exclusions: an event's Products box and the product edit screen can
+   exclude a product from an event; an exclusion wins over every link.
 
 ### 6.4 Storefront and cart
 

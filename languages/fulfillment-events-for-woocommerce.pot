@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.0\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-19T08:56:10+00:00\n"
+"POT-Creation-Date: 2026-11-19T18:24:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: includes/admin/class-fe-admin.php:123
 #: includes/admin/class-fe-admin.php:157
-#: includes/admin/class-fe-event-editor.php:246
+#: includes/admin/class-fe-event-editor.php:226
 #: includes/admin/class-fe-locations-page.php:30
 msgid "You do not have permission to do this."
 msgstr ""
@@ -95,125 +95,134 @@ msgstr ""
 msgid "Delete events, locations and zone rules when the plugin is deleted"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:202
+#: includes/admin/class-fe-event-editor.php:181
 msgid "Sales close must be after sales open. The close time was cleared."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:234
-msgid "Duplicate for next year"
+#: includes/admin/class-fe-event-editor.php:213
+msgid "Duplicate"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:250
+#: includes/admin/class-fe-event-editor.php:230
 #: includes/rest/class-fe-rest-controller.php:94
 msgid "Event not found."
 msgstr ""
 
 #. translators: %s: event title
-#: includes/admin/class-fe-event-editor.php:258
+#: includes/admin/class-fe-event-editor.php:238
 #, php-format
 msgid "%s (copy)"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:262
+#: includes/admin/class-fe-event-editor.php:242
 msgid "Could not create the copy."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:292
+#: includes/admin/class-fe-event-editor.php:269
 msgid "Details"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:293
+#: includes/admin/class-fe-event-editor.php:270
 msgid "Dates"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:294
+#: includes/admin/class-fe-event-editor.php:271
 msgid "Zones"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:295
+#: includes/admin/class-fe-event-editor.php:272
 msgid "Products"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:307
+#: includes/admin/class-fe-event-editor.php:284
 msgid "Fulfillment event"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:333
+#: includes/admin/class-fe-event-editor.php:310
 msgid "Customers can buy event products while the sales window is open. Leave a field empty for no limit. Times use the store timezone."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:336
+#: includes/admin/class-fe-event-editor.php:313
 msgid "Sales open"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:340
+#: includes/admin/class-fe-event-editor.php:317
 msgid "Sales close"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:357
+#: includes/admin/class-fe-event-editor.php:334
 msgid "Each date can offer delivery, pickup or both. A date with neither is not saved. Courier is offered on every date for zones that have it."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:360
+#: includes/admin/class-fe-event-editor.php:337
 msgid "Date"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:361
+#: includes/admin/class-fe-event-editor.php:338
 #: includes/admin/class-fe-zone-grid.php:106
 #: includes/wc/class-fe-emails.php:261
 msgid "Delivery"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:362
+#: includes/admin/class-fe-event-editor.php:339
 #: includes/admin/class-fe-zone-grid.php:107
 #: includes/wc/class-fe-emails.php:262
 msgid "Pickup"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:363
+#: includes/admin/class-fe-event-editor.php:340
 msgid "Pickup location"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:375
+#: includes/admin/class-fe-event-editor.php:352
 msgid "Add date"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:395
-#: includes/admin/class-fe-event-editor.php:399
+#: includes/admin/class-fe-event-editor.php:372
+#: includes/admin/class-fe-event-editor.php:376
 msgid "Offer"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:396
-#: includes/admin/class-fe-event-editor.php:400
+#: includes/admin/class-fe-event-editor.php:373
+#: includes/admin/class-fe-event-editor.php:377
 msgid "Window, e.g. 10am to 2pm"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:404
+#: includes/admin/class-fe-event-editor.php:381
 msgid "Default location"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:410
+#: includes/admin/class-fe-event-editor.php:387
 msgid "Remove"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:431
+#: includes/admin/class-fe-event-editor.php:409
 msgid "Products in these categories, or chosen below, are sold through this event. Only categories a product is directly assigned to count; parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:432
+#: includes/admin/class-fe-event-editor.php:410
 msgid "Categories"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:433
+#: includes/admin/class-fe-event-editor.php:411
 msgid "Choose categories"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:438
+#: includes/admin/class-fe-event-editor.php:416
 msgid "Individual products"
 msgstr ""
 
-#: includes/admin/class-fe-event-editor.php:439
+#: includes/admin/class-fe-event-editor.php:417
+#: includes/admin/class-fe-event-editor.php:426
 msgid "Search for a product"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:425
+msgid "Exclude products"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:434
+msgid "Products listed here are left out of this event even when one of the categories above includes them."
 msgstr ""
 
 #: includes/admin/class-fe-locations-page.php:102
@@ -324,37 +333,45 @@ msgstr ""
 msgid "%s (draft)"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:77
+#: includes/admin/class-fe-product-fields.php:78
 msgid "No event"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:91
-#: includes/admin/class-fe-product-fields.php:128
-#: includes/admin/class-fe-product-fields.php:141
+#: includes/admin/class-fe-product-fields.php:92
+#: includes/admin/class-fe-product-fields.php:135
+#: includes/admin/class-fe-product-fields.php:148
 msgid "Fulfillment events"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:93
+#: includes/admin/class-fe-product-fields.php:94
 msgid "Events this product is sold through. Categories can link events too. Only categories the product is directly assigned to count; parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:130
-#: includes/admin/class-fe-product-fields.php:143
+#: includes/admin/class-fe-product-fields.php:95
+msgid "Excluded from events"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:97
+msgid "Events this product is left out of, even when one of its categories is in them."
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:137
+#: includes/admin/class-fe-product-fields.php:150
 msgid "Products directly assigned to this category are sold through these events. Parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:169
+#: includes/admin/class-fe-product-fields.php:176
 #: includes/data/class-fe-event-repo.php:30
 msgid "Events"
 msgstr ""
 
 #. translators: %d: number of open events
-#: includes/admin/class-fe-product-fields.php:189
+#: includes/admin/class-fe-product-fields.php:196
 msgid "Only the earliest event with an upcoming date applies at checkout."
 msgstr ""
 
 #. translators: %d: number of open events
-#: includes/admin/class-fe-product-fields.php:189
+#: includes/admin/class-fe-product-fields.php:196
 #, php-format
 msgid "In %d open event"
 msgid_plural "In %d open events"
@@ -556,12 +573,12 @@ msgstr ""
 msgid "Lets customers add an event order on to an open order for the same event, at no extra shipping cost."
 msgstr ""
 
-#: includes/wc/class-fe-method-addon.php:71
+#: includes/wc/class-fe-method-addon.php:80
 msgid "Add to an existing order"
 msgstr ""
 
 #. translators: 1: order number, 2: fulfillment type, 3: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-method-addon.php:110
+#: includes/wc/class-fe-method-addon.php:119
 #, php-format
 msgid "Add to my order #%1$s — %2$s · %3$s · no extra fee"
 msgstr ""

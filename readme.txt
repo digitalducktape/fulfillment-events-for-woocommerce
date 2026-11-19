@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.0
+Stable tag: 0.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.4.1 =
+* Products can be excluded from an event, from the event's Products box or the product's "Excluded from events" field. An exclusion wins over category and product links.
+* The Event add-on shipping method only has a title; its rates are always free and use the target order's date, window and location.
+* "Duplicate for next year" is now "Duplicate": an exact draft copy (dates, sales window, zone rules, categories, products and exclusions).
 
 = 0.4.0 =
 * Checkout rejects an event date that has passed since the rates were shown; rates refresh daily.

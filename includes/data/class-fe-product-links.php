@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Event ids are stored as an array of ints in `_fe_events` meta on products
- * and on product_cat terms.
+ * and on product_cat terms. Products can also carry `_fe_excluded_events`,
+ * which removes an event the product would otherwise get from a category.
  */
 class Fe_Product_Links {
 
-	const META_KEY = '_fe_events';
+	const META_KEY    = '_fe_events';
+	const EXCLUDE_KEY = '_fe_excluded_events';
 
 	/**
 	 * Casts a stored value to a unique list of positive ints.
@@ -32,7 +34,8 @@ class Fe_Product_Links {
 
 	/**
 	 * Events a product belongs to: its own links plus those of every
-	 * product_cat term. A variation uses its parent's links and categories.
+	 * product_cat term, minus the events it is excluded from. A variation
+	 * uses its parent's links, categories and exclusions.
 	 *
 	 * @param int $product_id Product or variation id.
 	 * @return int[]
@@ -54,7 +57,28 @@ class Fe_Product_Links {
 				$ids = array_merge( $ids, self::clean( get_term_meta( (int) $term_id, self::META_KEY, true ) ) );
 			}
 		}
-		return array_values( array_unique( $ids ) );
+		return Fe_Event_Resolver::effective_ids( $ids, self::excluded_for_product( $product_id ) );
+	}
+
+	/**
+	 * Events a product is excluded from.
+	 *
+	 * @param int $product_id Product id (not a variation).
+	 * @return int[]
+	 */
+	public static function excluded_for_product( $product_id ) {
+		return self::clean( get_post_meta( (int) $product_id, self::EXCLUDE_KEY, true ) );
+	}
+
+	/**
+	 * Sets the events a product is excluded from.
+	 *
+	 * @param int   $product_id Product id.
+	 * @param int[] $event_ids  Event ids.
+	 */
+	public static function set_excluded_for_product( $product_id, array $event_ids ) {
+		$ids = self::clean( $event_ids );
+		$ids ? update_post_meta( (int) $product_id, self::EXCLUDE_KEY, $ids ) : delete_post_meta( (int) $product_id, self::EXCLUDE_KEY );
 	}
 
 	/**
@@ -115,7 +139,7 @@ class Fe_Product_Links {
 				),
 			)
 		);
-		$out = array();
+		$out   = array();
 		foreach ( is_array( $terms ) ? $terms : array() as $term_id ) {
 			if ( in_array( (int) $event_id, self::clean( get_term_meta( (int) $term_id, self::META_KEY, true ) ), true ) ) {
 				$out[] = (int) $term_id;
@@ -125,12 +149,14 @@ class Fe_Product_Links {
 	}
 
 	/**
-	 * Product ids whose own links include an event.
+	 * Product ids whose own links (or, with EXCLUDE_KEY, exclusions)
+	 * include an event.
 	 *
-	 * @param int $event_id Event id.
+	 * @param int    $event_id Event id.
+	 * @param string $key      META_KEY or EXCLUDE_KEY.
 	 * @return int[]
 	 */
-	public static function product_ids_for_event( $event_id ) {
+	public static function product_ids_for_event( $event_id, $key = self::META_KEY ) {
 		$ids = get_posts(
 			array(
 				'post_type'      => 'product',
@@ -140,7 +166,7 @@ class Fe_Product_Links {
 				'no_found_rows'  => true,
 				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 					array(
-						'key'     => self::META_KEY,
+						'key'     => $key,
 						'value'   => self::needle( $event_id ),
 						'compare' => 'LIKE',
 					),
@@ -149,7 +175,7 @@ class Fe_Product_Links {
 		);
 		$out = array();
 		foreach ( $ids as $id ) {
-			if ( in_array( (int) $event_id, self::clean( get_post_meta( (int) $id, self::META_KEY, true ) ), true ) ) {
+			if ( in_array( (int) $event_id, self::clean( get_post_meta( (int) $id, $key, true ) ), true ) ) {
 				$out[] = (int) $id;
 			}
 		}
@@ -168,13 +194,15 @@ class Fe_Product_Links {
 
 	/**
 	 * Makes an event's links exactly the given categories and products,
-	 * adding it where missing and removing it everywhere else.
+	 * adding it where missing and removing it everywhere else. Exclusions
+	 * are synced the same way when given, and left alone when null.
 	 *
-	 * @param int   $event_id     Event id.
-	 * @param int[] $term_ids     Categories that should link the event.
-	 * @param int[] $product_ids  Products that should link the event.
+	 * @param int        $event_id     Event id.
+	 * @param int[]      $term_ids     Categories that should link the event.
+	 * @param int[]      $product_ids  Products that should link the event.
+	 * @param int[]|null $excluded_ids Products excluded from the event.
 	 */
-	public static function sync_event( $event_id, array $term_ids, array $product_ids ) {
+	public static function sync_event( $event_id, array $term_ids, array $product_ids, $excluded_ids = null ) {
 		$event_id    = (int) $event_id;
 		$term_ids    = self::clean( $term_ids );
 		$product_ids = self::clean( $product_ids );
@@ -186,6 +214,14 @@ class Fe_Product_Links {
 		foreach ( array_unique( array_merge( $product_ids, self::product_ids_for_event( $event_id ) ) ) as $product_id ) {
 			$current = self::clean( get_post_meta( (int) $product_id, self::META_KEY, true ) );
 			self::set_for_product( $product_id, self::with_event( $current, $event_id, in_array( (int) $product_id, $product_ids, true ) ) );
+		}
+		if ( null === $excluded_ids ) {
+			return;
+		}
+		$excluded_ids = self::clean( (array) $excluded_ids );
+		foreach ( array_unique( array_merge( $excluded_ids, self::product_ids_for_event( $event_id, self::EXCLUDE_KEY ) ) ) as $product_id ) {
+			$current = self::excluded_for_product( (int) $product_id );
+			self::set_excluded_for_product( $product_id, self::with_event( $current, $event_id, in_array( (int) $product_id, $excluded_ids, true ) ) );
 		}
 	}
 
