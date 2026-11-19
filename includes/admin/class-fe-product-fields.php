@@ -37,6 +37,73 @@ class Fe_Product_Fields {
 		add_action( 'edited_product_cat', array( __CLASS__, 'save_term' ) );
 		add_filter( 'manage_edit-product_columns', array( __CLASS__, 'add_column' ) );
 		add_action( 'manage_product_posts_custom_column', array( __CLASS__, 'render_column' ), 10, 2 );
+		add_action( 'woocommerce_product_bulk_edit_end', array( __CLASS__, 'render_bulk_field' ) );
+		add_action( 'woocommerce_product_bulk_edit_save', array( __CLASS__, 'save_bulk' ) );
+	}
+
+	/**
+	 * Bulk edit actions as value => label.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function bulk_actions() {
+		return array(
+			''        => __( '— No change —', 'fulfillment-events-for-woocommerce' ),
+			'add'     => __( 'Add to event', 'fulfillment-events-for-woocommerce' ),
+			'exclude' => __( 'Exclude from event', 'fulfillment-events-for-woocommerce' ),
+			'remove'  => __( 'Remove from event (follow categories)', 'fulfillment-events-for-woocommerce' ),
+		);
+	}
+
+	/**
+	 * Fields in the Products list bulk edit panel.
+	 */
+	public static function render_bulk_field() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+		echo '<div class="inline-edit-group fe-bulk-events"><label class="alignleft"><span class="title">' . esc_html__( 'Fulfillment event', 'fulfillment-events-for-woocommerce' ) . '</span><span class="input-text-wrap"><select name="fe_bulk_action">';
+		foreach ( self::bulk_actions() as $value => $label ) {
+			echo '<option value="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</option>';
+		}
+		echo '</select></span></label><label class="alignleft"><span class="input-text-wrap"><select name="fe_bulk_event"><option value="">' . esc_html__( 'Choose an event', 'fulfillment-events-for-woocommerce' ) . '</option>';
+		foreach ( self::event_choices() as $event_id => $title ) {
+			echo '<option value="' . esc_attr( $event_id ) . '">' . esc_html( $title ) . '</option>';
+		}
+		echo '</select></span></label></div>';
+	}
+
+	/**
+	 * Applies the bulk edit to one product. WordPress has already checked
+	 * the bulk-posts nonce before WooCommerce calls this.
+	 *
+	 * @param WC_Product $product Product being saved.
+	 */
+	public static function save_bulk( $product ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- bulk-posts nonce checked by core.
+		$action   = isset( $_REQUEST['fe_bulk_action'] ) ? sanitize_key( wp_unslash( $_REQUEST['fe_bulk_action'] ) ) : '';
+		$event_id = isset( $_REQUEST['fe_bulk_event'] ) ? absint( $_REQUEST['fe_bulk_event'] ) : 0;
+		// phpcs:enable
+		if ( ! in_array( $action, array( 'add', 'exclude', 'remove' ), true ) || $event_id <= 0 ) {
+			return;
+		}
+		if ( Fe_Event_Repo::POST_TYPE !== get_post_type( $event_id ) ) {
+			return;
+		}
+		$product_id = (int) $product->get_id();
+		if ( ! current_user_can( 'manage_woocommerce' ) || ! current_user_can( 'edit_post', $product_id ) ) {
+			return;
+		}
+		$own                    = get_post_meta( $product_id, Fe_Product_Links::META_KEY, true );
+		list( $own, $excluded ) = Fe_Event_Resolver::apply_bulk(
+			is_array( $own ) ? $own : array(),
+			Fe_Product_Links::excluded_for_product( $product_id ),
+			$action,
+			$event_id
+		);
+		Fe_Product_Links::set_for_product( $product_id, $own );
+		Fe_Product_Links::set_excluded_for_product( $product_id, $excluded );
+		Fe_Admin::flush_rate_cache();
 	}
 
 	/**
@@ -190,12 +257,24 @@ class Fe_Product_Fields {
 		if ( null === self::$open_ids ) {
 			self::$open_ids = array_map( 'intval', wp_list_pluck( Fe_Event_Repo::open_events( current_time( 'mysql' ) ), 'id' ) );
 		}
-		$count = count( array_intersect( Fe_Product_Links::event_ids_for_product( $post_id ), self::$open_ids ) );
+		$ids      = Fe_Product_Links::event_ids_for_product( $post_id );
+		$excluded = Fe_Product_Links::excluded_for_product( $post_id );
+		if ( ! $ids && ! $excluded ) {
+			echo '<span class="na">&ndash;</span>';
+			return;
+		}
+		$names = array();
+		foreach ( $ids as $id ) {
+			$names[] = esc_html( get_the_title( $id ) );
+		}
+		foreach ( $excluded as $id ) {
+			$names[] = '<s title="' . esc_attr__( 'Excluded', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( get_the_title( $id ) ) . '</s>';
+		}
+		echo implode( '<br>', $names ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above.
+		$count = count( array_intersect( $ids, self::$open_ids ) );
 		if ( $count > 1 ) {
 			/* translators: %d: number of open events */
-			echo '<span class="fe-badge fe-badge--warn" title="' . esc_attr__( 'Only the earliest event with an upcoming date applies at checkout.', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( sprintf( _n( 'In %d open event', 'In %d open events', $count, 'fulfillment-events-for-woocommerce' ), $count ) ) . '</span>';
-		} else {
-			echo '<span class="na">&ndash;</span>';
+			echo '<br><span class="fe-badge fe-badge--warn" title="' . esc_attr__( 'Only the earliest event with an upcoming date applies at checkout.', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( sprintf( _n( 'In %d open event', 'In %d open events', $count, 'fulfillment-events-for-woocommerce' ), $count ) ) . '</span>';
 		}
 	}
 }

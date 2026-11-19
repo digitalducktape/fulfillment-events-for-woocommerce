@@ -88,4 +88,24 @@ class EventResolverTest extends TestCase {
 		$this->assertSame( 2, Fe_Event_Resolver::resolve( $ids, $open, '2026-12-01' ) );
 		$this->assertSame( 'closed', Fe_Event_Resolver::status( array( 9 ), Fe_Event_Resolver::resolve( array(), $open, '2026-12-01' ) ) );
 	}
+
+	public function test_bulk_add_links_and_clears_exclusion() {
+		$this->assertSame( array( array( 1, 7 ), array( 3 ) ), Fe_Event_Resolver::apply_bulk( array( 1 ), array( 3, 7 ), 'add', 7 ) );
+	}
+
+	public function test_bulk_add_does_not_duplicate() {
+		$this->assertSame( array( array( 1, 7 ), array() ), Fe_Event_Resolver::apply_bulk( array( 7, 1 ), array(), 'add', 7 ) );
+	}
+
+	public function test_bulk_exclude_drops_link_and_excludes() {
+		$this->assertSame( array( array( 1 ), array( 7 ) ), Fe_Event_Resolver::apply_bulk( array( 1, 7 ), array(), 'exclude', 7 ) );
+	}
+
+	public function test_bulk_remove_clears_both() {
+		$this->assertSame( array( array( 1 ), array( 3 ) ), Fe_Event_Resolver::apply_bulk( array( 1, 7 ), array( 3, 7 ), 'remove', 7 ) );
+	}
+
+	public function test_bulk_unknown_action_or_event_changes_nothing() {
+		$this->assertSame( array( array( 1 ), array( 3 ) ), Fe_Event_Resolver::apply_bulk( array( 1 ), array( 3 ), 'add', 0 ) );
+	}
 }

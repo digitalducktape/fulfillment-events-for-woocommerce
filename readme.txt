@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.1
+Stable tag: 0.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,10 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.4.2 =
+* Products list bulk edit: add products to an event, exclude them from it, or remove them (back to following their categories).
+* The Products list Events column names each event a product is in, with excluded events struck through.
 
 = 0.4.1 =
 * Products can be excluded from an event, from the event's Products box or the product's "Excluded from events" field. An exclusion wins over category and product links.

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.1\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.4.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-19T18:24:33+00:00\n"
+"POT-Creation-Date: 2026-11-19T18:37:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -135,6 +135,7 @@ msgid "Products"
 msgstr ""
 
 #: includes/admin/class-fe-event-editor.php:284
+#: includes/admin/class-fe-product-fields.php:65
 msgid "Fulfillment event"
 msgstr ""
 
@@ -323,55 +324,79 @@ msgstr ""
 msgid "This order was not split."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:60
+#: includes/admin/class-fe-product-fields.php:51
+msgid "— No change —"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:52
+msgid "Add to event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:53
+msgid "Exclude from event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:54
+msgid "Remove from event (follow categories)"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:69
+msgid "Choose an event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:127
 msgid "(no title)"
 msgstr ""
 
 #. translators: %s: event title
-#: includes/admin/class-fe-product-fields.php:63
+#: includes/admin/class-fe-product-fields.php:130
 #, php-format
 msgid "%s (draft)"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:78
+#: includes/admin/class-fe-product-fields.php:145
 msgid "No event"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:92
-#: includes/admin/class-fe-product-fields.php:135
-#: includes/admin/class-fe-product-fields.php:148
+#: includes/admin/class-fe-product-fields.php:159
+#: includes/admin/class-fe-product-fields.php:202
+#: includes/admin/class-fe-product-fields.php:215
 msgid "Fulfillment events"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:94
+#: includes/admin/class-fe-product-fields.php:161
 msgid "Events this product is sold through. Categories can link events too. Only categories the product is directly assigned to count; parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:95
+#: includes/admin/class-fe-product-fields.php:162
 msgid "Excluded from events"
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:97
+#: includes/admin/class-fe-product-fields.php:164
 msgid "Events this product is left out of, even when one of its categories is in them."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:137
-#: includes/admin/class-fe-product-fields.php:150
+#: includes/admin/class-fe-product-fields.php:204
+#: includes/admin/class-fe-product-fields.php:217
 msgid "Products directly assigned to this category are sold through these events. Parent categories are not inherited."
 msgstr ""
 
-#: includes/admin/class-fe-product-fields.php:176
+#: includes/admin/class-fe-product-fields.php:243
 #: includes/data/class-fe-event-repo.php:30
 msgid "Events"
 msgstr ""
 
+#: includes/admin/class-fe-product-fields.php:271
+msgid "Excluded"
+msgstr ""
+
 #. translators: %d: number of open events
-#: includes/admin/class-fe-product-fields.php:196
+#: includes/admin/class-fe-product-fields.php:277
 msgid "Only the earliest event with an upcoming date applies at checkout."
 msgstr ""
 
 #. translators: %d: number of open events
-#: includes/admin/class-fe-product-fields.php:196
+#: includes/admin/class-fe-product-fields.php:277
 #, php-format
 msgid "In %d open event"
 msgid_plural "In %d open events"

@@ -67,6 +67,35 @@ class Fe_Event_Resolver {
 	}
 
 	/**
+	 * Applies a bulk-edit action to a product's own links and exclusions.
+	 *
+	 * - add:     link the event, and drop any exclusion of it.
+	 * - exclude: exclude the event, and drop any direct link to it.
+	 * - remove:  drop both the direct link and the exclusion, so the product
+	 *            follows its categories again.
+	 *
+	 * @param int[]  $own      The product's own event links.
+	 * @param int[]  $excluded The product's exclusions.
+	 * @param string $action   add|exclude|remove.
+	 * @param int    $event_id Event id.
+	 * @return array{0:int[],1:int[]} New links and exclusions.
+	 */
+	public static function apply_bulk( array $own, array $excluded, $action, $event_id ) {
+		$event_id = (int) $event_id;
+		$own      = array_values( array_diff( array_unique( array_map( 'intval', $own ) ), array( $event_id ) ) );
+		$excluded = array_values( array_diff( array_unique( array_map( 'intval', $excluded ) ), array( $event_id ) ) );
+		if ( $event_id <= 0 ) {
+			return array( $own, $excluded );
+		}
+		if ( 'add' === $action ) {
+			$own[] = $event_id;
+		} elseif ( 'exclude' === $action ) {
+			$excluded[] = $event_id;
+		}
+		return array( $own, $excluded );
+	}
+
+	/**
 	 * Purchase status for a product.
 	 *
 	 * @param int[]    $product_event_ids Event ids linked to the product.
