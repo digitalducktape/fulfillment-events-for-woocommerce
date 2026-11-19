@@ -77,7 +77,7 @@ class Fe_Emails {
 		return array(
 			'_fe_will_split' => $order->get_meta( Fe_Meta::WILL_SPLIT ),
 			'_fe_parent_id'  => $order->get_meta( Fe_Meta::PARENT_ID ),
-			_fe_split_failed' => $order->get_meta( self::SPLIT_FAILED ),
+			'_fe_split_failed' => $order->get_meta( self::SPLIT_FAILED ),
 		);
 	}
 
