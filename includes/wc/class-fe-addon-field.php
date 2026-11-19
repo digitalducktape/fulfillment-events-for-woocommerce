@@ -114,10 +114,83 @@ class Fe_Addon_Field {
 	}
 
 	/**
-	 * Registers the blocks checkout field (WooCommerce 8.9+).
+	 * Pure: whether the guest add-on rate can be offered. On WooCommerce 9.9+
+	 * the block checkout shows the order number field only when the rate is
+	 * picked. Below 9.9 the field is not registered for blocks (it would show
+	 * on every checkout), so the guest rate is only offered to the classic
+	 * checkout: not on Store API requests and not when the checkout page uses
+	 * the checkout block.
+	 *
+	 * @param string $wc_version        WooCommerce version.
+	 * @param bool   $is_store_api      Whether this is a Store API request.
+	 * @param bool   $checkout_is_block Whether the checkout page uses the checkout block.
+	 * @return bool
+	 */
+	public static function guest_addon_supported( $wc_version, $is_store_api, $checkout_is_block ) {
+		if ( self::blocks_field_supported( $wc_version ) ) {
+			return true;
+		}
+		return ! $is_store_api && ! $checkout_is_block;
+	}
+
+	/**
+	 * Pure: whether the conditional blocks field is available (WooCommerce 9.9+).
+	 *
+	 * @param string $wc_version WooCommerce version.
+	 * @return bool
+	 */
+	public static function blocks_field_supported( $wc_version ) {
+		return '' !== (string) $wc_version && version_compare( (string) $wc_version, '9.9', '>=' );
+	}
+
+	/**
+	 * Whether the guest add-on rate can be offered in this request.
+	 *
+	 * @return bool
+	 */
+	public static function guest_addon_available() {
+		$version = defined( 'WC_VERSION' ) ? WC_VERSION : '';
+		if ( self::blocks_field_supported( $version ) ) {
+			return true;
+		}
+		return self::guest_addon_supported( $version, self::is_store_api_request(), self::checkout_is_block() );
+	}
+
+	/**
+	 * Whether the current request goes to the Store API (blocks cart/checkout).
+	 *
+	 * @return bool
+	 */
+	private static function is_store_api_request() {
+		if ( function_exists( 'WC' ) && WC() && method_exists( WC(), 'is_store_api_request' ) ) {
+			return (bool) WC()->is_store_api_request();
+		}
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			return false;
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		return false !== strpos( $uri, 'wc/store' );
+	}
+
+	/**
+	 * Whether the store's checkout page uses the checkout block.
+	 *
+	 * @return bool
+	 */
+	private static function checkout_is_block() {
+		if ( ! function_exists( 'has_block' ) || ! function_exists( 'wc_get_page_id' ) ) {
+			return false;
+		}
+		$page_id = (int) wc_get_page_id( 'checkout' );
+		return $page_id > 0 && has_block( 'woocommerce/checkout', $page_id );
+	}
+
+	/**
+	 * Registers the blocks checkout field (WooCommerce 9.9+ only; older
+	 * versions can't hide it, and the guest add-on rate is classic-only there).
 	 */
 	public static function register_block_field() {
-		if ( ! function_exists( 'woocommerce_register_additional_checkout_field' ) ) {
+		if ( ! function_exists( 'woocommerce_register_additional_checkout_field' ) || ! self::blocks_field_supported( defined( 'WC_VERSION' ) ? WC_VERSION : '' ) ) {
 			return;
 		}
 		try {
@@ -401,6 +474,7 @@ class Fe_Addon_Field {
 	 */
 	public static function hydrate( $order ) {
 		$input = null;
+		$noted = false;
 		foreach ( $order->get_items( 'shipping' ) as $item ) {
 			if ( 'yes' !== (string) $item->get_meta( 'fe_addon_guest' ) || '' !== (string) $item->get_meta( 'fe_date' ) ) {
 				continue;
@@ -414,6 +488,10 @@ class Fe_Addon_Field {
 			$target_id = Fe_Addon_Rules::resolve_guest( $input, (int) $item->get_meta( 'fe_event_id' ), (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ), self::today() );
 			$data      = $target_id ? self::target_data( wc_get_order( $target_id ) ) : null;
 			if ( ! $data ) {
+				if ( ! $noted ) {
+					$order->add_order_note( __( 'Add-on order number could not be matched; check this order.', 'fulfillment-events-for-woocommerce' ) );
+					$noted = true;
+				}
 				continue;
 			}
 			foreach ( Fe_Addon_Rules::rate_meta( $data['fulfillment'], $target_id ) as $key => $value ) {

@@ -28,7 +28,7 @@ class Fe_Order_Admin {
 		add_filter( 'manage_edit-shop_order_columns', array( __CLASS__, 'add_column' ) );
 		add_action( 'manage_shop_order_posts_custom_column', array( __CLASS__, 'render_column' ), 10, 2 );
 
-		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_box' ) );
+		add_action( 'add_meta_boxes', array( __CLASS__, 'add_meta_box' ), 10, 2 );
 	}
 
 	/**
@@ -129,9 +129,49 @@ class Fe_Order_Admin {
 	}
 
 	/**
-	 * Adds the split links box on the order edit screen.
+	 * Whether an order carries any of this plugin's `_fe_*` meta.
+	 *
+	 * @param WC_Order $order Order.
+	 * @return bool
 	 */
-	public static function add_meta_box() {
+	private static function has_fe_meta( $order ) {
+		foreach ( $order->get_meta_data() as $meta ) {
+			if ( isset( $meta->key ) && 0 === strpos( (string) $meta->key, '_fe_' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Resolves the order from a meta box argument.
+	 *
+	 * @param WP_Post|WC_Order|mixed $post_or_order Post (legacy) or order (HPOS).
+	 * @return WC_Order|null
+	 */
+	private static function order_from( $post_or_order ) {
+		if ( $post_or_order instanceof WC_Order ) {
+			return $post_or_order;
+		}
+		if ( is_object( $post_or_order ) && isset( $post_or_order->ID ) ) {
+			$order = wc_get_order( $post_or_order->ID );
+			return $order instanceof WC_Order ? $order : null;
+		}
+		return null;
+	}
+
+	/**
+	 * Adds the split links box on the order edit screen, only for orders this
+	 * plugin touched.
+	 *
+	 * @param string                 $screen_id     Screen id or post type.
+	 * @param WP_Post|WC_Order|mixed $post_or_order Post (legacy) or order (HPOS).
+	 */
+	public static function add_meta_box( $screen_id = '', $post_or_order = null ) {
+		$order = self::order_from( $post_or_order );
+		if ( ! $order || ! self::has_fe_meta( $order ) ) {
+			return;
+		}
 		add_meta_box(
 			'fe_split_links',
 			__( 'Split order', 'fulfillment-events-for-woocommerce' ),
@@ -148,8 +188,8 @@ class Fe_Order_Admin {
 	 * @param WP_Post|WC_Order $post_or_order Post (legacy) or order (HPOS).
 	 */
 	public static function render_meta_box( $post_or_order ) {
-		$order = $post_or_order instanceof WC_Order ? $post_or_order : wc_get_order( $post_or_order->ID );
-		if ( ! $order instanceof WC_Order ) {
+		$order = self::order_from( $post_or_order );
+		if ( ! $order || ! self::has_fe_meta( $order ) ) {
 			return;
 		}
 		$parent_id = (int) $order->get_meta( Fe_Meta::PARENT_ID );

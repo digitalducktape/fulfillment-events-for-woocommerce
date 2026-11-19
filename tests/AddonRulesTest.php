@@ -301,8 +301,10 @@ class AddonRulesTest extends TestCase {
 			2 => (object) array( 'key' => 'Items', 'value' => 'Pie × 1' ),
 			3 => (object) array( 'key' => 'fe_addon_guest', 'value' => 'yes' ),
 			4 => (object) array( 'key' => 'coffee_size', 'value' => 'Large' ),
+			5 => (object) array( 'key' => 'fe_gift_wrap', 'value' => 'Yes' ),
 		);
-		$this->assertSame( array( 2, 4 ), array_keys( Fe_Order_Stamper::strip_fe_meta( $formatted ) ) );
+		// Only this plugin's keys go; another plugin's fe_* key stays.
+		$this->assertSame( array( 2, 4, 5 ), array_keys( Fe_Order_Stamper::strip_fe_meta( $formatted ) ) );
 
 		$hidden = Fe_Order_Stamper::hidden_item_meta( array( '_qty' ) );
 		foreach ( array( '_qty', 'fe_event_id', 'fe_event_name', 'fe_date', 'fe_type', 'fe_window', 'fe_location', 'fe_addon_of', 'fe_addon_guest' ) as $key ) {
@@ -325,5 +327,16 @@ class AddonRulesTest extends TestCase {
 		$this->assertSame( 0, preg_match( $pattern, 'flat_rate:1' ) );
 		$this->assertSame( $rates, $new['hidden']['properties']['cart']['properties']['shipping_rates']['not'] );
 		$this->assertSame( array( 'shipping_rates' ), $new['required']['properties']['cart']['required'] );
+	}
+
+	public function test_guest_addon_supported_below_99_only_on_classic() {
+		$this->assertTrue( Fe_Addon_Field::guest_addon_supported( '9.9.0', true, true ) );
+		$this->assertTrue( Fe_Addon_Field::guest_addon_supported( '10.3.1', true, false ) );
+		$this->assertTrue( Fe_Addon_Field::guest_addon_supported( '9.8.5', false, false ) );
+		$this->assertFalse( Fe_Addon_Field::guest_addon_supported( '9.8.5', true, false ) );
+		$this->assertFalse( Fe_Addon_Field::guest_addon_supported( '9.8.5', false, true ) );
+		$this->assertFalse( Fe_Addon_Field::blocks_field_supported( '8.9.0' ) );
+		$this->assertFalse( Fe_Addon_Field::blocks_field_supported( '' ) );
+		$this->assertTrue( Fe_Addon_Field::blocks_field_supported( '9.9.0' ) );
 	}
 }

@@ -54,8 +54,8 @@ class Fe_Order_Stamper {
 	}
 
 	/**
-	 * Drops fe_* entries from formatted item meta (emails, My Account,
-	 * thank-you page, order admin).
+	 * Drops this plugin's entries from formatted item meta (emails, My
+	 * Account, thank-you page, order admin). Other plugins' fe_* keys stay.
 	 *
 	 * @param array $formatted Formatted meta, id => {key, value, display_key, display_value}.
 	 * @return array
@@ -64,9 +64,10 @@ class Fe_Order_Stamper {
 		if ( ! is_array( $formatted ) ) {
 			return $formatted;
 		}
+		$ours = self::item_meta_keys();
 		foreach ( $formatted as $id => $meta ) {
 			$key = is_object( $meta ) && isset( $meta->key ) ? (string) $meta->key : ( is_array( $meta ) && isset( $meta['key'] ) ? (string) $meta['key'] : '' );
-			if ( 0 === strpos( $key, 'fe_' ) ) {
+			if ( in_array( $key, $ours, true ) ) {
 				unset( $formatted[ $id ] );
 			}
 		}

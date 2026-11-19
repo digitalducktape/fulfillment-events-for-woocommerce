@@ -60,7 +60,7 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 				'type'        => 'text',
 				'default'     => $this->default_title(),
 				'desc_tip'    => true,
-				'description' => __( 'Shown to customers when the cart has no event rates.', 'fulfillment-events-for-woocommerce' ),
+				'description' => __( 'Name shown in the shipping zone list.', 'fulfillment-events-for-woocommerce' ),
 			),
 			'cost'   => array(
 				'title'       => __( 'Cost', 'fulfillment-events-for-woocommerce' ),
@@ -111,7 +111,7 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 			Fe_Event_Repo::clean_window( (string) $this->get_option( 'window', '' ) ),
 			$locations,
 			Fe_Location_Repo::default_id(),
-			wp_date( 'Y-m-d' ),
+			! empty( $package['fe_today'] ) ? (string) $package['fe_today'] : wp_date( 'Y-m-d' ),
 			array( __CLASS__, 'format_date' ),
 			__( "We'll coordinate the time with you", 'fulfillment-events-for-woocommerce' )
 		);

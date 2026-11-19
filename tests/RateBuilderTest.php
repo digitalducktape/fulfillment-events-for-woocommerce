@@ -79,7 +79,7 @@ final class RateBuilderTest extends TestCase {
 		$this->assertSame( '2026-12-10', $rates[0]['date'] );
 	}
 
-	public function test_marin_style_override_only_on_one_date() {
+	public function test_zone_override_only_on_one_date() {
 		$event = $this->event(
 			array(
 				$this->date( '2026-12-10', array( 'delivery' => true ) ),
@@ -156,5 +156,16 @@ final class RateBuilderTest extends TestCase {
 
 	public function test_format_date_is_pure_english() {
 		$this->assertSame( 'Thu, Dec 10', Fe_Rate_Builder::format_date( '2026-12-10' ) );
+	}
+
+	public function test_pickup_with_unknown_location_falls_back_to_default() {
+		$event = $this->event(
+			array(
+				$this->date( '2026-12-12', array( 'pickup' => true, 'location_id' => 99 ) ),
+			)
+		);
+		$rates = Fe_Rate_Builder::build( $event, 'pickup', 1, array(), 0.0, '', $this->locations(), 1, '2026-12-01' );
+		$this->assertSame( 'Main store, 1 Main St', $rates[0]['meta']['fe_location'] );
+		$this->assertSame( 'Main store', $rates[0]['where'] );
 	}
 }

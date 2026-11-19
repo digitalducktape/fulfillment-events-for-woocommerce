@@ -79,6 +79,9 @@ final class CartPackagesTest extends TestCase {
 		$this->assertSame( array( 'postcode' => '12345' ), $out[2]['destination'] );
 		$this->assertSame( 'keep', $out[2]['custom'] );
 		$this->assertSame( 4, $out[0]['fe_customer_id'] );
+		// Today is part of each package, so the rate cache hash rolls daily.
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}$/', $out[0]['fe_today'] );
+		$this->assertSame( $out[0]['fe_today'], $out[2]['fe_today'] );
 	}
 
 	public function test_inert_input_returned_unchanged() {
@@ -105,5 +108,54 @@ final class CartPackagesTest extends TestCase {
 		$this->assertFalse( Fe_Cart::destination_is_complete( array( 'country' => 'US', 'postcode' => '' ) ) );
 		$this->assertTrue( Fe_Cart::destination_is_complete( array( 'postcode' => '12345' ) ) );
 		$this->assertTrue( Fe_Cart::destination_is_complete( array( 'country' => 'US', 'city' => 'Town' ) ) );
+	}
+
+	public function test_package_carries_given_today() {
+		$map = array( 1 => 5, 2 => 9, 3 => null );
+		$out = Fe_Cart::build_packages(
+			array( $this->package() ),
+			function ( $pid ) use ( $map ) {
+				return $map[ $pid ];
+			},
+			function ( $id ) {
+				return 'Event ' . $id;
+			},
+			'2026-12-01'
+		);
+		$this->assertSame( '2026-12-01', $out[1]['fe_today'] );
+	}
+
+	public function test_past_date_errors() {
+		$metas = array(
+			array( 'fe_date' => '2026-12-09', 'fe_event_name' => 'Winter market' ),
+			array( 'fe_date' => '2026-12-10', 'fe_event_name' => 'Holiday' ),
+			array( 'fe_date' => '', 'fe_event_name' => 'Guest add-on' ),
+		);
+		$this->assertSame(
+			array( 'The date you chose for Winter market has passed. Choose another date.' ),
+			Fe_Cart::past_date_errors( $metas, '2026-12-10' )
+		);
+		$this->assertSame( array(), Fe_Cart::past_date_errors( $metas, '2026-12-09' ) );
+	}
+
+	public function test_chosen_fe_metas_only_reads_plugin_rates() {
+		$rate = new class() {
+			public $meta;
+			public function get_meta_data() {
+				return $this->meta;
+			}
+		};
+		$fe       = clone $rate;
+		$fe->meta = array( 'fe_date' => '2026-12-09' );
+		$flat     = clone $rate;
+		$flat->meta = array( 'fe_date' => '2000-01-01' );
+		$packages = array(
+			0 => array( 'rates' => array( 'fe_delivery:3:5-2026-12-09' => $fe ) ),
+			1 => array( 'rates' => array( 'flat_rate:1' => $flat ) ),
+		);
+		$this->assertSame(
+			array( array( 'fe_date' => '2026-12-09' ) ),
+			Fe_Cart::chosen_fe_metas( $packages, array( 0 => 'fe_delivery:3:5-2026-12-09', 1 => 'flat_rate:1' ) )
+		);
 	}
 }

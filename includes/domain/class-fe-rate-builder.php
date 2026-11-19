@@ -72,6 +72,10 @@ class Fe_Rate_Builder {
 				}
 				$window = ! empty( $row['pickup_window'] ) ? (string) $row['pickup_window'] : (string) $default_window;
 				$loc_id = ! empty( $row['location_id'] ) ? (int) $row['location_id'] : $default_location_id;
+				// A deleted or unknown location falls back to the default one.
+				if ( null !== $loc_id && ! isset( $locations_by_id[ $loc_id ] ) ) {
+					$loc_id = $default_location_id;
+				}
 				if ( null !== $loc_id && isset( $locations_by_id[ $loc_id ] ) ) {
 					$loc      = $locations_by_id[ $loc_id ];
 					$loc_name = (string) $loc['name'];

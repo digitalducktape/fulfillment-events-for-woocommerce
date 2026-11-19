@@ -62,6 +62,9 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 		$event       = Fe_Event_Repo::get( $event_id );
 
 		if ( $customer_id <= 0 ) {
+			if ( isset( $package['fe_guest_addon'] ) && 'no' === $package['fe_guest_addon'] ) {
+				return;
+			}
 			$this->add_rate(
 				array(
 					'id'        => $this->id . ':' . $this->instance_id . ':guest',

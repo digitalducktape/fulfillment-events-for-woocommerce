@@ -43,6 +43,109 @@ class Fe_Cart {
 		add_action( 'woocommerce_cart_calculate_fees', array( __CLASS__, 'combined_delivery_fee' ) );
 		add_action( 'woocommerce_single_product_summary', array( __CLASS__, 'render_product_note' ), 25 );
 		add_filter( 'render_block_woocommerce/product-price', array( __CLASS__, 'append_note_to_price_block' ), 10, 3 );
+		add_action( 'woocommerce_after_checkout_validation', array( __CLASS__, 'validate_classic_dates' ), 10, 2 );
+		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( __CLASS__, 'validate_store_api_dates' ), 10, 2 );
+	}
+
+	/**
+	 * Store-local today, Y-m-d.
+	 *
+	 * @return string
+	 */
+	private static function today() {
+		return function_exists( 'current_time' ) ? (string) current_time( 'Y-m-d' ) : gmdate( 'Y-m-d' );
+	}
+
+	/**
+	 * Pure: one error per chosen event rate whose date is before today.
+	 * A rate chosen yesterday can still sit in the session; it must not be
+	 * ordered. Rates without a date (an unresolved guest add-on) are skipped.
+	 *
+	 * @param array  $metas List of rate meta arrays (fe_date, fe_event_name).
+	 * @param string $today Y-m-d, store-local.
+	 * @return string[] Messages.
+	 */
+	public static function past_date_errors( array $metas, $today ) {
+		$errors = array();
+		foreach ( $metas as $meta ) {
+			$date = isset( $meta['fe_date'] ) ? (string) $meta['fe_date'] : '';
+			if ( '' === $date || '' === (string) $today || $date >= (string) $today ) {
+				continue;
+			}
+			$name = isset( $meta['fe_event_name'] ) && '' !== (string) $meta['fe_event_name'] ? (string) $meta['fe_event_name'] : __( 'your order', 'fulfillment-events-for-woocommerce' );
+			/* translators: %s: event name. */
+			$errors[ $name ] = sprintf( __( 'The date you chose for %s has passed. Choose another date.', 'fulfillment-events-for-woocommerce' ), $name );
+		}
+		return array_values( $errors );
+	}
+
+	/**
+	 * Pure: meta of the chosen rate in each package, for this plugin's rates only.
+	 *
+	 * @param array $packages Calculated packages (with rates).
+	 * @param array $chosen   Package key => chosen rate id.
+	 * @return array List of meta arrays.
+	 */
+	public static function chosen_fe_metas( $packages, $chosen ) {
+		$out = array();
+		foreach ( (array) $packages as $key => $package ) {
+			if ( ! isset( $chosen[ $key ] ) || 0 !== strpos( (string) $chosen[ $key ], 'fe_' ) ) {
+				continue;
+			}
+			$rate = isset( $package['rates'][ $chosen[ $key ] ] ) ? $package['rates'][ $chosen[ $key ] ] : null;
+			if ( is_object( $rate ) && method_exists( $rate, 'get_meta_data' ) ) {
+				$out[] = (array) $rate->get_meta_data();
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Classic checkout: rejects a chosen event date that has passed.
+	 *
+	 * @param array    $data   Posted checkout data.
+	 * @param WP_Error $errors Errors.
+	 */
+	public static function validate_classic_dates( $data, $errors ) {
+		if ( ! function_exists( 'WC' ) || ! WC() || ! is_object( $errors ) ) {
+			return;
+		}
+		$chosen = isset( $data['shipping_method'] ) ? (array) $data['shipping_method'] : array();
+		foreach ( self::past_date_errors( self::chosen_fe_metas( WC()->shipping()->get_packages(), $chosen ), self::today() ) as $i => $message ) {
+			$errors->add( 'fe_date_passed_' . $i, esc_html( $message ) );
+		}
+	}
+
+	/**
+	 * Blocks checkout: rejects a chosen event date that has passed. Runs on
+	 * place-order (POST) only, not on the PUT updates while the customer types.
+	 *
+	 * @param WC_Order        $order   Draft order.
+	 * @param WP_REST_Request $request Checkout request.
+	 * @throws Automattic\WooCommerce\StoreApi\Exceptions\RouteException When a date has passed.
+	 */
+	public static function validate_store_api_dates( $order, $request ) {
+		if ( is_object( $request ) && method_exists( $request, 'get_method' ) && 'POST' !== strtoupper( (string) $request->get_method() ) ) {
+			return;
+		}
+		if ( ! is_object( $order ) || ! method_exists( $order, 'get_items' ) ) {
+			return;
+		}
+		$metas = array();
+		foreach ( $order->get_items( 'shipping' ) as $item ) {
+			if ( 0 !== strpos( (string) $item->get_method_id(), 'fe_' ) ) {
+				continue;
+			}
+			$metas[] = array(
+				'fe_date'       => (string) $item->get_meta( 'fe_date' ),
+				'fe_event_name' => (string) $item->get_meta( 'fe_event_name' ),
+			);
+		}
+		$errors = self::past_date_errors( $metas, self::today() );
+		if ( $errors ) {
+			// The Store API returns the message as JSON text; the blocks UI escapes it when rendering.
+			throw new Automattic\WooCommerce\StoreApi\Exceptions\RouteException( 'fe_date_passed', implode( ' ', $errors ), 400 ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
+		}
 	}
 
 	/**
@@ -248,7 +351,7 @@ class Fe_Cart {
 	 * @return array
 	 */
 	public static function packages( $packages ) {
-		return self::build_packages(
+		$out = self::build_packages(
 			$packages,
 			function ( $product_id ) {
 				$st = self::product_event_status( (int) $product_id );
@@ -259,6 +362,18 @@ class Fe_Cart {
 				return $event ? (string) $event['title'] : '';
 			}
 		);
+		if ( ! is_array( $out ) ) {
+			return $out;
+		}
+		// Part of the package, so a rate cached on one checkout type is not
+		// reused on the other.
+		$guest_addon = Fe_Addon_Field::guest_addon_available() ? 'yes' : 'no';
+		foreach ( $out as $i => $package ) {
+			if ( isset( $package['fe_group'] ) ) {
+				$out[ $i ]['fe_guest_addon'] = $guest_addon;
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -267,11 +382,16 @@ class Fe_Cart {
 	 * @param array    $packages          Packages built by WooCommerce.
 	 * @param callable $event_for_product Product id => event id or null.
 	 * @param callable $event_name        Event id => event name.
+	 * @param string   $today             Y-m-d, store-local; defaults to today. Stored on
+	 *                                    each package so WooCommerce's rate cache rolls daily.
 	 * @return array
 	 */
-	public static function build_packages( $packages, $event_for_product, $event_name ) {
+	public static function build_packages( $packages, $event_for_product, $event_name, $today = null ) {
 		if ( ! is_array( $packages ) || empty( $packages ) ) {
 			return $packages;
+		}
+		if ( null === $today ) {
+			$today = self::today();
 		}
 
 		$contents = array();
@@ -328,6 +448,7 @@ class Fe_Cart {
 			$package['fe_event_id']     = $group['event_id'];
 			$package['fe_event_name']   = null !== $group['event_id'] ? (string) call_user_func( $event_name, $group['event_id'] ) : '';
 			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
+			$package['fe_today']        = (string) $today;
 			$result[]                   = $package;
 		}
 		return $result;
