@@ -64,6 +64,13 @@ here.
 - [ ] Send the Square webhook at the same moment as the checkout return (or replay it quickly): exactly one set of children; no `fe_split_lock_*` row is left in wp_options afterwards.
 - [ ] Parent on-hold (bank transfer) split into on-hold children, then mark payment complete on the parent (or the gateway confirms): every on-hold child moves to Processing with a "Payment completed on #parent" note, and the parent gets a paid date.
 - [ ] Two events delivering on the same date: the cart shows a negative "Combined delivery" fee equal to the cheaper delivery cost; picking a different date or pickup for one removes it.
+- [ ] With "Defer transactional emails" on (`woocommerce_defer_transactional_emails` returning true), the split confirmation is still sent once.
+- [ ] Bank transfer (BACS) two-event order: the customer receives the on-hold email with the bank details for the parent, plus the split confirmation; no on-hold email per child.
+- [ ] Split children show no "Refund via gateway" button (no transaction id); `_fe_parent_transaction_id` holds the parent's id when the gateway set one.
+- [ ] Staff add a product linked to a closed event to a manual order and the customer pays via the order-pay link: the order completes (no split/stamp surprise) and nothing blocks payment.
+- [ ] Plain-text split confirmation: apostrophes and other entities in event names, locations and the additional content render as characters, not `&#039;`.
+- [ ] A cart whose rates were shown yesterday for a date that has now passed: placing the order (classic and block) fails with "The date you chose for {event} has passed. Choose another date." and the rates list refreshes without that date.
+- [ ] Orders with no `_fe_will_split` cause no `fe_split_lock_*` rows in wp_options on payment.
 
 ## M4: add-ons and polish
 
@@ -77,7 +84,9 @@ here.
 - [ ] Past-dated targets: a customer's open order whose event date was yesterday is not listed (logged in) and is rejected with the generic message (guest); an order dated today is still offered.
 - [ ] Guest types the number from the split confirmation email (the parent's number): the add-on resolves to the child for that event and the new order's `_fe_addon_of` is the child's id; a parent number whose children are all for other events is rejected with the generic message.
 - [ ] WooCommerce 9.9+ block checkout: the order number field is hidden until "Add to an existing order" is selected, appears and is required when it is, and disappears again when another rate is picked. Confirms the `cart.shipping_rates` schema path and the `fe_addon:{instance}:guest` id match. A cart with no event product never shows it.
-- [ ] WooCommerce 8.9–9.8 block checkout: the field shows unconditionally (see readme Known limitations). Place a non-event order with it left empty and check whether WooCommerce writes an empty `_wc_other/fulfillment-events/addon-order` meta on the order; note the result.
+- [ ] WooCommerce 8.9–9.8 block checkout: the order number field is not shown on any checkout and the guest "Add to an existing order" rate is not offered (logged-in add-on rates still are); the classic checkout on the same site still offers the guest rate with its field. On 9.9+ the schema-valued `hidden`/`required` work as above (registration doesn't throw; check the log).
+- [ ] Guest add-on whose order number can't be matched when the order is created (for example the target was cancelled in between): the new order gets the note "Add-on order number could not be matched; check this order."
+- [ ] Order edit screen: the "Split order" box shows on split parents, children and stamped event orders, and not on orders with no `_fe_*` meta.
 - [ ] Shipping lines of event orders show no `fe_*` keys (fe_event_id, fe_date, fe_addon_of, fe_addon_guest…) in the customer emails, My Account order view, thank-you page, or the order admin item list.
 
 ## M3: storefront, hint, REST, release

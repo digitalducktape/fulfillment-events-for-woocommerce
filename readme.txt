@@ -58,12 +58,21 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 
 == Known limitations ==
 
-* Split children cannot be refunded on their own; refund on the parent order.
-* Block checkout on WooCommerce 8.9 to 9.8: the "Adding to an existing order? Order number" field shows on every checkout, because conditional additional fields need WooCommerce 9.9. It is optional and ignored unless the customer picks "Add to an existing order". On 9.9 and later it only appears when that rate is selected.
+* Split children cannot be refunded on their own; refund on the parent order. Children don't carry the transaction id (it is kept as `_fe_parent_transaction_id`), so WooCommerce offers no "Refund via gateway" on them.
+* Block checkout on WooCommerce 8.9 to 9.8: the "Adding to an existing order? Order number" field needs conditional additional fields (WooCommerce 9.9), so it is not registered for block checkout, and the guest "Add to an existing order" rate is only offered on the classic checkout. Logged-in customers still see their own orders as add-on rates. On 9.9 and later the block field appears only when that rate is selected.
+* Payment gateways that only authorize at checkout and capture later are not supported: the split runs when the order reaches Processing or On hold, and the capture must happen on the parent.
+* A split that fails and is rolled back is not retried automatically. The order stays one order with `_fe_split_failed` = `yes`; delete that order meta to let the next status change or payment retry the split.
+* WooCommerce Blocks "Local pickup" rates are filtered out of event packages; use the plugin's Event pickup method for event items.
+* When a duplicate same-date delivery fee is credited ("Combined delivery"), the shipping tax on that fee is still charged.
+* A split parent passes through Processing (or On hold) before Split, so third-party hooks on those statuses fire for the parent and again for each child.
+* A product linked only to unpublished (draft or private) events is not purchasable.
+* Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
 
 = 0.4.0 =
+* Checkout rejects an event date that has passed since the rates were shown; rates refresh daily.
+* Block checkout below WooCommerce 9.9: the add-on order number field is no longer shown on every checkout; the guest add-on rate is classic-only there.
 * Split: no database lock for orders that won't split; a rolled-back split is not retried until `_fe_split_failed` is deleted; children no longer copy the transaction id (kept as `_fe_parent_transaction_id`).
 * Emails: the split confirmation no longer depends on the mailer being loaded; on-hold payment instructions are sent for split orders; with per-child staff emails off, staff get one new-order email for the whole order.
 

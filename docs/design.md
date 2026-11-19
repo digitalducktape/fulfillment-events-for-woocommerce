@@ -78,10 +78,9 @@ titles.
   shortcode checkout.
 - **One charge per checkout** through whatever payment gateway the store uses;
   refunds go through the order that holds the transaction.
-- **Products are often re-created each season** with a year suffix; prior
-  years stay published, out of stock. Attaching by **category** is the primary
-  path.
-- **Stock can be tiny** (2-20 units). Splitting must never touch stock.
+- **Products may be re-created for each run of an event**, with earlier
+  versions left published. Attaching by **category** is the primary path.
+- **Stock may be small.** Splitting must never touch stock.
 - **No-shipping products (such as class tickets)** must not demand shipping.
   Stock WooCommerce already skips shipping for virtual products; the fix is
   ticking **Virtual** on those products (see §6.8).
@@ -131,7 +130,7 @@ one charge. The plugin:
      ( ) Delivery · Wed Dec 10 · 9am–6pm ........... $9.00
      ( ) Delivery · Fri Dec 18 · 9am–6pm ........... $9.00
      ( ) Pickup at the fair · Sat Dec 13 ............ Free
-     ( ) Add to my order #14530 (Delivery, Dec 10) .. Free
+     ( ) Add to my order #1001 (Delivery, Dec 10) ... Free
    ```
 
 So the customer's "pick a date" *is* WooCommerce's native "pick a shipping
@@ -207,7 +206,7 @@ that type isn't offered there (e.g. Zone C has no Event Delivery).
 - Package names come from the event title ("Winter market — Dec 3").
 - If an event package ends up with **zero rates** for the customer's zone,
   checkout shows a clear notice ("Winter market items aren't available for delivery
-  to 94606 — pickup and courier are") rather than WooCommerce's generic
+  to 12345 — pickup and courier are") rather than WooCommerce's generic
   "no shipping options".
 
 ### 6.5 Add-on to an existing order
@@ -221,6 +220,10 @@ status open (processing/on-hold), not itself an add-on, and
   otherwise), validated **at place-order** against the billing email and the
   package's event. Guests are never shown orders they didn't name, and rates
   never depend on the email (avoids WooCommerce's package-hash rate cache).
+  The blocks field is conditional (hidden until the guest rate is picked) and
+  needs WooCommerce 9.9; below 9.9 it is not registered and the guest rate is
+  only offered to the classic checkout. An order number that can't be matched
+  when the order is created leaves a note on the order for staff.
 
 The customer ID is added to the package so logged-in rates recalculate per
 customer. Label shows only order number, type and date. The new order inherits the
@@ -243,11 +246,21 @@ cancels the duplicate. *(Builder's call; keeps native per-package rates.)*
 packages). For such orders:
 - the stock customer "processing" email is suppressed
   (`woocommerce_email_enabled_customer_processing_order`) because
-  `payment_complete()` sends it *before* `woocommerce_payment_complete` fires;
+  `payment_complete()` sends it *before* `woocommerce_payment_complete` fires.
+  The parent's "on-hold" email is **not** suppressed: it carries the payment
+  instructions of offline gateways (bank transfer, cheque). Children send
+  neither;
 - the split runs on `woocommerce_payment_complete` (and on transition to
   `processing`/`on-hold` for offline gateways) **in the same request**,
-  idempotent via `_fe_split_done`; the parent moves straight to Split;
-- the plugin then sends its own confirmation email.
+  idempotent via `_fe_split_done`; the parent moves straight to Split. The
+  order is read and checked before the per-order lock is taken, so orders that
+  won't split cost nothing;
+- the plugin then sends its own confirmation email (a static listener on
+  `fe_order_split` loads the mailer, so it also works with deferred
+  transactional emails);
+- a split that fails before any child leaves pending is rolled back, the
+  parent stays one order with `_fe_split_failed` = `yes`, and the suppressed
+  emails are sent once. It is not split again until staff delete that key.
 
 Rules:
 
@@ -265,7 +278,12 @@ Rules:
     `_reduced_stock` meta so cancelling/refunding a *child* restores its own
     stock; strip `_reduced_stock` from the parent's items so cancelling the
     parent can't restore stock a second time.
-  - Staff "new order" emails fire per child (configurable).
+  - Staff "new order" emails fire per child, and not for the parent. With
+    that setting off, the parent's "new order" email is sent once for the
+    whole order instead, and none per child.
+  - Children do **not** copy the parent's transaction id (a gateway refund
+    from a child would refund the shared charge); it is kept for reference
+    as `_fe_parent_transaction_id`.
   - Parent moves to a new status **"Split"** (`wc-fe-split`). It **keeps its
     line items** (it is the payment record and the refund anchor for the payment gateway)
     and the Split status is **excluded from WooCommerce Analytics and
@@ -277,8 +295,8 @@ Rules:
 - **Refunds** are issued on the **parent** (it holds the gateway
   transaction). v1 adds a "Refund on parent" link on child orders and an
   order note on both; automatic child↔parent refund mirroring is a non-goal.
-- Admin order list shows "part of #14530" on children and "split into
-  #14531, #14532" on the parent.
+- Admin order list shows "part of #1001" on children and "split into
+  #1002, #1003" on the parent.
 - Downstream apps that list `processing` orders must skip any order with
   `_fe_split_done` (belt-and-braces for the brief window before Split).
 
@@ -329,6 +347,10 @@ Written on every order that has a fulfillment (unsplit orders and each child):
 Snapshots (not IDs alone) so historical orders stay readable if an event is
 edited or deleted.
 
+Internal, not part of the contract: `_fe_will_split`, `_fe_split_done`,
+`_fe_split_failed`, `_fe_children` (parent), `_fe_parent_transaction_id`
+(children).
+
 ## 8. Testing and rollout
 
 - **Unit (Docker, `bin/test.sh`)**: cart grouping, rate building per
@@ -350,18 +372,18 @@ edited or deleted.
 | M2 | Order split, emails, stock handling, Split status, Analytics exclusion | staging: two-event cart, cancel child, refund parent |
 | M4 | Add-on (logged-in + guest order-number), duplicate-event, product availability note, no-shipping hint, support CTA polish | staging |
 
-**Production cutover (suggested):**
+**Going live (suggested):**
 1. Upload the plugin (deactivated).
 2. Create events, attach categories, and add the Event methods to zones with
    default prices.
-3. Activate the plugin and **remove any legacy per-date methods from the
-   zones** in the same sitting. Event packages already filter them out, but
+3. Activate the plugin and **remove any existing per-date shipping methods
+   from the zones** in the same sitting. Event packages already filter them out, but
    carts with non-event products would still be offered them.
 4. Place one real test order, check it in any downstream app, refund it.
 
-Orders placed before cutover keep their legacy methods. Rollback = deactivate
-the plugin and re-enable the legacy methods; orders already placed keep their
-`_fe_*` meta.
+Orders placed before the plugin was activated keep their original shipping
+methods. Rollback = deactivate the plugin and re-enable the earlier methods;
+orders already placed keep their `_fe_*` meta.
 
 ## 9. Design calls
 
