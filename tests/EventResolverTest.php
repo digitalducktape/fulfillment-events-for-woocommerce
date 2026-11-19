@@ -108,4 +108,20 @@ class EventResolverTest extends TestCase {
 	public function test_bulk_unknown_action_or_event_changes_nothing() {
 		$this->assertSame( array( array( 1 ), array( 3 ) ), Fe_Event_Resolver::apply_bulk( array( 1 ), array( 3 ), 'add', 0 ) );
 	}
+
+	public function test_product_in_two_events_moves_to_the_later_one_when_the_first_closes() {
+		$dec10 = $this->event( 10, array( '2026-12-10' ) );
+		$dec18 = $this->event( 18, array( '2026-12-18' ) );
+
+		// Both open: the Dec 10 event applies.
+		$this->assertSame( 10, Fe_Event_Resolver::resolve( array( 10, 18 ), array( $dec10, $dec18 ), '2026-12-01' ) );
+
+		// Dec 10 sales window closed (not in the open list): Dec 18 applies, still purchasable.
+		$resolved = Fe_Event_Resolver::resolve( array( 10, 18 ), array( $dec18 ), '2026-12-08' );
+		$this->assertSame( 18, $resolved );
+		$this->assertSame( 'active', Fe_Event_Resolver::status( array( 10, 18 ), $resolved ) );
+
+		// Dec 10 date has passed while its sales window is still open: Dec 18 applies.
+		$this->assertSame( 18, Fe_Event_Resolver::resolve( array( 10, 18 ), array( $dec10, $dec18 ), '2026-12-11' ) );
+	}
 }
