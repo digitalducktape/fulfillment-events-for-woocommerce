@@ -426,6 +426,21 @@ class Fe_Event_Editor {
 	}
 
 	/**
+	 * Pure: "1 product exception", "3 product exceptions", or '' for none.
+	 *
+	 * @param int $count Exceptions.
+	 * @return string
+	 */
+	public static function exception_count_text( $count ) {
+		$count = (int) $count;
+		if ( $count <= 0 ) {
+			return '';
+		}
+		/* translators: %d: number of product exceptions */
+		return sprintf( _n( '%d product exception', '%d product exceptions', $count, 'fulfillment-events-for-woocommerce' ), $count );
+	}
+
+	/**
 	 * Renders the Dates and Notes columns.
 	 *
 	 * @param string $column  Column key.
@@ -454,5 +469,9 @@ class Fe_Event_Editor {
 			echo '<li' . ( $past ? ' class="fe-past" title="' . esc_attr__( 'Date has passed', 'fulfillment-events-for-woocommerce' ) . '"' : '' ) . '><strong>' . esc_html( $when ) . '</strong> <span class="fe-kinds">' . esc_html( self::offer_text( $row ) ) . '</span></li>';
 		}
 		echo '</ul>';
+		$count = count( $event['date_limits'] ) + count( Fe_Product_Links::product_ids_for_event( (int) $post_id, Fe_Product_Links::EXCLUDE_KEY ) );
+		if ( $count ) {
+			echo '<span class="description">' . esc_html( self::exception_count_text( $count ) ) . '</span>';
+		}
 	}
 }

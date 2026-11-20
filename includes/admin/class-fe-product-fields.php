@@ -5,7 +5,7 @@
  * @package Fulfillment_Events
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'FE_TESTING' ) ) {
 	exit;
 }
 
@@ -169,7 +169,53 @@ class Fe_Product_Fields {
 		echo '</p><p class="form-field"><label for="fe_excluded_events">' . esc_html__( 'Excluded from events', 'fulfillment-events-for-woocommerce' ) . '</label>';
 		self::select( Fe_Product_Links::excluded_for_product( $post->ID ), 'fe_excluded_events', 'fe_excluded_events' );
 		echo wc_help_tip( __( 'Events this product is left out of, even when one of its categories is in them.', 'fulfillment-events-for-woocommerce' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '</p></div>';
+		echo '</p>';
+		foreach ( Fe_Product_Links::event_ids_for_product( $post->ID ) as $event_id ) {
+			$event = Fe_Event_Repo::get( $event_id );
+			if ( ! $event || ! isset( $event['date_limits'][ $post->ID ] ) ) {
+				continue;
+			}
+			echo '<p class="form-field"><label>' . esc_html__( 'Date limit', 'fulfillment-events-for-woocommerce' ) . '</label>' . esc_html( self::limit_text( $event['title'], (array) $event['date_limits'][ $post->ID ] ) ) . ' <a href="' . esc_url( get_edit_post_link( $event_id ) ) . '">' . esc_html__( '(set on the event)', 'fulfillment-events-for-woocommerce' ) . '</a></p>';
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * Pure: a product's date limit in one event, e.g.
+	 * "Holiday Pre-order 2026: only Dec 18".
+	 *
+	 * @param string   $event_title Event title.
+	 * @param string[] $dates       Allowed dates.
+	 * @return string
+	 */
+	public static function limit_text( $event_title, array $dates ) {
+		if ( ! $dates ) {
+			/* translators: %s: event title */
+			return sprintf( __( '%s: no dates', 'fulfillment-events-for-woocommerce' ), $event_title );
+		}
+		/* translators: 1: event title, 2: dates, e.g. "Dec 18" or "Dec 10 and Dec 18" */
+		return sprintf( __( '%1$s: only %2$s', 'fulfillment-events-for-woocommerce' ), $event_title, self::date_list( $dates ) );
+	}
+
+	/**
+	 * Pure: "Dec 18", "Dec 10 and Dec 18" or "Dec 3, Dec 10 and Dec 18".
+	 *
+	 * @param string[] $dates Y-m-d dates.
+	 * @return string
+	 */
+	public static function date_list( array $dates ) {
+		sort( $dates );
+		$labels = array();
+		foreach ( $dates as $ymd ) {
+			$dt       = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $ymd );
+			$labels[] = $dt ? $dt->format( 'M j' ) : (string) $ymd;
+		}
+		$last = array_pop( $labels );
+		if ( ! $labels ) {
+			return (string) $last;
+		}
+		/* translators: 1: comma-separated dates, 2: last date */
+		return sprintf( __( '%1$s and %2$s', 'fulfillment-events-for-woocommerce' ), implode( ', ', $labels ), $last );
 	}
 
 	/**
@@ -272,7 +318,12 @@ class Fe_Product_Fields {
 		}
 		$names = array();
 		foreach ( $ids as $id ) {
-			$names[] = esc_html( get_the_title( $id ) );
+			$label  = get_the_title( $id );
+			$limits = get_post_meta( $id, Fe_Event_Repo::META_LIMITS, true );
+			if ( is_array( $limits ) && isset( $limits[ $post_id ] ) ) {
+				$label .= ' (' . ( $limits[ $post_id ] ? self::date_list( (array) $limits[ $post_id ] ) : __( 'no dates', 'fulfillment-events-for-woocommerce' ) ) . ')';
+			}
+			$names[] = esc_html( $label );
 		}
 		foreach ( $excluded as $id ) {
 			$names[] = '<s title="' . esc_attr__( 'Excluded', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( get_the_title( $id ) ) . '</s>';
@@ -281,7 +332,7 @@ class Fe_Product_Fields {
 		$count = count( array_intersect( $ids, self::$open_ids ) );
 		if ( $count > 1 ) {
 			/* translators: %d: number of open events */
-			echo '<br><span class="fe-badge fe-badge--warn" title="' . esc_attr__( 'Only the earliest event with an upcoming date applies at checkout.', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( sprintf( _n( 'In %d open event', 'In %d open events', $count, 'fulfillment-events-for-woocommerce' ), $count ) ) . '</span>';
+			echo '<br><span class="fe-badge fe-badge--warn" title="' . esc_attr__( 'Checkout offers the dates of each of these events.', 'fulfillment-events-for-woocommerce' ) . '">' . esc_html( sprintf( _n( 'In %d open event', 'In %d open events', $count, 'fulfillment-events-for-woocommerce' ), $count ) ) . '</span>';
 		}
 	}
 }

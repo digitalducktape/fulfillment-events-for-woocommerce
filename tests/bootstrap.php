@@ -33,3 +33,4 @@ require_once $includes . 'wc/class-fe-emails.php';
 require_once $includes . 'admin/class-fe-notices.php';
 require_once $includes . 'admin/class-fe-zone-grid.php';
 require_once $includes . 'domain/class-fe-event-setup.php';
+require_once $includes . 'admin/class-fe-product-fields.php';
