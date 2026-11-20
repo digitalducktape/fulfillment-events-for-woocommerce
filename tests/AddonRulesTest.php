@@ -349,4 +349,35 @@ class AddonRulesTest extends TestCase {
 		$this->assertSame( 42, Fe_Addon_Rules::resolve_guest( '42', array( 5, 9 ), 'a@b.c', $lookup ) );
 		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '42', array( 5 ), 'a@b.c', $lookup ) );
 	}
+
+	private function dec10_target() {
+		return array( 'event_id' => 7, 'date' => '2026-12-10', 'status' => 'processing', 'is_addon' => false, 'customer_id' => 3, 'billing_email' => 'a@b.c' );
+	}
+
+	public function test_dec_18_only_item_cannot_join_a_dec_10_order() {
+		$t = $this->dec10_target();
+		$this->assertFalse( Fe_Addon_Rules::eligible( $t, 7, '', 3, '2026-12-01', array( '2026-12-18' ) ) );
+		$this->assertTrue( Fe_Addon_Rules::eligible( $t, 7, '', 3, '2026-12-01', null ) );
+		$this->assertTrue( Fe_Addon_Rules::eligible( $t, 7, '', 3, '2026-12-01', array( '2026-12-10' ) ) );
+	}
+
+	public function test_guest_resolve_uses_offer_dates() {
+		$target = $this->dec10_target();
+		$lookup = function ( $id ) use ( $target ) {
+			return 42 === $id ? $target : null;
+		};
+		$this->assertSame( 0, Fe_Addon_Rules::resolve_guest( '42', array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ), 'a@b.c', $lookup, '2026-12-01' ) );
+		$this->assertSame( 42, Fe_Addon_Rules::resolve_guest( '42', array( array( 'event_id' => 7, 'dates' => null ) ), 'a@b.c', $lookup, '2026-12-01' ) );
+	}
+
+	public function test_meta_offers_parses_json_and_falls_back() {
+		$this->assertSame(
+			array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ),
+			Fe_Addon_Rules::meta_offers( array( 'fe_offers' => '[{"event_id":7,"dates":["2026-12-18"]}]' ) )
+		);
+		$this->assertSame(
+			array( array( 'event_id' => 5, 'dates' => null ), array( 'event_id' => 9, 'dates' => null ) ),
+			Fe_Addon_Rules::meta_offers( array( 'fe_event_id' => 5, 'fe_event_ids' => '5,9' ) )
+		);
+	}
 }

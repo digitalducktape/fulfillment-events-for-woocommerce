@@ -62,10 +62,11 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 	 * @param array $package WooCommerce package.
 	 */
 	public function calculate_shipping( $package = array() ) {
-		$event_ids = Fe_Cart::package_event_ids( $package );
-		if ( ! $event_ids ) {
+		$offers = isset( $package['fe_offers'] ) ? Fe_Cart_Grouper::to_offers( $package['fe_offers'] ) : Fe_Cart_Grouper::to_offers( Fe_Cart::package_event_ids( $package ) );
+		if ( ! $offers ) {
 			return;
 		}
+		$event_ids   = array_column( $offers, 'event_id' );
 		$event_id    = $event_ids[0];
 		$event_name  = isset( $package['fe_event_name'] ) ? (string) $package['fe_event_name'] : '';
 		$customer_id = isset( $package['fe_customer_id'] ) ? (int) $package['fe_customer_id'] : 0;
@@ -84,6 +85,7 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 					'meta_data' => array(
 						'fe_event_id'    => $event_id,
 						'fe_event_ids'   => implode( ',', $event_ids ),
+						'fe_offers'      => wp_json_encode( $offers ),
 						'fe_event_name'  => $event_name,
 						'fe_addon_guest' => 'yes',
 					),
@@ -109,8 +111,8 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 				continue;
 			}
 			$ok = false;
-			foreach ( $event_ids as $eid ) {
-				$ok = $ok || Fe_Addon_Rules::eligible( $data['target'], $eid, '', $customer_id, $today );
+			foreach ( $offers as $offer ) {
+				$ok = $ok || Fe_Addon_Rules::eligible( $data['target'], $offer['event_id'], '', $customer_id, $today, $offer['dates'] );
 			}
 			if ( ! $ok ) {
 				continue;

@@ -328,6 +328,7 @@ class Fe_Addon_Field {
 				'fe_addon_guest' => (string) $item->get_meta( 'fe_addon_guest' ),
 				'fe_event_id'    => (int) $item->get_meta( 'fe_event_id' ),
 				'fe_event_ids'   => (string) $item->get_meta( 'fe_event_ids' ),
+				'fe_offers'      => (string) $item->get_meta( 'fe_offers' ),
 				'fe_event_name'  => (string) $item->get_meta( 'fe_event_name' ),
 			);
 		}
@@ -486,13 +487,14 @@ class Fe_Addon_Field {
 					$input = self::clean( self::saved_block_value( $order ) );
 				}
 			}
-			$event_ids = Fe_Addon_Rules::meta_event_ids(
+			$offers    = Fe_Addon_Rules::meta_offers(
 				array(
 					'fe_event_id'  => $item->get_meta( 'fe_event_id' ),
 					'fe_event_ids' => $item->get_meta( 'fe_event_ids' ),
+					'fe_offers'    => $item->get_meta( 'fe_offers' ),
 				)
 			);
-			$target_id = Fe_Addon_Rules::resolve_guest( $input, $event_ids, (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ), self::today() );
+			$target_id = Fe_Addon_Rules::resolve_guest( $input, $offers, (string) $order->get_billing_email(), array( __CLASS__, 'lookup' ), self::today() );
 			$data      = $target_id ? self::target_data( wc_get_order( $target_id ) ) : null;
 			if ( ! $data ) {
 				if ( ! $noted ) {

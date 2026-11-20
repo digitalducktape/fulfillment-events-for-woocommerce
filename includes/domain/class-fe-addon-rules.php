@@ -36,9 +36,11 @@ class Fe_Addon_Rules {
 	 * @param string $billing_email Billing email of the new order ('' when unknown).
 	 * @param int    $customer_id   Logged-in customer id (0 for guests).
 	 * @param string $today         Store-local Y-m-d; when set, targets dated before it are not eligible.
+	 * @param array|null $allowed_dates Dates the items being added may ship on; null for any.
+	 *                                  A product limited to Dec 18 can't join a Dec 10 order.
 	 * @return bool
 	 */
-	public static function eligible( array $target, $event_id, $billing_email, $customer_id, $today = '' ) {
+	public static function eligible( array $target, $event_id, $billing_email, $customer_id, $today = '', $allowed_dates = null ) {
 		$event_id = (int) $event_id;
 		if ( $event_id <= 0 || (int) ( isset( $target['event_id'] ) ? $target['event_id'] : 0 ) !== $event_id ) {
 			return false;
@@ -52,6 +54,9 @@ class Fe_Addon_Rules {
 		}
 		$date = isset( $target['date'] ) ? (string) $target['date'] : '';
 		if ( '' !== (string) $today && ( '' === $date || $date < (string) $today ) ) {
+			return false;
+		}
+		if ( is_array( $allowed_dates ) && ! in_array( $date, array_map( 'strval', $allowed_dates ), true ) ) {
 			return false;
 		}
 		$customer_id = (int) $customer_id;
@@ -82,9 +87,9 @@ class Fe_Addon_Rules {
 	 * parent (the number in the split confirmation email) resolves to its
 	 * child for the package's event.
 	 *
-	 * @param string    $input         Typed order number.
-	 * @param int|int[] $event_id      Package event, or every event the package offers;
-	 *                                 the target must be in one of them.
+	 * @param string          $input         Typed order number.
+	 * @param int|int[]|array $event_id      Package event, its event ids, or its offers
+	 *                                       (Fe_Cart_Grouper::to_offers); the target must fit one.
 	 * @param string   $billing_email New order's billing email.
 	 * @param callable $lookup        int order id => ?array target (see eligible()); a split
 	 *                                parent is {status: SPLIT_STATUS, children: int[]}.
@@ -100,22 +105,22 @@ class Fe_Addon_Rules {
 		if ( ! is_array( $target ) ) {
 			return 0;
 		}
-		$event_ids = array_map( 'intval', (array) $event_id );
+		$offers = Fe_Cart_Grouper::to_offers( $event_id );
 		if ( isset( $target['status'] ) && self::SPLIT_STATUS === $target['status'] ) {
 			$children = isset( $target['children'] ) ? (array) $target['children'] : array();
-			foreach ( $event_ids as $eid ) {
+			foreach ( $offers as $offer ) {
 				foreach ( $children as $child_id ) {
 					$child_id = (int) $child_id;
 					$child    = $child_id > 0 ? call_user_func( $lookup, $child_id ) : null;
-					if ( is_array( $child ) && self::eligible( $child, $eid, $billing_email, 0, $today ) ) {
+					if ( is_array( $child ) && self::eligible( $child, $offer['event_id'], $billing_email, 0, $today, $offer['dates'] ) ) {
 						return $child_id;
 					}
 				}
 			}
 			return 0;
 		}
-		foreach ( $event_ids as $eid ) {
-			if ( self::eligible( $target, $eid, $billing_email, 0, $today ) ) {
+		foreach ( $offers as $offer ) {
+			if ( self::eligible( $target, $offer['event_id'], $billing_email, 0, $today, $offer['dates'] ) ) {
 				return $id;
 			}
 		}
@@ -123,8 +128,27 @@ class Fe_Addon_Rules {
 	}
 
 	/**
-	 * Event ids a guest add-on line may target: the comma-separated
-	 * fe_event_ids of a multi-event package, else fe_event_id.
+	 * What a guest add-on line may target: the JSON fe_offers of 0.5.0
+	 * packages (events and allowed dates), else the event ids.
+	 *
+	 * @param array $meta Rate or item meta.
+	 * @return array[] Offers list.
+	 */
+	public static function meta_offers( array $meta ) {
+		if ( isset( $meta['fe_offers'] ) && '' !== (string) $meta['fe_offers'] ) {
+			$decoded = json_decode( (string) $meta['fe_offers'], true );
+			if ( is_array( $decoded ) ) {
+				$offers = Fe_Cart_Grouper::to_offers( $decoded );
+				if ( $offers ) {
+					return $offers;
+				}
+			}
+		}
+		return Fe_Cart_Grouper::to_offers( self::meta_event_ids( $meta ) );
+	}
+
+	/**
+	 * Event ids from guest add-on meta (comma-separated fe_event_ids, else fe_event_id).
 	 *
 	 * @param array $meta Rate or item meta.
 	 * @return int[]
@@ -174,7 +198,7 @@ class Fe_Addon_Rules {
 			if ( ! is_array( $meta ) || ! isset( $meta['fe_addon_guest'] ) || 'yes' !== $meta['fe_addon_guest'] ) {
 				continue;
 			}
-			if ( 0 === self::resolve_guest( $input, self::meta_event_ids( $meta ), $billing_email, $lookup, $today ) ) {
+			if ( 0 === self::resolve_guest( $input, self::meta_offers( $meta ), $billing_email, $lookup, $today ) ) {
 				return array(
 					'number'     => trim( ltrim( trim( (string) $input ), '#' ) ),
 					'event_name' => isset( $meta['fe_event_name'] ) ? (string) $meta['fe_event_name'] : '',
