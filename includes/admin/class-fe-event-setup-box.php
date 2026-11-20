@@ -38,6 +38,7 @@ class Fe_Event_Setup_Box {
 			<?php self::section_dates( $rows, $ticks, $zones ); ?>
 			<?php self::section_products( $post->ID, $event, $dates ); ?>
 			<?php Fe_Zone_Grid::render_prices( $rules, $dates ); ?>
+			<?php Fe_Zone_Grid::render_legacy( Fe_Event_Setup::legacy_rules( $rules, $dates, $ids ) ); ?>
 		</div>
 		<?php
 	}
@@ -169,6 +170,7 @@ class Fe_Event_Setup_Box {
 		}
 		foreach ( $list as $zone_id => $zone_name ) {
 			$on = ! isset( $ticks[ $type ][ $zone_id ] ) || $ticks[ $type ][ $zone_id ];
+			echo '<input type="hidden" name="' . esc_attr( $name ) . '[zones_shown][' . esc_attr( $type ) . '][]" value="' . esc_attr( $zone_id ) . '">';
 			echo '<label class="fe-zone"><input type="checkbox" name="' . esc_attr( $name ) . '[zones][' . esc_attr( $type ) . '][]" value="' . esc_attr( $zone_id ) . '"' . checked( $on, true, false ) . '> ' . esc_html( $zone_name ) . '</label>';
 		}
 		echo '</span>';

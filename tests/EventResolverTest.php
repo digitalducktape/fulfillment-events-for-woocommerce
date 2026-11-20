@@ -161,4 +161,11 @@ class EventResolverTest extends TestCase {
 		$this->assertSame( array( 9, 7 ), array_column( Fe_Event_Resolver::open_offers( array( 7, 9 ), $events, '2026-12-01', 42 ), 'event_id' ) );
 		$this->assertSame( array( 7, 9 ), Fe_Event_Resolver::open_ids( array( 7, 9 ), $events, '2026-12-01' ) );
 	}
+
+	public function test_limit_matching_every_remaining_date_counts_as_no_limit() {
+		$events = $this->limited_events( array( 42 => array( '2026-12-18' ), 43 => array( '2026-12-10', '2026-12-18' ) ) );
+		// Day after Dec 10: the cookie box and the rest both ship only Dec 18, so they share a shipping choice.
+		$this->assertSame( array( array( 'event_id' => 7, 'dates' => null ) ), Fe_Event_Resolver::open_offers( array( 7 ), $events, '2026-12-11', 42 ) );
+		$this->assertSame( array( array( 'event_id' => 7, 'dates' => null ) ), Fe_Event_Resolver::open_offers( array( 7 ), $events, '2026-12-01', 43 ) );
+	}
 }

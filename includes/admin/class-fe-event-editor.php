@@ -68,7 +68,8 @@ class Fe_Event_Editor {
 			Fe_Event_Setup::ticks_from_post( $date_rows, $zones_by_type ),
 			Fe_Event_Setup::prices_from_post( isset( $post['fe_prices'] ) && is_array( $post['fe_prices'] ) ? array_values( $post['fe_prices'] ) : array() ),
 			$date_list,
-			$zones_by_type
+			$zones_by_type,
+			! empty( $post['fe_legacy_posted'] ) ? array_map( 'strval', isset( $post['fe_keep_rules'] ) ? (array) $post['fe_keep_rules'] : array() ) : null
 		);
 		$exceptions = Fe_Event_Setup::exceptions_from_post( isset( $post['fe_exceptions'] ) && is_array( $post['fe_exceptions'] ) ? array_values( $post['fe_exceptions'] ) : array(), $date_list );
 

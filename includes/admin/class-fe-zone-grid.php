@@ -115,6 +115,48 @@ class Fe_Zone_Grid {
 	}
 
 	/**
+	 * Settings from earlier versions the screen has no tick for (for example
+	 * pickup turned off for a zone). They still apply at checkout, so they
+	 * are listed here and can be removed.
+	 *
+	 * @param array[] $legacy From Fe_Event_Setup::legacy_rules().
+	 */
+	public static function render_legacy( array $legacy ) {
+		if ( ! $legacy ) {
+			return;
+		}
+		$types = array(
+			'delivery' => __( 'Delivery', 'fulfillment-events-for-woocommerce' ),
+			'pickup'   => __( 'Pickup', 'fulfillment-events-for-woocommerce' ),
+			'courier'  => __( 'Courier', 'fulfillment-events-for-woocommerce' ),
+		);
+		?>
+		<div class="fe-legacy">
+			<h4 class="fe-subtitle"><?php esc_html_e( 'Also turned off for this event', 'fulfillment-events-for-woocommerce' ); ?></h4>
+			<p class="description"><?php esc_html_e( 'Set in an earlier version. Remove a row to turn it back on.', 'fulfillment-events-for-woocommerce' ); ?></p>
+			<input type="hidden" name="fe_legacy_posted" value="1">
+			<?php foreach ( $legacy as $rule ) : ?>
+				<?php
+				$date  = isset( $rule['date'] ) && null !== $rule['date'] ? (string) $rule['date'] : '';
+				$label = sprintf(
+					/* translators: 1: service, 2: zone, 3: date or "all dates" */
+					__( '%1$s off in %2$s, %3$s', 'fulfillment-events-for-woocommerce' ),
+					isset( $types[ $rule['type'] ] ) ? $types[ $rule['type'] ] : $rule['type'],
+					self::zone_name( (int) $rule['zone_id'] ),
+					'' === $date ? __( 'all dates', 'fulfillment-events-for-woocommerce' ) : self::short_date( $date )
+				);
+				?>
+				<div class="fe-row" data-fe-row>
+					<input type="hidden" name="fe_keep_rules[]" value="<?php echo esc_attr( Fe_Event_Setup::rule_key( $rule ) ); ?>">
+					<span><?php echo esc_html( $label ); ?></span>
+					<button type="button" class="button-link button-link-delete" data-fe-remove aria-label="<?php echo esc_attr( $label ); ?>"><span class="dashicons dashicons-trash" aria-hidden="true"></span> <?php esc_html_e( 'Remove', 'fulfillment-events-for-woocommerce' ); ?></button>
+				</div>
+			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * One price row.
 	 *
 	 * @param string   $i     Row index or the __p__ placeholder.

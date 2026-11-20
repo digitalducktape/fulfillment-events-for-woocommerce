@@ -61,9 +61,15 @@ class Fe_Event_Setup {
 			}
 			$posted = ! empty( $row['zones_posted'] );
 			foreach ( self::ZONE_TYPES as $type ) {
-				$on                      = $posted && isset( $row['zones'][ $type ] ) ? array_map( 'intval', (array) $row['zones'][ $type ] ) : array();
+				$on    = $posted && isset( $row['zones'][ $type ] ) ? array_map( 'intval', (array) $row['zones'][ $type ] ) : array();
+				$zones = self::zone_ids( $zones_by_type, $type );
+				// Only zones the card showed can be unticked; one added to the
+				// shipping zone while the screen was open keeps its rules.
+				if ( $posted && isset( $row['zones_shown'][ $type ] ) ) {
+					$zones = array_values( array_intersect( $zones, array_map( 'intval', (array) $row['zones_shown'][ $type ] ) ) );
+				}
 				$ticks[ $date ][ $type ] = array();
-				foreach ( self::zone_ids( $zones_by_type, $type ) as $zone ) {
+				foreach ( $zones as $zone ) {
 					$ticks[ $date ][ $type ][ $zone ] = ! $posted || in_array( $zone, $on, true );
 				}
 			}
@@ -81,11 +87,13 @@ class Fe_Event_Setup {
 	 * @param array    $existing      Rules stored before the save.
 	 * @param array    $ticks         From ticks_from_post().
 	 * @param array    $prices        From prices_from_post().
-	 * @param string[] $dates         The event's dates after the save.
-	 * @param array    $zones_by_type type => zone ids shown on the screen.
+	 * @param string[]      $dates         The event's dates after the save.
+	 * @param array         $zones_by_type type => zone ids shown on the screen.
+	 * @param string[]|null $keep_legacy   Keys (rule_key()) of the legacy_rules() still listed on
+	 *                                     the screen; others were removed there. Null keeps them all.
 	 * @return array{rules: array[], dropped: int}
 	 */
-	public static function rules_from_setup( array $existing, array $ticks, array $prices, array $dates, array $zones_by_type ) {
+	public static function rules_from_setup( array $existing, array $ticks, array $prices, array $dates, array $zones_by_type, $keep_legacy = null ) {
 		$kept = array();
 		foreach ( $existing as $rule ) {
 			$mode = isset( $rule['mode'] ) ? (string) $rule['mode'] : '';
@@ -93,6 +101,9 @@ class Fe_Event_Setup {
 				continue;
 			}
 			if ( 'off' === $mode && self::in_scope( $rule, $dates, $zones_by_type ) ) {
+				continue;
+			}
+			if ( 'off' === $mode && is_array( $keep_legacy ) && ! in_array( self::rule_key( $rule ), $keep_legacy, true ) ) {
 				continue;
 			}
 			$kept[] = $rule;
@@ -133,6 +144,37 @@ class Fe_Event_Setup {
 			'rules'   => Fe_Zone_Rule_Repo::normalize_rules( array_merge( $kept, $priced, array_values( $offs ) ) ),
 			'dropped' => $dropped,
 		);
+	}
+
+	/**
+	 * "Off" rules the screen can't show as ticks (pickup turned off for a
+	 * zone, zones without the Event method, dates no longer in the event),
+	 * listed so they can be seen and removed.
+	 *
+	 * @param array    $existing      Stored rules.
+	 * @param string[] $dates         Event dates.
+	 * @param array    $zones_by_type type => zone ids shown on the screen.
+	 * @return array[]
+	 */
+	public static function legacy_rules( array $existing, array $dates, array $zones_by_type ) {
+		$out = array();
+		foreach ( $existing as $rule ) {
+			if ( isset( $rule['mode'] ) && 'off' === $rule['mode'] && ! self::in_scope( $rule, $dates, $zones_by_type ) ) {
+				$out[] = $rule;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * A rule's identity, "zone|type|date" ('' for all dates).
+	 *
+	 * @param array $rule Rule.
+	 * @return string
+	 */
+	public static function rule_key( array $rule ) {
+		$date = isset( $rule['date'] ) && null !== $rule['date'] ? (string) $rule['date'] : '';
+		return (int) $rule['zone_id'] . '|' . (string) $rule['type'] . '|' . $date;
 	}
 
 	/**

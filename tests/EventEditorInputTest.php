@@ -116,4 +116,12 @@ final class EventEditorInputTest extends TestCase {
 		$out = Fe_Event_Editor::parse_post( $this->base() );
 		$this->assertSame( array(), $out['excluded_ids'] );
 	}
+
+	public function test_removed_legacy_rule_is_dropped_only_when_the_list_was_posted() {
+		$existing = array( array( 'zone_id' => 1, 'type' => 'pickup', 'date' => null, 'mode' => 'off', 'cost' => null ) );
+		$base     = array( 'fe_dates' => array( array( 'date' => '2026-12-18', 'pickup' => '1' ) ) );
+		$this->assertCount( 1, Fe_Event_Editor::parse_post( $base, array(), $existing )['rules'] );
+		$this->assertCount( 0, Fe_Event_Editor::parse_post( $base + array( 'fe_legacy_posted' => '1' ), array(), $existing )['rules'] );
+		$this->assertCount( 1, Fe_Event_Editor::parse_post( $base + array( 'fe_legacy_posted' => '1', 'fe_keep_rules' => array( '1|pickup|' ) ), array(), $existing )['rules'] );
+	}
 }

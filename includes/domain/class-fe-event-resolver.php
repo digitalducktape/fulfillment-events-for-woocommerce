@@ -80,9 +80,14 @@ class Fe_Event_Resolver {
 				continue;
 			}
 			sort( $allowed );
+			$future = array_values( array_unique( $future ) );
+			sort( $future );
+			// A limit that leaves every remaining date is no limit: the product
+			// shares its shipping choice with the rest of the event (after Dec 10
+			// passes, a Dec 18-only box and the cookies ship together).
 			$offers[ $id ]  = array(
 				'event_id' => $id,
-				'dates'    => $limited ? $allowed : null,
+				'dates'    => $limited && $allowed !== $future ? $allowed : null,
 			);
 			$next_of[ $id ] = $allowed[0];
 		}

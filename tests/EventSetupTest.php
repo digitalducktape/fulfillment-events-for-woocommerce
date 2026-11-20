@@ -113,4 +113,37 @@ final class EventSetupTest extends TestCase {
 			Fe_Event_Setup::products_to_link( array( 12, 13, 5 ), array( 5 ), array( 12 => array( 40 ), 13 => array( 77 ) ), array( 77 ) )
 		);
 	}
+
+	public function test_zone_added_while_screen_was_open_is_not_turned_off() {
+		$rows  = array(
+			array(
+				'date'         => '2026-12-10',
+				'zones_posted' => '1',
+				'zones_shown'  => array( 'courier' => array( '1' ), 'delivery' => array( '1', '2' ) ),
+				'zones'        => array( 'courier' => array( '1' ), 'delivery' => array( '1', '2' ) ),
+			),
+		);
+		$ticks = Fe_Event_Setup::ticks_from_post( $rows, $this->zones() );
+		$this->assertSame( array( 1 => true ), $ticks['2026-12-10']['courier'] );
+		$out = Fe_Event_Setup::rules_from_setup( array(), $ticks, array(), array( '2026-12-10' ), $this->zones() );
+		$this->assertSame( array(), $out['rules'] );
+	}
+
+	public function test_legacy_rules_are_listed_and_can_be_removed() {
+		$existing = array(
+			$this->rule( 1, 'pickup', null, 'off' ),
+			$this->rule( 2, 'pickup', '2026-12-18', 'off' ),
+			$this->rule( 1, 'delivery', null, 'inherit' ),
+			$this->rule( 3, 'courier', null, 'off' ),
+		);
+		$legacy = Fe_Event_Setup::legacy_rules( $existing, self::DATES, $this->zones() );
+		$this->assertSame( array( '1|pickup|', '2|pickup|2026-12-18' ), array_map( array( 'Fe_Event_Setup', 'rule_key' ), $legacy ) );
+		$ticks = Fe_Event_Setup::ticks_from_rules( $existing, self::DATES, $this->zones() );
+		$out   = Fe_Event_Setup::rules_from_setup( $existing, $ticks, array(), self::DATES, $this->zones(), array( '2|pickup|2026-12-18' ) );
+		$this->assertNull( $this->find( $out['rules'], 1, 'pickup', null ) );
+		$this->assertNotNull( $this->find( $out['rules'], 2, 'pickup', '2026-12-18' ) );
+		$this->assertNotNull( $this->find( $out['rules'], 1, 'delivery', null ) );
+		$all = Fe_Event_Setup::rules_from_setup( $existing, $ticks, array(), self::DATES, $this->zones() );
+		$this->assertNotNull( $this->find( $all['rules'], 1, 'pickup', null ) );
+	}
 }
