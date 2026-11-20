@@ -168,6 +168,8 @@ class Fe_Order_Stamper {
 		if ( ! empty( $package['fe_group'] ) ) {
 			$item->update_meta_data( Fe_Meta::GROUP, (string) $package['fe_group'] );
 		}
+		// The date picker's list of dates belongs to checkout, not the order.
+		$item->delete_meta_data( 'fe_dates' );
 	}
 
 	/**

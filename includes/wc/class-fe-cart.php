@@ -475,6 +475,9 @@ class Fe_Cart {
 				// cart rated before the customer's order existed keeps rates
 				// with no "Add to my order" option.
 				$out[ $i ]['fe_addon_targets'] = self::addon_targets_key( isset( $package['fe_customer_id'] ) ? (int) $package['fe_customer_id'] : 0 );
+				// The date picked for this section; part of the package so a
+				// new pick recalculates its rates.
+				$out[ $i ]['fe_chosen'] = Fe_Checkout_Dates::chosen( (string) $package['fe_group'] );
 			}
 		}
 		return $out;
@@ -767,7 +770,95 @@ class Fe_Cart {
 				unset( $rates[ $id ] );
 			}
 		}
-		return $rates;
+		return $is_event ? self::one_date( $rates, isset( $package['fe_chosen'] ) ? (string) $package['fe_chosen'] : '' ) : $rates;
+	}
+
+	/**
+	 * Methods whose rates are one per date, collapsed to the chosen date.
+	 */
+	const DATED_METHODS = array( 'fe_delivery', 'fe_pickup', 'fe_courier' );
+
+	/**
+	 * Keeps only the rates of one date, re-keyed per service ("fe_delivery:3")
+	 * so the customer's service stays selected when they change the date.
+	 * Each kept rate carries the section's dates in `fe_dates` for the date
+	 * picker.
+	 *
+	 * @param WC_Shipping_Rate[] $rates  Rates of an event package.
+	 * @param string             $chosen Date the customer picked, or ''.
+	 * @return WC_Shipping_Rate[]
+	 */
+	private static function one_date( array $rates, $chosen ) {
+		$rows = array();
+		foreach ( $rates as $id => $rate ) {
+			if ( ! is_object( $rate ) || ! method_exists( $rate, 'get_meta_data' ) ) {
+				continue;
+			}
+			$meta   = (array) $rate->get_meta_data();
+			$rows[] = array(
+				'id'          => (string) $id,
+				'method_id'   => (string) $rate->get_method_id(),
+				'instance_id' => method_exists( $rate, 'get_instance_id' ) ? (int) $rate->get_instance_id() : 0,
+				'date'        => isset( $meta['fe_date'] ) ? (string) $meta['fe_date'] : '',
+			);
+		}
+		$pick = self::choose_date( $rows, $chosen );
+		$out  = array();
+		foreach ( $rates as $id => $rate ) {
+			if ( ! isset( $pick['keep'][ (string) $id ] ) ) {
+				if ( ! is_object( $rate ) || ! method_exists( $rate, 'get_meta_data' ) ) {
+					$out[ $id ] = $rate;
+				}
+				continue;
+			}
+			$new_id = $pick['keep'][ (string) $id ];
+			if ( $new_id !== (string) $id ) {
+				$rate->set_id( $new_id );
+				$rate->add_meta_data( 'fe_dates', $pick['dates'] );
+			}
+			$out[ $new_id ] = $rate;
+		}
+		return $out;
+	}
+
+	/**
+	 * Pure: which rates to keep for a section. Dated rates (delivery, pickup,
+	 * courier) are kept only for the chosen date, falling back to the
+	 * earliest, one per service; other rates are kept as they are.
+	 *
+	 * @param array[] $rows   List of {id, method_id, instance_id, date}, in rate order.
+	 * @param string  $chosen Chosen date (Y-m-d) or ''.
+	 * @return array{date: ?string, dates: string[], keep: array<string,string>} keep maps old id => new id.
+	 */
+	public static function choose_date( array $rows, $chosen ) {
+		$dates = array();
+		foreach ( $rows as $row ) {
+			if ( in_array( $row['method_id'], self::DATED_METHODS, true ) && '' !== $row['date'] ) {
+				$dates[ $row['date'] ] = true;
+			}
+		}
+		$dates = array_keys( $dates );
+		sort( $dates );
+		$date = null;
+		if ( $dates ) {
+			$date = in_array( (string) $chosen, $dates, true ) ? (string) $chosen : $dates[0];
+		}
+		$keep = array();
+		foreach ( $rows as $row ) {
+			if ( ! in_array( $row['method_id'], self::DATED_METHODS, true ) || '' === $row['date'] ) {
+				$keep[ $row['id'] ] = $row['id'];
+				continue;
+			}
+			$new_id = $row['method_id'] . ':' . (int) $row['instance_id'];
+			if ( $row['date'] === $date && ! in_array( $new_id, $keep, true ) ) {
+				$keep[ $row['id'] ] = $new_id;
+			}
+		}
+		return array(
+			'date'  => $date,
+			'dates' => $dates,
+			'keep'  => $keep,
+		);
 	}
 
 	/**

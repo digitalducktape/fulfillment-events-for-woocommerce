@@ -28,6 +28,7 @@ class Fe_Plugin {
 		Fe_Activator::maybe_upgrade();
 		add_action( 'init', array( 'Fe_Event_Repo', 'register_post_type' ) );
 		Fe_Cart::init();
+		Fe_Checkout_Dates::init();
 		Fe_Order_Stamper::init();
 		Fe_Addon_Field::init();
 		Fe_Split_Status::init();

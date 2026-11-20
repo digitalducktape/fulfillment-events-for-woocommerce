@@ -149,6 +149,14 @@ class Fe_Admin {
 				</tbody></table>
 				<?php submit_button(); ?>
 			</form>
+			<div class="fe-about">
+				<p>
+					<?php esc_html_e( 'Fulfillment Events is open source.', 'fulfillment-events-for-woocommerce' ); ?>
+					<a href="<?php echo esc_url( FE_REPO_URL ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'See the project on GitHub', 'fulfillment-events-for-woocommerce' ); ?></a>
+				</p>
+				<?php // A plain link styled like the Buy Me a Coffee button: the official button loads a script from their servers on every settings visit. ?>
+				<a class="fe-bmc" href="<?php echo esc_url( FE_SUPPORT_URL ); ?>" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">❤️</span> <?php esc_html_e( 'Support this plugin', 'fulfillment-events-for-woocommerce' ); ?></a>
+			</div>
 		</div>
 		<?php
 	}

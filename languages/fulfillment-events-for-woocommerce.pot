@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.5.1\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-20T02:34:07+00:00\n"
+"POT-Creation-Date: 2026-11-20T03:27:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -40,7 +40,8 @@ msgid "https://www.ed-wolf.com/"
 msgstr ""
 
 #: includes/admin/class-fe-admin.php:46
-#: includes/class-fe-plugin.php:92
+#: includes/admin/class-fe-admin.php:158
+#: includes/class-fe-plugin.php:93
 msgid "Support this plugin"
 msgstr ""
 
@@ -61,7 +62,7 @@ msgid "Settings"
 msgstr ""
 
 #: includes/admin/class-fe-admin.php:123
-#: includes/admin/class-fe-admin.php:162
+#: includes/admin/class-fe-admin.php:170
 #: includes/admin/class-fe-event-editor.php:308
 #: includes/admin/class-fe-locations-page.php:30
 msgid "You do not have permission to do this."
@@ -101,6 +102,14 @@ msgstr ""
 
 #: includes/admin/class-fe-admin.php:147
 msgid "Delete events, locations and zone rules when the plugin is deleted"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:154
+msgid "Fulfillment Events is open source."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:155
+msgid "See the project on GitHub"
 msgstr ""
 
 #: includes/admin/class-fe-event-editor.php:209
@@ -238,8 +247,10 @@ msgstr ""
 msgid "Edit shipping zones and their prices"
 msgstr ""
 
+#. translators: %s: event name, e.g. Holiday Pre-order 2026
 #: includes/admin/class-fe-event-setup-box.php:127
 #: includes/admin/class-fe-zone-grid.php:197
+#: includes/wc/class-fe-checkout-dates.php:115
 msgid "Date"
 msgstr ""
 
@@ -620,7 +631,7 @@ msgstr ""
 msgid "Remove this price change"
 msgstr ""
 
-#: includes/class-fe-plugin.php:80
+#: includes/class-fe-plugin.php:81
 msgid "Fulfillment Events for WooCommerce needs WooCommerce to be installed and active."
 msgstr ""
 
@@ -689,15 +700,25 @@ msgid "Combined delivery"
 msgstr ""
 
 #. translators: %s: event name.
-#: includes/wc/class-fe-cart.php:799
+#: includes/wc/class-fe-cart.php:890
 #, php-format
 msgid "%s items aren't available for this address. Try a different address or remove them from your cart."
 msgstr ""
 
 #. translators: 1: event name, 2: postcode.
-#: includes/wc/class-fe-cart.php:802
+#: includes/wc/class-fe-cart.php:893
 #, php-format
 msgid "%1$s items aren't available for %2$s. Try a different address or remove them from your cart."
+msgstr ""
+
+#. translators: %s: event name, e.g. Holiday Pre-order 2026
+#: includes/wc/class-fe-checkout-dates.php:115
+#, php-format
+msgid "Date for %s"
+msgstr ""
+
+#: includes/wc/class-fe-checkout-dates.php:189
+msgid "Date pickers for event shipping sections."
 msgstr ""
 
 #: includes/wc/class-fe-email-split-confirmation.php:30

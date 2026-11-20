@@ -3,7 +3,7 @@
  * Plugin Name:          Fulfillment Events for WooCommerce
  * Plugin URI:           https://github.com/digitalducktape/fulfillment-events-for-woocommerce
  * Description:          Sell products tied to dated fulfillment events (pickup, delivery, courier), check out several dates in one payment, and split the paid order into one order per date.
- * Version:              0.5.1
+ * Version:              0.6.0
  * Requires at least:    6.0
  * Requires PHP:         7.4
  * Requires Plugins:     woocommerce
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'FE_VERSION' ) ) {
-	define( 'FE_VERSION', '0.5.1' );
+	define( 'FE_VERSION', '0.6.0' );
 }
 if ( ! defined( 'FE_DB_VERSION' ) ) {
 	define( 'FE_DB_VERSION', 2 );
@@ -33,6 +33,9 @@ if ( ! defined( 'FE_PLUGIN_FILE' ) ) {
 }
 if ( ! defined( 'FE_PLUGIN_DIR' ) ) {
 	define( 'FE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+}
+if ( ! defined( 'FE_REPO_URL' ) ) {
+	define( 'FE_REPO_URL', 'https://github.com/digitalducktape/fulfillment-events-for-woocommerce' );
 }
 if ( ! defined( 'FE_SUPPORT_URL' ) ) {
 	define( 'FE_SUPPORT_URL', 'https://buymeacoffee.com/digitalducktape' );
@@ -65,6 +68,7 @@ require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-addon-rules.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-event-setup.php';
 require_once FE_PLUGIN_DIR . 'includes/functions.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-cart.php';
+require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-checkout-dates.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-order-stamper.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-addon-field.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-split-status.php';

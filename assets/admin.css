@@ -63,3 +63,9 @@
 .fe-badge { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 12px; }
 .fe-badge--warn { background: #fcf9e8; color: #6e4b00; border: 1px solid #dba617; }
 .column-fe_events { width: 9em; }
+
+/* Settings: project links. */
+.fe-about { margin-top: 32px; padding-top: 16px; border-top: 1px solid #dcdcde; }
+.fe-bmc { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid #000; border-radius: 10px; background: #ffdd00; color: #000; font-size: 16px; font-weight: 600; text-decoration: none; }
+.fe-bmc:hover, .fe-bmc:focus { background: #ffe94d; color: #000; }
+.fe-bmc:focus { outline: 2px solid #2271b1; outline-offset: 2px; box-shadow: none; }
