@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.4.5
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,15 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.5.0 =
+* One "Event setup" screen instead of four boxes: when it sells, the dates, the products, and (rarely needed) price changes.
+* Each date says what runs: delivery (time and which zones), pickup (time and place) and courier (which zones), each on or off. Courier can now be turned off for a date.
+* Product exceptions on the event: limit a product to some of the event's dates, or take it out of the event. One holiday event can now hold a product that ships only on Dec 18.
+* A date-limited product gets its own shipping choice at checkout, offering only its dates.
+* "Add to my order" only offers orders on a date the new items allow.
+* Products show their date limits on the edit screen and in the Products list; the events list counts each event's exceptions.
+* Events from 0.4.x keep their settings: zones turned off for a whole event show as unticked on every date, and price overrides move to "Change a price for this event".
 
 = 0.4.5 =
 * Fix: "Add to my order" could be missing at checkout when the same cart had been priced before the customer's order existed. Cached rates now refresh when the customer's open orders change.

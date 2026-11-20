@@ -177,13 +177,16 @@ that type isn't offered there (e.g. Zone C has no Event Delivery).
 
 1. **WooCommerce → Settings → Shipping** (stock): create zones by ZIP, add the
    Event methods with each zone's default price.
-2. **Fulfillment → Events → Add**: name, sales window, dates table (date,
-   which types, windows, pickup location), and a **zone × type grid**
-   pre-filled from zone defaults — admin only touches exceptions ("no Zone B
-   delivery for the fair", "$25 Zone B on Dec 18").
+2. **Fulfillment → Events → Add** (0.5.0: one "Event setup" box, see
+   `docs/superpowers/specs/2026-11-19-one-screen-event-editor-design.md`):
+   when it sells; each date with delivery (time, zones), pickup (time,
+   place) and courier (zones), each on or off; products (categories,
+   individual products, and exceptions: "only on" some dates or "not in
+   this event"); and a rarely used "Change a price for this event" list.
+   Unticked zones are stored as per-date `off` zone rules.
 3. **Attach products**: on the event screen pick categories/products; also a
-   "Fulfillment events" box on the product edit screen and a field on the
-   category edit screen.
+   "Fulfillment events" box on the product edit screen (with a read-only
+   line for date limits) and a field on the category edit screen.
 4. **Fulfillment → Locations**: manage pickup locations.
 5. "Duplicate" (event list row action and a button in the edit screen's
    Publish box): an exact draft copy (dates, sales window, rules,
@@ -394,6 +397,8 @@ orders already placed keep their `_fe_*` meta.
 
 - One shipping fee **per date** (two delivery dates = two fees).
 - Multi-event product → offered **every open event's dates**; the chosen rate picks the event.
+- Date-limited product (0.5.0) → offered only its dates, in its own shipping
+  choice; add-ons to an order on another date are refused.
 - Split = **one child order per event group**; a non-event shippable group is
   its own child; duplicate same-date fees are credited back.
 - Customer gets **one** confirmation email (stock processing email suppressed
