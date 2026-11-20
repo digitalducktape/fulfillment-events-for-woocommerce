@@ -95,6 +95,9 @@ final class CartPackagesTest extends TestCase {
 		// Today is part of each package, so the rate cache hash rolls daily.
 		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}$/', $out[0]['fe_today'] );
 		$this->assertSame( $out[0]['fe_today'], $out[2]['fe_today'] );
+		// The plugin version is part of each package, so an update refreshes
+		// shipping options WooCommerce cached in the customer's session.
+		$this->assertArrayHasKey( 'fe_version', $out[0] );
 	}
 
 	public function test_inert_input_returned_unchanged() {

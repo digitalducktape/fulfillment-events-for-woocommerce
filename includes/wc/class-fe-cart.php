@@ -434,7 +434,10 @@ class Fe_Cart {
 		if ( ! is_object( $rate ) || ! is_callable( array( $rate, 'get_method_id' ) ) || 'fe_courier' !== $rate->get_method_id() ) {
 			return $label;
 		}
-		$note = is_callable( array( $rate, 'get_delivery_time' ) ) ? (string) $rate->get_delivery_time() : fe_courier_instructions();
+		$note = is_callable( array( $rate, 'get_delivery_time' ) ) ? (string) $rate->get_delivery_time() : '';
+		if ( '' === trim( $note ) ) {
+			$note = fe_courier_instructions();
+		}
 		if ( '' === trim( $note ) ) {
 			return $label;
 		}
@@ -601,7 +604,10 @@ class Fe_Cart {
 			$package['fe_event_name']   = self::package_heading( $group, $event_name );
 			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
 			$package['fe_today']        = (string) $today;
-			$result[]                   = $package;
+			// WooCommerce reuses rates cached in the session while the package
+			// is unchanged; the version makes a plugin update rebuild them.
+			$package['fe_version'] = defined( 'FE_VERSION' ) ? (string) FE_VERSION : '';
+			$result[]              = $package;
 		}
 		return $result;
 	}

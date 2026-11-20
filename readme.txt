@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.6.2
+Stable tag: 0.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,10 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.6.3 =
+* Updating the plugin refreshes shipping options WooCommerce had saved in shoppers' sessions, so changes like the times in 0.6.2 show straight away.
+* The classic checkout shows the courier instructions even when a saved option has none.
 
 = 0.6.2 =
 * Delivery and pickup options show their time: "Delivery · Thu, Dec 10 · 9am–1pm". The time is also on the order and its emails.
