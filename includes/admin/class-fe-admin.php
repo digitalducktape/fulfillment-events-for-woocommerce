@@ -133,9 +133,9 @@ class Fe_Admin {
 				<?php wp_nonce_field( 'fe_save_settings' ); ?>
 				<table class="form-table"><tbody>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Staff emails', 'fulfillment-events-for-woocommerce' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Admin emails', 'fulfillment-events-for-woocommerce' ); ?></th>
 						<td><label><input type="checkbox" name="fe_staff_email_per_child" value="1" <?php checked( self::flag( 'fe_staff_email_per_child', true ) ); ?>> <?php esc_html_e( 'Send a new-order email for each order created when a multi-date order is split', 'fulfillment-events-for-woocommerce' ); ?></label>
-							<p class="description"><?php esc_html_e( 'When unticked, staff get one new-order email for the whole order instead.', 'fulfillment-events-for-woocommerce' ); ?></p></td>
+							<p class="description"><?php esc_html_e( 'When unticked, admins get one new-order email for the whole order instead.', 'fulfillment-events-for-woocommerce' ); ?></p></td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="fe_courier_instructions"><?php esc_html_e( 'Courier instructions', 'fulfillment-events-for-woocommerce' ); ?></label></th>

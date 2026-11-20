@@ -123,7 +123,7 @@ class Fe_Email_Split_Confirmation extends WC_Email {
 	 * @return string
 	 */
 	public function get_default_additional_content() {
-		return __( 'Each order below is prepared and fulfilled separately.', 'fulfillment-events-for-woocommerce' );
+		return __( 'Each order above is prepared and fulfilled separately.', 'fulfillment-events-for-woocommerce' );
 	}
 
 	/**
