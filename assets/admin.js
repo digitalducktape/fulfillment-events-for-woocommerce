@@ -1,60 +1,61 @@
-/* Fulfillment Events: event editor date rows and zone grid. */
+/* Fulfillment Events: the Event setup screen. */
 ( function () {
 	'use strict';
 
-	document.addEventListener( 'DOMContentLoaded', function () {
-		// Zone grid: show the price box only for "Custom price", and recolour the cell.
-		document.addEventListener( 'change', function ( event ) {
-			var target = event.target;
-			if ( target.classList && target.classList.contains( 'fe-zmode' ) ) {
-				var row = target.closest( '.fe-zrow' );
-				row.classList.toggle( 'is-custom', 'on' === target.value );
-				if ( 'on' === target.value ) {
-					row.querySelector( 'input[type="number"]' ).focus();
-				}
-				var cell = target.closest( '.fe-zcell' );
-				var modes = Array.prototype.map.call( cell.querySelectorAll( '.fe-zmode' ), function ( s ) {
-					return s.value;
-				} );
-				var state = 'off' === modes[ 0 ] ? 'off' : ( modes.some( function ( m ) {
-					return 'inherit' !== m;
-				} ) ? 'override' : 'default' );
-				cell.classList.remove( 'fe-zcell--default', 'fe-zcell--override', 'fe-zcell--off' );
-				cell.classList.add( 'fe-zcell--' + state );
-			}
-			// Dates box: dim the time and place of a type that isn't offered.
-			if ( target.type === 'checkbox' && target.closest && target.closest( '.fe-offer' ) ) {
-				target.closest( '.fe-offer' ).classList.toggle( 'is-off', ! target.checked );
-				var place = target.name && /\[pickup\]$/.test( target.name ) ? target.closest( 'tr' ).querySelector( '.fe-place' ) : null;
-				if ( place ) {
-					place.classList.toggle( 'is-off', ! target.checked );
-				}
-			}
-		} );
+	var templates = {
+		date: { tpl: 'fe-date-template', rows: 'fe-date-rows', token: /__i__/g },
+		exception: { tpl: 'fe-exception-template', rows: 'fe-exception-rows', token: /__x__/g },
+		price: { tpl: 'fe-price-template', rows: 'fe-price-rows', token: /__p__/g }
+	};
 
-		var rows = document.getElementById( 'fe-dates-rows' );
-		var tpl = document.getElementById( 'fe-date-template' );
-		var add = document.getElementById( 'fe-add-date' );
-		if ( ! rows || ! tpl || ! add ) {
+	function addRow( kind ) {
+		var spec = templates[ kind ];
+		var tpl = document.getElementById( spec.tpl );
+		var rows = document.getElementById( spec.rows );
+		if ( ! tpl || ! rows ) {
 			return;
 		}
+		var next = parseInt( rows.getAttribute( 'data-next' ) || '0', 10 );
+		// Keep indexes unique even after rows were removed.
+		rows.setAttribute( 'data-next', String( next + 1 ) );
+		rows.insertAdjacentHTML( 'beforeend', tpl.innerHTML.replace( spec.token, 'n' + next ) );
+		// Let WooCommerce turn new product search fields into search boxes.
+		if ( window.jQuery ) {
+			window.jQuery( document.body ).trigger( 'wc-enhanced-select-init' );
+		}
+		var added = rows.lastElementChild;
+		var first = added ? added.querySelector( 'input:not([type=hidden]), select' ) : null;
+		if ( first ) {
+			first.focus();
+		}
+	}
 
-		var next = rows.querySelectorAll( '.fe-date-row' ).length;
-
-		add.addEventListener( 'click', function () {
-			var html = tpl.innerHTML.replace( /__i__/g, String( next ) );
-			next += 1;
-			rows.insertAdjacentHTML( 'beforeend', html );
-		} );
-
-		rows.addEventListener( 'click', function ( event ) {
-			var button = event.target.closest ? event.target.closest( '.fe-remove-date' ) : null;
-			if ( button ) {
-				var row = button.closest( '.fe-date-row' );
-				if ( row ) {
-					row.remove();
-				}
+	document.addEventListener( 'click', function ( event ) {
+		var add = event.target.closest ? event.target.closest( '[data-fe-add]' ) : null;
+		if ( add ) {
+			event.preventDefault();
+			addRow( add.getAttribute( 'data-fe-add' ) );
+			return;
+		}
+		var remove = event.target.closest ? event.target.closest( '[data-fe-remove]' ) : null;
+		if ( remove ) {
+			event.preventDefault();
+			var row = remove.closest( '[data-fe-row]' );
+			if ( row ) {
+				row.remove();
 			}
-		} );
+		}
+	} );
+
+	// Dim a service's time, place and zones when it isn't offered that day,
+	// and an exception's dates when it takes the product out of the event.
+	document.addEventListener( 'change', function ( event ) {
+		var target = event.target;
+		if ( 'radio' === target.type && target.closest && target.closest( '.fe-exception' ) ) {
+			target.closest( '.fe-exception' ).classList.toggle( 'is-exclude', 'exclude' === target.value && target.checked );
+		}
+		if ( 'checkbox' === target.type && target.closest && target.parentElement && target.parentElement.classList.contains( 'fe-service__toggle' ) ) {
+			target.closest( '.fe-service' ).classList.toggle( 'is-off', ! target.checked );
+		}
 	} );
 }() );

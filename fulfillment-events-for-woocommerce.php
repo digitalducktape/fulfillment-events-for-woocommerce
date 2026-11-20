@@ -71,6 +71,7 @@ require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-split-status.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-order-splitter.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-emails.php';
 require_once FE_PLUGIN_DIR . 'includes/admin/class-fe-zone-grid.php';
+require_once FE_PLUGIN_DIR . 'includes/admin/class-fe-event-setup-box.php';
 require_once FE_PLUGIN_DIR . 'includes/admin/class-fe-event-editor.php';
 require_once FE_PLUGIN_DIR . 'includes/admin/class-fe-locations-page.php';
 require_once FE_PLUGIN_DIR . 'includes/admin/class-fe-product-fields.php';

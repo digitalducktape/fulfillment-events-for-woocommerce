@@ -100,7 +100,7 @@ class Fe_Admin {
 		if ( $screen && Fe_Event_Repo::POST_TYPE === $screen->post_type ) {
 			wp_enqueue_style( 'woocommerce_admin_styles' );
 			wp_enqueue_script( 'wc-enhanced-select' );
-			wp_enqueue_script( 'fe-admin', plugins_url( 'assets/admin.js', FE_PLUGIN_FILE ), array(), FE_VERSION, true );
+			wp_enqueue_script( 'fe-admin', plugins_url( 'assets/admin.js', FE_PLUGIN_FILE ), array( 'jquery', 'wc-enhanced-select' ), FE_VERSION, true );
 		}
 	}
 

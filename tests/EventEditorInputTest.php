@@ -31,62 +31,73 @@ final class EventEditorInputTest extends TestCase {
 		$this->assertSame( '2026-12-01 09:00:00', $out['event']['sales_open'] );
 	}
 
-	public function test_parse_post_drops_negative_cost() {
-		$out = Fe_Event_Editor::parse_post(
-			$this->base(
-				array(
-					'fe_rules' => array(
-						2 => array(
-							'delivery' => array(
-								array( 'mode' => 'on', 'cost' => '-5', 'date' => '' ),
-							),
-							'pickup'   => array(
-								array( 'mode' => 'on', 'cost' => 'abc', 'date' => '' ),
-								array( 'mode' => 'off', 'cost' => '', 'date' => '' ),
-							),
-						),
-					),
-				)
-			)
-		);
-		$this->assertCount( 1, $out['rules'] );
-		$this->assertSame( 'pickup', $out['rules'][0]['type'] );
-		$this->assertSame( 'off', $out['rules'][0]['mode'] );
-		$this->assertNull( $out['rules'][0]['cost'] );
-	}
-
-	public function test_parse_post_maps_grid_cells_to_rules() {
-		$out = Fe_Event_Editor::parse_post(
-			$this->base(
-				array(
-					'fe_rules' => array(
-						2 => array(
-							'delivery' => array(
-								array( 'mode' => 'on', 'cost' => '25', 'date' => '2026-12-18' ),
-								array( 'mode' => 'inherit', 'cost' => '', 'date' => '' ),
-							),
-						),
-						0 => array(
-							'courier' => array(
-								array( 'mode' => 'on', 'cost' => '', 'date' => 'not-a-date' ),
-							),
-						),
-					),
-				)
-			)
-		);
-		$this->assertSame(
+	public function test_parse_post_full_setup_form() {
+		$zones = array( 'delivery' => array( 1, 2 ), 'courier' => array( 1, 3 ) );
+		$out   = Fe_Event_Editor::parse_post(
 			array(
-				array(
-					'zone_id' => 2,
-					'type'    => 'delivery',
-					'date'    => '2026-12-18',
-					'mode'    => 'on',
-					'cost'    => 25.0,
+				'fe_sales_open'   => '2026-11-01T09:00',
+				'fe_dates'        => array(
+					array(
+						'date'            => '2026-12-10',
+						'zones_posted'    => '1',
+						'delivery'        => '1',
+						'delivery_window' => '10am to 2pm',
+						'courier'         => '1',
+						'zones'           => array(
+							'delivery' => array( '1', '2' ),
+							'courier'  => array( '1' ),
+						),
+					),
+					array(
+						'date'          => '2026-12-18',
+						'zones_posted'  => '1',
+						'pickup'        => '1',
+						'pickup_window' => '11am to 4pm',
+						'location_id'   => '2',
+						'zones'         => array( 'delivery' => array( '1', '2' ), 'courier' => array( '1', '3' ) ),
+					),
+				),
+				'fe_category_ids' => array( '40' ),
+				'fe_product_ids'  => array( '7', '13' ),
+				'fe_exceptions'   => array(
+					array( 'product_id' => '12', 'mode' => 'only', 'dates' => array( '2026-12-18' ) ),
+					array( 'product_id' => '13', 'mode' => 'exclude' ),
+				),
+				'fe_prices'       => array(
+					array( 'zone_id' => '2', 'type' => 'delivery', 'date' => '', 'cost' => '25' ),
 				),
 			),
-			$out['rules']
+			$zones,
+			array( array( 'zone_id' => 1, 'type' => 'pickup', 'date' => null, 'mode' => 'off', 'cost' => null ) )
 		);
+		$this->assertSame( array( '2026-12-10', '2026-12-18' ), array_column( $out['dates'], 'date' ) );
+		$this->assertTrue( $out['dates'][0]['courier'] );
+		$this->assertFalse( $out['dates'][1]['courier'] );
+		$modes = array();
+		foreach ( $out['rules'] as $r ) {
+			$modes[ $r['zone_id'] . '|' . $r['type'] . '|' . ( null === $r['date'] ? '' : $r['date'] ) ] = $r['mode'];
+		}
+		$this->assertSame(
+			array(
+				'1|pickup|'              => 'off',
+				'2|delivery|'            => 'on',
+				'3|courier|2026-12-10'   => 'off',
+			),
+			$modes
+		);
+		$this->assertSame( array( 13 ), $out['excluded_ids'] );
+		$this->assertSame( array( 7 ), $out['product_ids'] );
+		$this->assertSame( array( 12 => array( '2026-12-18' ) ), $out['limits'] );
+		$this->assertSame( array( 12 ), $out['only_ids'] );
+		$this->assertSame( 0, $out['dropped'] );
+	}
+
+	public function test_notice_text() {
+		$name = function ( $id ) {
+			return 'Box ' . $id;
+		};
+		$this->assertSame( "Box 4 has no dates left in this event, so it can't be bought for it.", Fe_Event_Editor::notice_text( array( 'code' => 'limit_emptied', 'products' => array( 4 ) ), $name ) );
+		$this->assertSame( '', Fe_Event_Editor::notice_text( array( 'code' => 'nope' ), $name ) );
 	}
 
 	public function test_parse_post_collects_unique_positive_ids() {
