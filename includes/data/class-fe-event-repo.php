@@ -17,6 +17,7 @@ class Fe_Event_Repo {
 	const POST_TYPE   = 'fe_event';
 	const META_OPEN   = '_fe_sales_open';
 	const META_CLOSE  = '_fe_sales_close';
+	const META_LIMITS = '_fe_date_limits';
 	const MAX_EVENTS  = 200;
 
 	/**
@@ -91,7 +92,8 @@ class Fe_Event_Repo {
 	 */
 	private static function shape( $post, array $dates ) {
 		$open  = (string) get_post_meta( $post->ID, self::META_OPEN, true );
-		$close = (string) get_post_meta( $post->ID, self::META_CLOSE, true );
+		$close  = (string) get_post_meta( $post->ID, self::META_CLOSE, true );
+		$limits = get_post_meta( $post->ID, self::META_LIMITS, true );
 		return array(
 			'id'          => (int) $post->ID,
 			'title'       => (string) $post->post_title,
@@ -99,7 +101,53 @@ class Fe_Event_Repo {
 			'sales_open'  => '' === $open ? null : $open,
 			'sales_close' => '' === $close ? null : $close,
 			'dates'       => $dates,
+			'date_limits' => is_array( $limits ) ? $limits : array(),
 		);
+	}
+
+	/**
+	 * Pure: cleans per-product date limits against the event's dates. Keeps
+	 * valid dates that are event dates, sorted and deduped; drops product ids
+	 * below 1. A product whose limit lost every date stays with an empty list
+	 * (it can't be bought for the event) and is reported in `emptied`.
+	 *
+	 * @param array    $raw         Product id => list of Y-m-d.
+	 * @param string[] $event_dates The event's dates.
+	 * @return array{limits: array<int,string[]>, emptied: int[]}
+	 */
+	public static function clean_limits( array $raw, array $event_dates ) {
+		$limits  = array();
+		$emptied = array();
+		foreach ( $raw as $product_id => $dates ) {
+			$product_id = (int) $product_id;
+			if ( $product_id <= 0 ) {
+				continue;
+			}
+			$kept = array_values( array_unique( array_intersect( array_map( 'strval', (array) $dates ), $event_dates ) ) );
+			sort( $kept );
+			$limits[ $product_id ] = $kept;
+			if ( ! $kept ) {
+				$emptied[] = $product_id;
+			}
+		}
+		return array(
+			'limits'  => $limits,
+			'emptied' => $emptied,
+		);
+	}
+
+	/**
+	 * Stores an event's per-product date limits (already cleaned).
+	 *
+	 * @param int   $event_id Event post id.
+	 * @param array $limits   Product id => list of Y-m-d.
+	 */
+	public static function save_date_limits( $event_id, array $limits ) {
+		if ( $limits ) {
+			update_post_meta( (int) $event_id, self::META_LIMITS, $limits );
+		} else {
+			delete_post_meta( (int) $event_id, self::META_LIMITS );
+		}
 	}
 
 	/**

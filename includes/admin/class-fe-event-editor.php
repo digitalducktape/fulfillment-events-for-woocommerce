@@ -277,6 +277,7 @@ class Fe_Event_Editor {
 
 		Fe_Event_Repo::save_sales_window( $new_id, (string) $event['sales_open'], (string) $event['sales_close'] );
 		Fe_Event_Repo::save_dates( $new_id, $event['dates'] );
+		Fe_Event_Repo::save_date_limits( $new_id, $event['date_limits'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $new_id, Fe_Zone_Rule_Repo::for_event( $id ) );
 		$notes = (string) get_post_meta( $id, self::NOTES_KEY, true );
 		if ( '' !== $notes ) {

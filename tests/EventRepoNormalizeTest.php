@@ -82,4 +82,17 @@ final class EventRepoNormalizeTest extends TestCase {
 		$this->assertFalse( $out[0]['delivery'] );
 		$this->assertFalse( $out[0]['pickup'] );
 	}
+
+	public function test_clean_limits_drops_non_event_dates_and_reports_emptied() {
+		$out = Fe_Event_Repo::clean_limits(
+			array(
+				12 => array( '2026-12-18', '2026-12-18', 'bad' ),
+				13 => array( '2026-12-01' ),
+				0  => array( '2026-12-10' ),
+			),
+			array( '2026-12-10', '2026-12-18' )
+		);
+		$this->assertSame( array( 12 => array( '2026-12-18' ), 13 => array() ), $out['limits'] );
+		$this->assertSame( array( 13 ), $out['emptied'] );
+	}
 }
