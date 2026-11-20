@@ -256,14 +256,19 @@ class Fe_Event_Editor {
 	// -------------------------------------------------------------------
 
 	/**
-	 * Adds "Duplicate" to the event list.
+	 * Adds "Duplicate" to the event list and drops Quick Edit, which can't
+	 * edit an event's dates, zones or products.
 	 *
 	 * @param array   $actions Row actions.
 	 * @param WP_Post $post    Row post.
 	 * @return array
 	 */
 	public static function row_actions( $actions, $post ) {
-		if ( Fe_Event_Repo::POST_TYPE === $post->post_type && current_user_can( 'manage_woocommerce' ) ) {
+		if ( Fe_Event_Repo::POST_TYPE !== $post->post_type ) {
+			return $actions;
+		}
+		unset( $actions['inline hide-if-no-js'] );
+		if ( current_user_can( 'manage_woocommerce' ) ) {
 			$actions['fe_duplicate'] = '<a href="' . esc_url( self::duplicate_url( (int) $post->ID ) ) . '">' . esc_html__( 'Duplicate', 'fulfillment-events-for-woocommerce' ) . '</a>';
 		}
 		return $actions;

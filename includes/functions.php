@@ -28,3 +28,27 @@ function fe_get_order_fulfillment( $order ) {
 	}
 	return Fe_Meta::from_meta( $meta );
 }
+
+/**
+ * Text shown under courier options at checkout. Until staff save their own
+ * wording in Fulfillment → Settings, a default explains how courier works;
+ * saving it empty shows nothing.
+ *
+ * @return string
+ */
+function fe_courier_instructions() {
+	$text = get_option( 'fe_courier_instructions', null );
+	if ( null === $text || false === $text ) {
+		return fe_default_courier_instructions();
+	}
+	return trim( (string) $text );
+}
+
+/**
+ * Default courier instructions.
+ *
+ * @return string
+ */
+function fe_default_courier_instructions() {
+	return __( "Send your own courier, such as Uber, to collect your order on the date you choose. We'll contact you to arrange the pickup time.", 'fulfillment-events-for-woocommerce' );
+}

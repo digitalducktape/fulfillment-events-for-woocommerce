@@ -138,6 +138,11 @@ class Fe_Admin {
 							<p class="description"><?php esc_html_e( 'When unticked, staff get one new-order email for the whole order instead.', 'fulfillment-events-for-woocommerce' ); ?></p></td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="fe_courier_instructions"><?php esc_html_e( 'Courier instructions', 'fulfillment-events-for-woocommerce' ); ?></label></th>
+						<td><textarea id="fe_courier_instructions" name="fe_courier_instructions" rows="3" class="large-text"><?php echo esc_textarea( fe_courier_instructions() ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Shown under each courier option at checkout. Leave empty to show nothing.', 'fulfillment-events-for-woocommerce' ); ?></p></td>
+					</tr>
+					<tr>
 						<th scope="row"><?php esc_html_e( 'Uninstall', 'fulfillment-events-for-woocommerce' ); ?></th>
 						<td><label><input type="checkbox" name="fe_delete_data_on_uninstall" value="1" <?php checked( self::flag( 'fe_delete_data_on_uninstall', false ) ); ?>> <?php esc_html_e( 'Delete events, locations and zone rules when the plugin is deleted', 'fulfillment-events-for-woocommerce' ); ?></label></td>
 					</tr>
@@ -158,6 +163,7 @@ class Fe_Admin {
 		}
 		update_option( 'fe_staff_email_per_child', isset( $_POST['fe_staff_email_per_child'] ) ? 'yes' : 'no' );
 		update_option( 'fe_delete_data_on_uninstall', isset( $_POST['fe_delete_data_on_uninstall'] ) ? 'yes' : 'no' );
+		update_option( 'fe_courier_instructions', isset( $_POST['fe_courier_instructions'] ) ? sanitize_textarea_field( wp_unslash( $_POST['fe_courier_instructions'] ) ) : '' );
 		self::flush_rate_cache();
 		wp_safe_redirect( add_query_arg( 'updated', '1', admin_url( 'admin.php?page=fe-settings' ) ) );
 		exit;

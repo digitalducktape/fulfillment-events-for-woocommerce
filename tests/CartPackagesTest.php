@@ -233,6 +233,43 @@ final class CartPackagesTest extends TestCase {
 				return 'Event ' . $id;
 			}
 		);
-		$this->assertSame( 'Event 7 · Holiday cookie box', $single[1]['fe_event_name'] );
+		// The product's name never goes in the heading; the dates tell the sections apart.
+		$this->assertSame( 'Event 7 · Dec 18', $single[1]['fe_event_name'] );
+	}
+
+	public function test_packages_come_in_date_order_with_regular_last() {
+		$pkg    = array(
+			'contents'    => array(
+				'a' => array( 'product_id' => 1, 'data' => new FeTestProduct(), 'line_total' => 10 ),
+				'b' => array( 'product_id' => 2, 'data' => new FeTestProduct(), 'line_total' => 30 ),
+				'c' => array( 'product_id' => 3, 'data' => new FeTestProduct(), 'line_total' => 5 ),
+				'd' => array( 'product_id' => 4, 'data' => new FeTestProduct(), 'line_total' => 5 ),
+			),
+			'destination' => array(),
+		);
+		$offers = array(
+			1 => null,
+			2 => array( array( 'event_id' => 5, 'dates' => array( '2026-12-18' ) ) ),
+			3 => array( array( 'event_id' => 5, 'dates' => null ) ),
+			4 => array( array( 'event_id' => 9, 'dates' => null ) ),
+		);
+		$dates  = array(
+			5 => array( '2026-11-01', '2026-12-10', '2026-12-18' ),
+			9 => array( '2026-12-03' ),
+		);
+		$out    = Fe_Cart::build_packages(
+			array( $pkg ),
+			function ( $pid ) use ( $offers ) {
+				return $offers[ $pid ];
+			},
+			function ( $id ) {
+				return 'Event ' . $id;
+			},
+			'2026-11-19',
+			function ( $id ) use ( $dates ) {
+				return $dates[ $id ];
+			}
+		);
+		$this->assertSame( array( 'event:9', 'event:5', 'event:5@2026-12-18', 'regular' ), array_column( $out, 'fe_group' ) );
 	}
 }

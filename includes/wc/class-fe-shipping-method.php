@@ -140,16 +140,23 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 
 			$specs = apply_filters( 'fe_package_rates_for_event', $specs, $event, $package, $this );
 
+			$note = 'courier' === $this->fe_type ? (string) apply_filters( 'fe_courier_instructions', fe_courier_instructions(), $event, $package ) : '';
+
 			foreach ( $specs as $spec ) {
+				$rate_id = $this->id . ':' . $this->instance_id . ':' . Fe_Cart::rate_suffix( $event['id'], $spec['id'], count( $event_ids ) );
 				$this->add_rate(
 					array(
-						'id'        => $this->id . ':' . $this->instance_id . ':' . Fe_Cart::rate_suffix( $event['id'], $spec['id'], count( $event_ids ) ),
+						'id'        => $rate_id,
 						'label'     => $spec['label'],
 						'cost'      => $spec['cost'],
 						'package'   => $package,
 						'meta_data' => $spec['meta'],
 					)
 				);
+				// The block checkout shows a rate's description under it (WooCommerce 9.2+).
+				if ( '' !== $note && isset( $this->rates[ $rate_id ] ) && is_callable( array( $this->rates[ $rate_id ], 'set_description' ) ) ) {
+					$this->rates[ $rate_id ]->set_description( $note );
+				}
 			}
 		}
 	}

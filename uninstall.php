@@ -39,3 +39,4 @@ delete_transient( 'fe_ticket_hint_products' );
 delete_option( 'fe_db_version' );
 delete_option( 'fe_staff_email_per_child' );
 delete_option( 'fe_delete_data_on_uninstall' );
+delete_option( 'fe_courier_instructions' );

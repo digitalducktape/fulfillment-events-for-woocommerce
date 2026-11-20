@@ -37,6 +37,7 @@ class Fe_Cart {
 		add_filter( 'woocommerce_cart_shipping_packages', array( __CLASS__, 'packages' ) );
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'filter_rates' ), 10, 2 );
 		add_filter( 'woocommerce_shipping_package_name', array( __CLASS__, 'package_name' ), 10, 3 );
+		add_action( 'woocommerce_after_shipping_rate', array( __CLASS__, 'render_rate_note' ), 10, 2 );
 		add_filter( 'woocommerce_cart_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_filter( 'woocommerce_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
@@ -421,6 +422,23 @@ class Fe_Cart {
 	private static $rendering_package = null;
 
 	/**
+	 * Classic checkout: prints a courier rate's instructions under it. The
+	 * block checkout shows them from the rate's description instead.
+	 *
+	 * @param WC_Shipping_Rate $rate  Rate.
+	 * @param int              $index Package index.
+	 */
+	public static function render_rate_note( $rate, $index = 0 ) {
+		if ( ! is_object( $rate ) || ! is_callable( array( $rate, 'get_method_id' ) ) || 'fe_courier' !== $rate->get_method_id() ) {
+			return;
+		}
+		$note = is_callable( array( $rate, 'get_description' ) ) ? (string) $rate->get_description() : fe_courier_instructions();
+		if ( '' !== trim( $note ) ) {
+			echo '<p class="fe-rate-note" style="margin:0.25em 0 0.5em;font-size:0.875em;opacity:0.8">' . esc_html( $note ) . '</p>';
+		}
+	}
+
+	/**
 	 * Splits the cart into one package per event plus a regular package.
 	 * Returns the input untouched when no item resolves to an event.
 	 *
@@ -437,6 +455,11 @@ class Fe_Cart {
 			function ( $event_id ) {
 				$event = Fe_Event_Repo::get( (int) $event_id );
 				return $event ? (string) $event['title'] : '';
+			},
+			null,
+			function ( $event_id ) {
+				$event = Fe_Event_Repo::get( (int) $event_id );
+				return $event ? array_column( (array) $event['dates'], 'date' ) : array();
 			}
 		);
 		if ( ! is_array( $out ) ) {
@@ -500,9 +523,11 @@ class Fe_Cart {
 	 * @param callable $event_name        Event id => event name.
 	 * @param string   $today             Y-m-d, store-local; defaults to today. Stored on
 	 *                                    each package so WooCommerce's rate cache rolls daily.
+	 * @param callable $event_dates       Optional event id => its dates (Y-m-d). When given,
+	 *                                    event packages come soonest date first.
 	 * @return array
 	 */
-	public static function build_packages( $packages, $event_for_product, $event_name, $today = null ) {
+	public static function build_packages( $packages, $event_for_product, $event_name, $today = null, $event_dates = null ) {
 		if ( ! is_array( $packages ) || empty( $packages ) ) {
 			return $packages;
 		}
@@ -540,6 +565,9 @@ class Fe_Cart {
 
 		$first  = reset( $packages );
 		$groups = Fe_Cart_Grouper::group( $items );
+		if ( is_callable( $event_dates ) ) {
+			$groups = self::sort_groups( $groups, $event_dates, (string) $today );
+		}
 		$result = array();
 		foreach ( $groups as $group ) {
 			$group_contents = array();
@@ -564,12 +592,47 @@ class Fe_Cart {
 			$package['fe_event_id']     = $group['event_id'];
 			$package['fe_event_ids']    = $group['event_ids'];
 			$package['fe_offers']       = $group['offers'];
-			$package['fe_event_name']   = self::package_heading( $group, $group_contents, $event_name );
+			$package['fe_event_name']   = self::package_heading( $group, $event_name );
 			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
 			$package['fe_today']        = (string) $today;
 			$result[]                   = $package;
 		}
 		return $result;
+	}
+
+	/**
+	 * Pure: event groups by the first date they can still ship on, so
+	 * checkout lists Dec 3 before Dec 10 whatever order items were added in.
+	 * Ties and groups with no upcoming date keep cart order; the regular
+	 * group stays last.
+	 *
+	 * @param array[]  $groups      From Fe_Cart_Grouper::group().
+	 * @param callable $event_dates Event id => its dates.
+	 * @param string   $today       Y-m-d.
+	 * @return array[]
+	 */
+	private static function sort_groups( array $groups, $event_dates, $today ) {
+		$keyed = array();
+		foreach ( $groups as $i => $group ) {
+			$first = 'regular' === $group['group'] ? '~regular' : '~none';
+			foreach ( $group['offers'] as $offer ) {
+				$dates = is_array( $offer['dates'] ) ? $offer['dates'] : (array) call_user_func( $event_dates, (int) $offer['event_id'] );
+				foreach ( $dates as $date ) {
+					$date = (string) $date;
+					if ( $date >= $today && $date < $first ) {
+						$first = $date;
+					}
+				}
+			}
+			$keyed[] = array( $first, $i, $group );
+		}
+		usort(
+			$keyed,
+			function ( $a, $b ) {
+				return array( $a[0], $a[1] ) <=> array( $b[0], $b[1] );
+			}
+		);
+		return array_column( $keyed, 2 );
 	}
 
 	/**
@@ -612,15 +675,14 @@ class Fe_Cart {
 
 	/**
 	 * Pure: package heading. Event names joined with " / "; a date-limited
-	 * package adds its product's name when it holds one product, else its
-	 * dates, so checkout tells the two shipping choices apart.
+	 * package adds its dates, so checkout tells the two shipping choices
+	 * apart.
 	 *
 	 * @param array    $group      Group from Fe_Cart_Grouper::group().
-	 * @param array    $contents   The group's cart lines.
 	 * @param callable $event_name Event id => event name.
 	 * @return string
 	 */
-	private static function package_heading( array $group, array $contents, $event_name ) {
+	private static function package_heading( array $group, $event_name ) {
 		$name  = self::joined_names( $group['event_ids'], $event_name );
 		$dates = array();
 		foreach ( $group['offers'] as $offer ) {
@@ -630,12 +692,6 @@ class Fe_Cart {
 		}
 		if ( ! $dates || '' === $name ) {
 			return $name;
-		}
-		if ( 1 === count( $contents ) ) {
-			$line = reset( $contents );
-			if ( isset( $line['data'] ) && is_object( $line['data'] ) && method_exists( $line['data'], 'get_name' ) ) {
-				return $name . ' · ' . $line['data']->get_name();
-			}
 		}
 		$dates = array_unique( $dates );
 		sort( $dates );

@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.5.0
+Stable tag: 0.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,12 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.5.1 =
+* Checkout lists shipping sections soonest date first, whatever order items were added in.
+* A date-limited section is headed with its dates ("Holiday Pre-order 2026 · Dec 18"), not a product name.
+* Courier instructions: set them in Fulfillment → Settings; they show under each courier option at checkout.
+* Quick Edit is gone from the events list; it couldn't edit dates, zones or products.
 
 = 0.5.0 =
 * One "Event setup" screen instead of four boxes: when it sells, the dates, the products, and (rarely needed) price changes.
