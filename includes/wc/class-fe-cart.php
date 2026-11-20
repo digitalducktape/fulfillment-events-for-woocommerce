@@ -169,7 +169,8 @@ class Fe_Cart {
 			$date = isset( $row['date'] ) ? (string) $row['date'] : '';
 			$d    = ! empty( $row['delivery'] );
 			$p    = ! empty( $row['pickup'] );
-			if ( '' === $date || $date < $today || ( ! $d && ! $p ) ) {
+			$c    = ! empty( $row['courier'] );
+			if ( '' === $date || $date < $today || ( ! $d && ! $p && ! $c ) ) {
 				continue;
 			}
 			$delivery = $delivery || $d;
@@ -179,7 +180,9 @@ class Fe_Cart {
 		if ( ! $labels ) {
 			return '';
 		}
-		if ( $delivery && $pickup ) {
+		if ( ! $delivery && ! $pickup ) {
+			$types = __( 'courier', 'fulfillment-events-for-woocommerce' );
+		} elseif ( $delivery && $pickup ) {
 			$types = __( 'delivery or pickup', 'fulfillment-events-for-woocommerce' );
 		} elseif ( $delivery ) {
 			$types = __( 'delivery', 'fulfillment-events-for-woocommerce' );
@@ -221,10 +224,12 @@ class Fe_Cart {
 						'date'     => $date,
 						'delivery' => false,
 						'pickup'   => false,
+						'courier'  => false,
 					);
 				}
 				$by_date[ $date ]['delivery'] = $by_date[ $date ]['delivery'] || ! empty( $row['delivery'] );
 				$by_date[ $date ]['pickup']   = $by_date[ $date ]['pickup'] || ! empty( $row['pickup'] );
+				$by_date[ $date ]['courier']  = $by_date[ $date ]['courier'] || ! empty( $row['courier'] );
 			}
 		}
 		ksort( $by_date );

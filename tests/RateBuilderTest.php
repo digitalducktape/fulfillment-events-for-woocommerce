@@ -168,4 +168,18 @@ final class RateBuilderTest extends TestCase {
 		$this->assertSame( 'Main store, 1 Main St', $rates[0]['meta']['fe_location'] );
 		$this->assertSame( 'Main store', $rates[0]['where'] );
 	}
+
+	public function test_courier_follows_its_own_flag() {
+		$event = $this->event(
+			array(
+				$this->date( '2026-12-10', array( 'delivery' => true, 'courier' => false ) ),
+				$this->date( '2026-12-18', array( 'courier' => true ) ),
+				$this->date( '2026-12-20', array( 'delivery' => true ) ),
+			)
+		);
+		// The 12-20 row has a courier key from date(); drop it to test the legacy fallback.
+		unset( $event['dates'][2]['courier'] );
+		$rates = Fe_Rate_Builder::build( $event, 'courier', 1, array(), 5.0, '', $this->locations(), 1, '2026-12-01' );
+		$this->assertSame( array( '2026-12-18', '2026-12-20' ), array_column( $rates, 'date' ) );
+	}
 }

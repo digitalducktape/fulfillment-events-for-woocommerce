@@ -37,6 +37,7 @@ class Fe_Activator {
   delivery_window VARCHAR(100) NOT NULL DEFAULT '',
   pickup TINYINT(1) NOT NULL DEFAULT 0,
   pickup_window VARCHAR(100) NOT NULL DEFAULT '',
+  courier TINYINT(1) NOT NULL DEFAULT 1,
   location_id BIGINT(20) UNSIGNED DEFAULT NULL,
   PRIMARY KEY  (id),
   KEY event_id (event_id)

@@ -407,7 +407,7 @@ class Fe_Event_Editor {
 		$pickup   = ! empty( $row['pickup'] );
 		?>
 		<tr class="fe-date-row">
-			<td class="fe-dates__date"><input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $get( 'date' ) ); ?>" aria-label="<?php esc_attr_e( 'Date', 'fulfillment-events-for-woocommerce' ); ?>"></td>
+			<td class="fe-dates__date"><input type="hidden" name="<?php echo esc_attr( $name ); ?>[courier]" value="<?php echo ( ! isset( $row['courier'] ) || $row['courier'] ) ? '1' : ''; ?>"><input type="date" name="<?php echo esc_attr( $name ); ?>[date]" value="<?php echo esc_attr( $get( 'date' ) ); ?>" aria-label="<?php esc_attr_e( 'Date', 'fulfillment-events-for-woocommerce' ); ?>"></td>
 			<td>
 				<div class="fe-offer<?php echo $delivery ? '' : ' is-off'; ?>">
 					<label class="fe-offer__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[delivery]" value="1" <?php checked( $delivery ); ?>> <?php esc_html_e( 'Delivery', 'fulfillment-events-for-woocommerce' ); ?></label>
@@ -475,12 +475,22 @@ class Fe_Event_Editor {
 	 * @return string
 	 */
 	public static function offer_text( array $row ) {
-		$d = ! empty( $row['delivery'] );
-		$p = ! empty( $row['pickup'] );
-		if ( $d && $p ) {
-			return __( 'delivery and pickup', 'fulfillment-events-for-woocommerce' );
+		$parts = array();
+		if ( ! empty( $row['delivery'] ) ) {
+			$parts[] = __( 'delivery', 'fulfillment-events-for-woocommerce' );
 		}
-		return $d ? __( 'delivery', 'fulfillment-events-for-woocommerce' ) : __( 'pickup', 'fulfillment-events-for-woocommerce' );
+		if ( ! empty( $row['pickup'] ) ) {
+			$parts[] = __( 'pickup', 'fulfillment-events-for-woocommerce' );
+		}
+		if ( ! empty( $row['courier'] ) ) {
+			$parts[] = __( 'courier', 'fulfillment-events-for-woocommerce' );
+		}
+		if ( count( $parts ) < 2 ) {
+			return implode( '', $parts );
+		}
+		$last = array_pop( $parts );
+		/* translators: 1: comma-separated services, 2: last service, e.g. "delivery, pickup" and "courier". */
+		return sprintf( __( '%1$s and %2$s', 'fulfillment-events-for-woocommerce' ), implode( ', ', $parts ), $last );
 	}
 
 	/**

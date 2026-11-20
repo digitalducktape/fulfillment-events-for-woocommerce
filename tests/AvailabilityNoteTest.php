@@ -75,4 +75,11 @@ class AvailabilityNoteTest extends TestCase {
 		$this->assertSame( 'Available for delivery or pickup on Dec 10 or Dec 18', Fe_Cart::availability_note( $merged, '2026-12-01' ) );
 		$this->assertSame( 'Available for delivery or pickup on Dec 18', Fe_Cart::availability_note( $merged, '2026-12-11' ) );
 	}
+
+	public function test_courier_only_note() {
+		$this->assertSame( 'Available for courier on Dec 18', Fe_Cart::availability_note( array( 'dates' => array( array( 'date' => '2026-12-18', 'courier' => true ) ) ), '2026-12-01' ) );
+		$this->assertSame( 'Available for delivery on Dec 18', Fe_Cart::availability_note( array( 'dates' => array( array( 'date' => '2026-12-18', 'delivery' => true, 'courier' => true ) ) ), '2026-12-01' ) );
+		$merged = Fe_Cart::merged_dates( array( array( 'dates' => array( array( 'date' => '2026-12-18', 'courier' => true ) ) ) ) );
+		$this->assertTrue( $merged['dates'][0]['courier'] );
+	}
 }

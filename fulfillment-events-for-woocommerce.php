@@ -26,7 +26,7 @@ if ( ! defined( 'FE_VERSION' ) ) {
 	define( 'FE_VERSION', '0.4.5' );
 }
 if ( ! defined( 'FE_DB_VERSION' ) ) {
-	define( 'FE_DB_VERSION', 1 );
+	define( 'FE_DB_VERSION', 2 );
 }
 if ( ! defined( 'FE_PLUGIN_FILE' ) ) {
 	define( 'FE_PLUGIN_FILE', __FILE__ );

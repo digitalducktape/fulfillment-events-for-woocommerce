@@ -69,4 +69,17 @@ final class EventRepoNormalizeTest extends TestCase {
 		$out = Fe_Event_Repo::normalize_dates( array( array( 'date' => '2026-12-10', 'delivery' => 1, 'delivery_window' => '<i>9</i>-12' ) ) );
 		$this->assertSame( '9-12', $out[0]['delivery_window'] );
 	}
+
+	public function test_courier_only_row_is_kept_and_neither_is_dropped() {
+		$out = Fe_Event_Repo::normalize_dates(
+			array(
+				array( 'date' => '2026-12-18', 'courier' => 1 ),
+				array( 'date' => '2026-12-19' ),
+			)
+		);
+		$this->assertCount( 1, $out );
+		$this->assertTrue( $out[0]['courier'] );
+		$this->assertFalse( $out[0]['delivery'] );
+		$this->assertFalse( $out[0]['pickup'] );
+	}
 }

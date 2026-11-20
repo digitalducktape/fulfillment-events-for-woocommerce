@@ -82,7 +82,9 @@ class Fe_Rate_Builder {
 					$location = '' !== (string) $loc['address'] ? $loc_name . ', ' . $loc['address'] : $loc_name;
 				}
 			} elseif ( 'courier' === $type ) {
-				if ( ! $delivery && ! $pickup ) {
+				// Dates saved before 0.5.0 have no courier flag: courier ran on any date with delivery or pickup.
+				$courier = array_key_exists( 'courier', $row ) ? ! empty( $row['courier'] ) : ( $delivery || $pickup );
+				if ( ! $courier ) {
 					continue;
 				}
 				$window = $cwin;

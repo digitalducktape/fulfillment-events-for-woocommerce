@@ -118,7 +118,7 @@ class Fe_Event_Repo {
 		$placeholders = implode( ',', array_fill( 0, count( $event_ids ), '%d' ) );
 		$table        = self::dates_table();
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-		$sql  = $wpdb->prepare( "SELECT event_id, date, delivery, delivery_window, pickup, pickup_window, location_id FROM {$table} WHERE event_id IN ({$placeholders}) ORDER BY date ASC", $event_ids );
+		$sql  = $wpdb->prepare( "SELECT event_id, date, delivery, delivery_window, pickup, pickup_window, courier, location_id FROM {$table} WHERE event_id IN ({$placeholders}) ORDER BY date ASC", $event_ids );
 		$rows = $wpdb->get_results( $sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		foreach ( (array) $rows as $row ) {
 			$out[ (int) $row['event_id'] ][] = array(
@@ -127,6 +127,7 @@ class Fe_Event_Repo {
 				'delivery_window' => (string) $row['delivery_window'],
 				'pickup'          => (bool) $row['pickup'],
 				'pickup_window'   => (string) $row['pickup_window'],
+				'courier'         => (bool) $row['courier'],
 				'location_id'     => null === $row['location_id'] ? null : (int) $row['location_id'],
 			);
 		}
@@ -135,11 +136,12 @@ class Fe_Event_Repo {
 
 	/**
 	 * Pure: cleans submitted date rows. Drops rows with an invalid date or
-	 * with neither delivery nor pickup, dedupes by date (last row wins) and
-	 * sorts ascending.
+	 * with none of delivery, pickup and courier, dedupes by date (last row
+	 * wins) and sorts ascending. A missing `courier` key means no courier,
+	 * as an unticked checkbox posts nothing.
 	 *
 	 * @param array $raw Raw rows.
-	 * @return array[] Rows of {date, delivery, delivery_window, pickup, pickup_window, location_id}.
+	 * @return array[] Rows of {date, delivery, delivery_window, pickup, pickup_window, courier, location_id}.
 	 */
 	public static function normalize_dates( array $raw ) {
 		$by_date = array();
@@ -153,7 +155,8 @@ class Fe_Event_Repo {
 			}
 			$delivery = ! empty( $row['delivery'] );
 			$pickup   = ! empty( $row['pickup'] );
-			if ( ! $delivery && ! $pickup ) {
+			$courier  = ! empty( $row['courier'] );
+			if ( ! $delivery && ! $pickup && ! $courier ) {
 				continue;
 			}
 			$location = isset( $row['location_id'] ) ? (int) $row['location_id'] : 0;
@@ -163,6 +166,7 @@ class Fe_Event_Repo {
 				'delivery_window' => $delivery && isset( $row['delivery_window'] ) ? self::clean_window( (string) $row['delivery_window'] ) : '',
 				'pickup'          => $pickup,
 				'pickup_window'   => $pickup && isset( $row['pickup_window'] ) ? self::clean_window( (string) $row['pickup_window'] ) : '',
+				'courier'         => $courier,
 				'location_id'     => $location > 0 ? $location : null,
 			);
 		}
@@ -228,9 +232,10 @@ class Fe_Event_Repo {
 					'delivery_window' => $row['delivery_window'],
 					'pickup'          => $row['pickup'] ? 1 : 0,
 					'pickup_window'   => $row['pickup_window'],
+					'courier'         => $row['courier'] ? 1 : 0,
 					'location_id'     => $row['location_id'],
 				),
-				array( '%d', '%s', '%d', '%s', '%d', '%s', '%d' )
+				array( '%d', '%s', '%d', '%s', '%d', '%s', '%d', '%d' )
 			);
 		}
 	}
