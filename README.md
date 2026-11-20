@@ -7,6 +7,12 @@ completed on its own.
 
 Design notes: [docs/design.md](docs/design.md).
 
+## Support
+
+If this plugin saves you time, you can support its development.
+
+[![Support this plugin](https://img.buymeacoffee.com/button-api/?text=Support%20this%20plugin&emoji=%E2%9D%A4%EF%B8%8F&slug=digitalducktape&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/digitalducktape)
+
 ## Requirements
 
 - WordPress 6.0+ (tested up to 6.9)
@@ -128,10 +134,6 @@ Translation template: `languages/fulfillment-events-for-woocommerce.pot`
 (regenerate with `vendor/bin/wp i18n make-pot . languages/fulfillment-events-for-woocommerce.pot --exclude=vendor,tests,bin,.superpowers,dist`).
 Manual checks that unit tests can't cover are in
 [docs/testing-checklist.md](docs/testing-checklist.md).
-
-## Support
-
-If this plugin saves you time, you can [support this plugin](https://buymeacoffee.com/digitalducktape).
 
 ## License
 
