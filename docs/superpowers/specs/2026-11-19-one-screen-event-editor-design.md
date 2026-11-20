@@ -158,11 +158,13 @@ links (`_fe_events` on products and product_cat terms), exclusions
   next save. Event-wide `on` rules with a cost show in the price list.
   Pickup zone rules (any) are kept and shown in the price list as-is; the
   new UI doesn't create pickup zone rules.
-- **Product date limits:** new product meta `_fe_event_dates`, an array
-  `event_id => [Y-m-d, …]`. Absent key = all of that event's dates. Saved
-  from the event screen's Exceptions (the event rewrites only its own key
-  on every product it touches and removes its key from products no longer
-  listed). Variations use the parent's limits (as links do).
+- **Product date limits:** stored on the event, post meta `_fe_date_limits`,
+  an array `product_id => [Y-m-d, …]`. A product without an entry gets all
+  of the event's dates. Saved from the event screen's Exceptions; the event
+  owns it, so no product rows are scanned or rewritten. (Planning change:
+  the draft put this on each product; on the event it needs no LIKE scans,
+  Duplicate copies it with the event, and deleting the event removes it.)
+  Variations use the parent's limits (as links do).
 - **One owner per fact** (my call): the Products row (categories + individual
   products) is the only thing that links a product to the event
   (`_fe_events`). Exceptions only own limits and exclusions. If an "Only on"
@@ -171,8 +173,8 @@ links (`_fe_events` on products and product_cat terms), exclusions
   exception later leaves that link alone. A product can't be both listed
   under individual products and "Not in this event": save keeps the
   exclusion and drops the link, as 0.4.1 does today.
-- Duplicate copies the limits to the new event id. Deleting an event
-  removes its key from all products. Uninstall deletes `_fe_event_dates`.
+- Duplicate copies `_fe_date_limits` with the rest of the event. Deleting an
+  event or uninstalling removes it with the event post.
 
 ### Cart and checkout
 
