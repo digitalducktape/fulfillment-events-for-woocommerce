@@ -244,8 +244,8 @@ class Fe_Checkout_Dates {
 		wp_enqueue_style( 'fe-checkout-dates-classic' );
 		wp_add_inline_style(
 			'fe-checkout-dates-classic',
-			'.woocommerce-shipping-methods li:has(.fe-rate-note),.woocommerce-shipping-methods li:has(.fe-date-picker){flex-wrap:wrap}'
-			. '.fe-rate-note{flex-basis:100%;margin:0.25em 0 0.5em;font-size:0.875em;opacity:0.8}'
+			'.woocommerce-shipping-methods li:has(.fe-date-picker){flex-wrap:wrap}'
+			. '.fe-rate-note{display:block;margin:0.25em 0 0.25em;font-size:0.875em;font-weight:normal;opacity:0.8}'
 			. '.fe-date-picker{flex-basis:100%;margin:0 0 0.75em}'
 			. '.fe-date-picker label{display:block;font-weight:600;margin-bottom:0.25em}'
 			. '.fe-date-picker select{max-width:100%}'

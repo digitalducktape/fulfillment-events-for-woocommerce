@@ -43,7 +43,7 @@ class Fe_Rate_Builder {
 	 * @param string        $today               Y-m-d, store-local; earlier dates are skipped.
 	 * @param callable|null $formatter           Optional Y-m-d => label date.
 	 * @param string|null   $courier_window      Optional courier window text.
-	 * @return array[] Each {id:string (the date; the caller prefixes), date, label, where (location name or ''), when (formatted date), cost, meta}.
+	 * @return array[] Each {id:string (the date; the caller prefixes), date, label, where (location name or ''), when (formatted date), window (time shown in the label, '' for courier), cost, meta}.
 	 */
 	public static function build( array $event, $type, $zone_id, array $rules, $default_cost, $default_window, array $locations_by_id, $default_location_id, $today, $formatter = null, $courier_window = null ) {
 		$specs = array();
@@ -98,6 +98,8 @@ class Fe_Rate_Builder {
 			}
 
 			$when = call_user_func( $fmt, $date );
+			// Delivery and pickup show their time; courier has none of its own.
+			$time = 'courier' === $type ? '' : trim( (string) $window );
 			if ( 'delivery' === $type ) {
 				$label = 'Delivery · ' . $when;
 			} elseif ( 'pickup' === $type ) {
@@ -105,15 +107,19 @@ class Fe_Rate_Builder {
 			} else {
 				$label = 'Courier pickup · ' . $when;
 			}
+			if ( '' !== $time ) {
+				$label .= ' · ' . $time;
+			}
 
 			$specs[] = array(
-				'id'    => $date,
-				'date'  => $date,
-				'label' => $label,
-				'where' => $loc_name,
-				'when'  => $when,
-				'cost'  => (float) $resolved['cost'],
-				'meta'  => array(
+				'id'     => $date,
+				'date'   => $date,
+				'label'  => $label,
+				'where'  => $loc_name,
+				'when'   => $when,
+				'window' => $time,
+				'cost'   => (float) $resolved['cost'],
+				'meta'   => array(
 					'fe_event_id'   => (int) $event['id'],
 					'fe_event_name' => (string) $event['title'],
 					'fe_date'       => $date,

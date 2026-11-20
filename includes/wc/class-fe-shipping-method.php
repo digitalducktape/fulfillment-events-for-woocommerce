@@ -153,9 +153,11 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 						'meta_data' => $spec['meta'],
 					)
 				);
-				// The block checkout shows a rate's description under it (WooCommerce 9.2+).
-				if ( '' !== $note && isset( $this->rates[ $rate_id ] ) && is_callable( array( $this->rates[ $rate_id ], 'set_description' ) ) ) {
-					$this->rates[ $rate_id ]->set_description( $note );
+				// The block checkout shows a rate's "delivery time" under its name
+				// (WooCommerce 9.2+); the classic one gets the note from
+				// Fe_Cart::label_with_note().
+				if ( '' !== $note && isset( $this->rates[ $rate_id ] ) && is_callable( array( $this->rates[ $rate_id ], 'set_delivery_time' ) ) ) {
+					$this->rates[ $rate_id ]->set_delivery_time( $note );
 				}
 			}
 		}
@@ -182,17 +184,26 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 		switch ( $this->fe_type ) {
 			case 'delivery':
 				/* translators: %s: date, e.g. Thu, Dec 10 */
-				return sprintf( __( 'Delivery · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
+				$label = sprintf( __( 'Delivery · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
+				break;
 			case 'pickup':
 				if ( '' === $spec['where'] ) {
 					/* translators: %s: date, e.g. Thu, Dec 10 */
-					return sprintf( __( 'Pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
+					$label = sprintf( __( 'Pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
+				} else {
+					/* translators: 1: location name, 2: date, e.g. Thu, Dec 10 */
+					$label = sprintf( __( 'Pickup at %1$s · %2$s', 'fulfillment-events-for-woocommerce' ), $spec['where'], $spec['when'] );
 				}
-				/* translators: 1: location name, 2: date, e.g. Thu, Dec 10 */
-				return sprintf( __( 'Pickup at %1$s · %2$s', 'fulfillment-events-for-woocommerce' ), $spec['where'], $spec['when'] );
+				break;
 			default:
 				/* translators: %s: date, e.g. Thu, Dec 10 */
-				return sprintf( __( 'Courier pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
+				$label = sprintf( __( 'Courier pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
 		}
+		$time = isset( $spec['window'] ) ? trim( (string) $spec['window'] ) : '';
+		if ( '' !== $time ) {
+			/* translators: 1: service and date, e.g. Delivery · Thu, Dec 10; 2: time, e.g. 9am–1pm */
+			$label = sprintf( __( '%1$s · %2$s', 'fulfillment-events-for-woocommerce' ), $label, $time );
+		}
+		return $label;
 	}
 }

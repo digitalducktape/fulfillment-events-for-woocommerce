@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.6.1
+Stable tag: 0.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,10 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.6.2 =
+* Delivery and pickup options show their time: "Delivery · Thu, Dec 10 · 9am–1pm". The time is also on the order and its emails.
+* Courier instructions sit under the courier option's name. In the block checkout they're shown as the option's delivery time (WooCommerce 9.2+), the only extra text it displays.
 
 = 0.6.1 =
 * Classic cart and checkout: the Date dropdown sits above the section's shipping options, and the courier instructions get a line of their own instead of squeezing beside the option.

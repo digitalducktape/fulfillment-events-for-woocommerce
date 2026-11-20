@@ -68,7 +68,10 @@ final class RateBuilderTest extends TestCase {
 		$rates = Fe_Rate_Builder::build( $event, 'delivery', 1, array(), 9.0, 'Anytime', $this->locations(), 1, '2026-12-01' );
 		$this->assertCount( 2, $rates );
 		$this->assertSame( 9.0, $rates[0]['cost'] );
-		$this->assertSame( 'Delivery · Thu, Dec 10', $rates[0]['label'] );
+		// The time goes in the option name so customers see what they pick.
+		$this->assertSame( 'Delivery · Thu, Dec 10 · 9-12', $rates[0]['label'] );
+		$this->assertSame( '9-12', $rates[0]['window'] );
+		$this->assertSame( 'Delivery · Fri, Dec 18 · Anytime', $rates[1]['label'] );
 		$this->assertSame( '9-12', $rates[0]['meta']['fe_window'] );
 		$this->assertSame( 'Anytime', $rates[1]['meta']['fe_window'] );
 		$this->assertSame( 7, $rates[0]['meta']['fe_event_id'] );
@@ -119,7 +122,9 @@ final class RateBuilderTest extends TestCase {
 		);
 		$rates = Fe_Rate_Builder::build( $event, 'courier', 1, array(), 5.0, '', $this->locations(), 1, '2026-12-01' );
 		$this->assertCount( 2, $rates );
+		// Courier has no set time; its instructions explain how it works.
 		$this->assertSame( 'Courier pickup · Sun, Dec 13', $rates[1]['label'] );
+		$this->assertSame( '', $rates[1]['window'] );
 		$this->assertSame( "We'll coordinate the time with you", $rates[1]['meta']['fe_window'] );
 		$this->assertSame( 'courier', $rates[1]['meta']['fe_type'] );
 	}

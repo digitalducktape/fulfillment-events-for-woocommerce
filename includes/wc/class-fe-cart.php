@@ -37,7 +37,7 @@ class Fe_Cart {
 		add_filter( 'woocommerce_cart_shipping_packages', array( __CLASS__, 'packages' ) );
 		add_filter( 'woocommerce_package_rates', array( __CLASS__, 'filter_rates' ), 10, 2 );
 		add_filter( 'woocommerce_shipping_package_name', array( __CLASS__, 'package_name' ), 10, 3 );
-		add_action( 'woocommerce_after_shipping_rate', array( __CLASS__, 'render_rate_note' ), 10, 2 );
+		add_filter( 'woocommerce_cart_shipping_method_full_label', array( __CLASS__, 'label_with_note' ), 10, 2 );
 		add_filter( 'woocommerce_cart_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_filter( 'woocommerce_no_shipping_available_html', array( __CLASS__, 'no_rates_html' ) );
 		add_action( 'woocommerce_store_api_cart_errors', array( __CLASS__, 'store_api_errors' ), 10, 2 );
@@ -422,20 +422,23 @@ class Fe_Cart {
 	private static $rendering_package = null;
 
 	/**
-	 * Classic checkout: prints a courier rate's instructions under it. The
-	 * block checkout shows them from the rate's description instead.
+	 * Classic checkout: puts a courier rate's instructions under its name,
+	 * inside the label so themes that lay options out in a row keep it below.
+	 * The block checkout shows them from the rate's delivery time instead.
 	 *
+	 * @param string           $label Label HTML.
 	 * @param WC_Shipping_Rate $rate  Rate.
-	 * @param int              $index Package index.
+	 * @return string
 	 */
-	public static function render_rate_note( $rate, $index = 0 ) {
+	public static function label_with_note( $label, $rate ) {
 		if ( ! is_object( $rate ) || ! is_callable( array( $rate, 'get_method_id' ) ) || 'fe_courier' !== $rate->get_method_id() ) {
-			return;
+			return $label;
 		}
-		$note = is_callable( array( $rate, 'get_description' ) ) ? (string) $rate->get_description() : fe_courier_instructions();
-		if ( '' !== trim( $note ) ) {
-			echo '<p class="fe-rate-note">' . esc_html( $note ) . '</p>';
+		$note = is_callable( array( $rate, 'get_delivery_time' ) ) ? (string) $rate->get_delivery_time() : fe_courier_instructions();
+		if ( '' === trim( $note ) ) {
+			return $label;
 		}
+		return $label . '<small class="fe-rate-note">' . esc_html( $note ) . '</small>';
 	}
 
 	/**
