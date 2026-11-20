@@ -1,0 +1,28 @@
+{
+  "name": "digitalducktape/fulfillment-events-for-woocommerce",
+  "description": "Sell products tied to dated fulfillment events, check out several dates in one payment, and split the paid order per date.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    { "name": "Ed Wolf", "homepage": "https://www.ed-wolf.com/" }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6",
+    "wp-coding-standards/wpcs": "^3.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "wp-cli/i18n-command": "^2.7"
+  },
+  "scripts": {
+    "test": "bin/test.sh",
+    "lint:phpcs": "phpcs"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}

@@ -1,0 +1,71 @@
+/* Fulfillment Events admin. */
+.fe-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0; }
+.fe-header h1, .fe-header__title { margin: 0; font-size: 20px; font-weight: 600; }
+.fe-support { text-decoration: none; font-weight: 600; }
+
+.fe-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; line-height: 1.6; border: 1px solid transparent; white-space: nowrap; }
+.fe-pill--default { background: #f0f0f1; color: #3c434a; border-color: #dcdcde; }
+.fe-pill--override { background: #e5f5fa; color: #045a73; border-color: #9fd3e4; }
+.fe-pill--off { background: #fcf0f1; color: #8a2424; border-color: #f0b8bb; }
+.fe-pill--none { background: transparent; color: #787c82; border: 1px dashed #c3c4c7; }
+/* Event setup: one flow, sections in reading order. */
+.fe-setup { max-width: 980px; }
+.fe-section { padding: 4px 0 16px; border-bottom: 1px solid #dcdcde; margin-bottom: 12px; }
+.fe-section__title { font-size: 14px; margin: 12px 0 6px; }
+.fe-subtitle { font-size: 13px; margin: 18px 0 4px; }
+.fe-muted { color: #787c82; font-style: italic; }
+.fe-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.fe-sales { display: flex; gap: 24px; flex-wrap: wrap; }
+.fe-sales label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.fe-field label { display: block; font-weight: 600; margin-bottom: 4px; }
+.fe-field select { width: 100%; }
+
+/* A date card: head, then one line per service. */
+.fe-date { border: 1px solid #dcdcde; border-radius: 4px; background: #fff; padding: 10px 12px; margin: 0 0 10px; }
+.fe-date__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.fe-date__head input[type="date"] { font-weight: 600; }
+.fe-service { display: grid; grid-template-columns: 7.5em 9.5em 1fr; align-items: center; gap: 6px 10px; padding: 5px 0; border-top: 1px solid #f0f0f1; }
+.fe-service__toggle { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; }
+.fe-service__time { width: 100%; }
+.fe-service__where { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; }
+.fe-service__lead { color: #50575e; }
+.fe-zone { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.fe-service.is-off .fe-service__toggle { font-weight: 400; color: #50575e; }
+.fe-service.is-off .fe-service__time, .fe-service.is-off .fe-service__where { opacity: .4; }
+@media ( max-width: 782px ) {
+	.fe-service { grid-template-columns: 1fr; }
+}
+
+/* Rows: exceptions and price changes. */
+.fe-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; padding: 8px 0; border-top: 1px solid #f0f0f1; }
+.fe-exception__product { min-width: 16em; max-width: 22em; }
+.fe-exception .select2-container { min-width: 16em; max-width: 22em; }
+.fe-exception__choice { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.fe-exception.is-exclude .fe-exception__dates { opacity: .4; }
+.fe-exception__dates { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; }
+.fe-money { display: inline-flex; align-items: center; gap: 4px; }
+.fe-money input[type="number"] { width: 6em; }
+.fe-prices { margin-top: 8px; }
+.fe-prices summary { cursor: pointer; color: #2271b1; padding: 6px 0; }
+.fe-remove-date .dashicons, [data-fe-remove] .dashicons { vertical-align: middle; }
+
+/* Events list. */
+.column-fe_dates { width: 26%; }
+.fe-datelist { margin: 0; }
+.fe-datelist li { margin: 0 0 2px; }
+.fe-datelist .fe-past { color: #a7aaad; text-decoration: line-through; }
+.fe-datelist .fe-kinds { color: #50575e; }
+.fe-note-excerpt { color: #50575e; font-style: italic; display: block; margin-top: 4px; }
+#fe_notes textarea { width: 100%; }
+
+.fe-form-table th { width: 140px; }
+
+.fe-badge { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 12px; }
+.fe-badge--warn { background: #fcf9e8; color: #6e4b00; border: 1px solid #dba617; }
+.column-fe_events { width: 9em; }
+
+/* Settings: project links. */
+.fe-about { margin-top: 32px; padding-top: 16px; border-top: 1px solid #dcdcde; }
+.fe-bmc { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid #000; border-radius: 10px; background: #ffdd00; color: #000; font-size: 16px; font-weight: 600; text-decoration: none; }
+.fe-bmc:hover, .fe-bmc:focus { background: #ffe94d; color: #000; }
+.fe-bmc:focus { outline: 2px solid #2271b1; outline-offset: 2px; box-shadow: none; }

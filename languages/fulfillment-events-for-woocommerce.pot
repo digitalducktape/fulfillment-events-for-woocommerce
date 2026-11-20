@@ -1,0 +1,945 @@
+# Copyright (C) 2026 Ed Wolf
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.6.6\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-20T05:11:11+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: fulfillment-events-for-woocommerce\n"
+
+#. Plugin Name of the plugin
+#: fulfillment-events-for-woocommerce.php:3
+msgid "Fulfillment Events for WooCommerce"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: fulfillment-events-for-woocommerce.php:4
+msgid "https://github.com/digitalducktape/fulfillment-events-for-woocommerce"
+msgstr ""
+
+#. Description of the plugin
+#: fulfillment-events-for-woocommerce.php:5
+msgid "Sell products tied to dated fulfillment events (pickup, delivery, courier), check out several dates in one payment, and split the paid order into one order per date."
+msgstr ""
+
+#. Author of the plugin
+#: fulfillment-events-for-woocommerce.php:11
+msgid "Ed Wolf"
+msgstr ""
+
+#. Author URI of the plugin
+#: fulfillment-events-for-woocommerce.php:12
+msgid "https://www.ed-wolf.com/"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:46
+#: includes/admin/class-fe-admin.php:158
+#: includes/class-fe-plugin.php:94
+msgid "Support this plugin"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:54
+#: includes/admin/class-fe-admin.php:55
+#: includes/admin/class-fe-order-admin.php:45
+#: includes/admin/class-fe-order-admin.php:49
+msgid "Fulfillment"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:68
+#: includes/admin/class-fe-locations-page.php:100
+msgid "Locations"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:69
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:123
+#: includes/admin/class-fe-admin.php:170
+#: includes/admin/class-fe-event-editor.php:308
+#: includes/admin/class-fe-locations-page.php:30
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:127
+msgid "Fulfillment settings"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:129
+msgid "Settings saved."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:136
+msgid "Admin emails"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:137
+msgid "Send a new-order email for each order created when a multi-date order is split"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:138
+msgid "When unticked, admins get one new-order email for the whole order instead."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:141
+msgid "Courier instructions"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:143
+msgid "Shown under each courier option at checkout. Leave empty to show nothing."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:146
+msgid "Uninstall"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:147
+msgid "Delete events, locations and zone rules when the plugin is deleted"
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:154
+msgid "Fulfillment Events is open source."
+msgstr ""
+
+#: includes/admin/class-fe-admin.php:155
+msgid "See the project on GitHub"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:209
+msgid "Sales close must be after sales open. The close time was cleared."
+msgstr ""
+
+#. translators: %s: product names
+#: includes/admin/class-fe-event-editor.php:213
+#, php-format
+msgid "%s has no dates left in this event, so it can't be bought for it."
+msgid_plural "%s have no dates left in this event, so they can't be bought for it."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-fe-event-editor.php:215
+msgid "A price change was removed because that zone is turned off on that date."
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:272
+#: includes/admin/class-fe-event-editor.php:287
+msgid "Duplicate"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:287
+msgid "Make a draft copy of the saved event"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:312
+#: includes/rest/class-fe-rest-controller.php:94
+msgid "Event not found."
+msgstr ""
+
+#. translators: %s: event title
+#: includes/admin/class-fe-event-editor.php:320
+#, php-format
+msgid "%s (copy)"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:324
+msgid "Could not create the copy."
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:356
+msgid "Event setup"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:357
+#: includes/admin/class-fe-event-editor.php:381
+#: includes/admin/class-fe-event-editor.php:403
+msgid "Internal notes"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:369
+#: includes/admin/class-fe-product-fields.php:65
+msgid "Fulfillment event"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:382
+msgid "e.g. Copied from last year, moved the fair pickup to Dec 18"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:383
+msgid "Only staff see these notes."
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:402
+#: includes/admin/class-fe-event-setup-box.php:87
+msgid "Dates"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:418
+#: includes/wc/class-fe-cart.php:189
+msgid "delivery"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:421
+#: includes/wc/class-fe-cart.php:191
+msgid "pickup"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:424
+#: includes/wc/class-fe-cart.php:185
+msgid "courier"
+msgstr ""
+
+#. translators: 1: comma-separated services, 2: last service, e.g. "delivery, pickup" and "courier".
+#. translators: 1: comma-separated dates, 2: last date
+#: includes/admin/class-fe-event-editor.php:431
+#: includes/admin/class-fe-product-fields.php:218
+#, php-format
+msgid "%1$s and %2$s"
+msgstr ""
+
+#. translators: %d: number of product exceptions
+#: includes/admin/class-fe-event-editor.php:446
+#, php-format
+msgid "%d product exception"
+msgid_plural "%d product exceptions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-fe-event-editor.php:466
+msgid "No dates yet"
+msgstr ""
+
+#: includes/admin/class-fe-event-editor.php:475
+msgid "Date has passed"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:64
+msgid "When it sells"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:66
+msgid "Opens"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:68
+msgid "Closes"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:71
+msgid "Leave either empty for no limit. Times use the store timezone."
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:88
+msgid "Tick what runs on each date and which zones it reaches. Pickup is open to every zone that offers it."
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:96
+msgid "Add date"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:97
+msgid "Edit shipping zones and their prices"
+msgstr ""
+
+#. translators: %s: event name, e.g. Holiday Pre-order 2026
+#: includes/admin/class-fe-event-setup-box.php:127
+#: includes/admin/class-fe-zone-grid.php:197
+#: includes/wc/class-fe-checkout-dates.php:115
+#: includes/wc/class-fe-checkout-dates.php:294
+msgid "Date"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:128
+msgid "Remove this date"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:128
+#: includes/admin/class-fe-zone-grid.php:152
+msgid "Remove"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:131
+#: includes/admin/class-fe-zone-grid.php:129
+#: includes/admin/class-fe-zone-grid.php:181
+#: includes/wc/class-fe-emails.php:261
+msgid "Delivery"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:132
+#: includes/admin/class-fe-event-setup-box.php:137
+msgid "e.g. 10am to 2pm"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:132
+msgid "Delivery time"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:136
+#: includes/admin/class-fe-zone-grid.php:130
+#: includes/admin/class-fe-zone-grid.php:182
+#: includes/wc/class-fe-emails.php:262
+msgid "Pickup"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:137
+msgid "Pickup time"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:138
+msgid "at"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:139
+msgid "Pickup place"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:140
+msgid "Default location"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:148
+#: includes/admin/class-fe-zone-grid.php:131
+#: includes/admin/class-fe-zone-grid.php:183
+msgid "Courier"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:166
+msgid "to"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:168
+msgid "No shipping zone offers this yet"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:213
+msgid "Products"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:214
+msgid "Categories"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:215
+msgid "Choose categories"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:220
+msgid "Individual products"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:221
+#: includes/admin/class-fe-event-setup-box.php:266
+msgid "Search for a product"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:224
+msgid "Products in these categories, or chosen here, are in the event. Only the categories a product is directly in count."
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:226
+msgid "Exceptions"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:227
+msgid "Limit a product to some of the dates, or take it out of this event. A product limited to dates gets its own shipping choice at checkout."
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:234
+msgid "Add an exception"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:266
+msgid "Product"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:270
+msgid "Only on"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:277
+msgid "Save to use new dates here"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:281
+msgid "Not in this event"
+msgstr ""
+
+#: includes/admin/class-fe-event-setup-box.php:282
+msgid "Remove this exception"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:102
+msgid "Location saved."
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:104
+msgid "Location deleted."
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:106
+msgid "A location needs a name."
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:111
+#: includes/admin/class-fe-locations-page.php:141
+msgid "Name"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:112
+#: includes/admin/class-fe-locations-page.php:143
+msgid "Address"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:121
+#: includes/admin/class-fe-locations-page.php:148
+msgid "Default"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:126
+msgid "Edit"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:128
+msgid "Delete"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:135
+msgid "Edit location"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:135
+#: includes/admin/class-fe-locations-page.php:151
+msgid "Add location"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:145
+msgid "Instructions"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:147
+msgid "Shown to customers who pick up here, for example where to park."
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:149
+msgid "Use for dates that do not pick a location"
+msgstr ""
+
+#: includes/admin/class-fe-locations-page.php:151
+msgid "Update location"
+msgstr ""
+
+#: includes/admin/class-fe-notices.php:119
+msgid "These products look like tickets or classes. If they need no shipping, mark them virtual so checkout skips delivery options. If they are sold for specific dates, add them to an event."
+msgstr ""
+
+#: includes/admin/class-fe-notices.php:123
+msgid "Dismiss this hint"
+msgstr ""
+
+#. translators: %s: list of linked order numbers
+#: includes/admin/class-fe-order-admin.php:88
+#, php-format
+msgid "Split into %s"
+msgstr ""
+
+#. translators: %s: linked parent order number
+#: includes/admin/class-fe-order-admin.php:102
+#, php-format
+msgid "part of %s"
+msgstr ""
+
+#: includes/admin/class-fe-order-admin.php:177
+msgid "Split order"
+msgstr ""
+
+#. translators: %s: linked parent order number
+#: includes/admin/class-fe-order-admin.php:200
+#, php-format
+msgid "Refunds for this order are made on %s."
+msgstr ""
+
+#: includes/admin/class-fe-order-admin.php:203
+msgid "This order was split into:"
+msgstr ""
+
+#: includes/admin/class-fe-order-admin.php:210
+msgid "This order was not split."
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:51
+msgid "— No change —"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:52
+msgid "Add to event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:53
+msgid "Exclude from event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:54
+msgid "Remove from event (follow categories)"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:69
+#: includes/admin/class-fe-product-fields.php:296
+#: includes/data/class-fe-event-repo.php:31
+msgid "Events"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:134
+msgid "(no title)"
+msgstr ""
+
+#. translators: %s: event title
+#: includes/admin/class-fe-product-fields.php:137
+#, php-format
+msgid "%s (draft)"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:152
+msgid "No event"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:166
+#: includes/admin/class-fe-product-fields.php:255
+#: includes/admin/class-fe-product-fields.php:268
+msgid "Fulfillment events"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:168
+msgid "Events this product is sold through. Categories can link events too. Only categories the product is directly assigned to count; parent categories are not inherited."
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:169
+msgid "Excluded from events"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:171
+msgid "Events this product is left out of, even when one of its categories is in them."
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:178
+msgid "Date limit"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:178
+msgid "(set on the event)"
+msgstr ""
+
+#. translators: %s: event title
+#: includes/admin/class-fe-product-fields.php:194
+#, php-format
+msgid "%s: no dates"
+msgstr ""
+
+#. translators: 1: event title, 2: dates, e.g. "Dec 18" or "Dec 10 and Dec 18"
+#: includes/admin/class-fe-product-fields.php:197
+#, php-format
+msgid "%1$s: only %2$s"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:257
+#: includes/admin/class-fe-product-fields.php:270
+msgid "Products directly assigned to this category are sold through these events. Parent categories are not inherited."
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:324
+msgid "no dates"
+msgstr ""
+
+#: includes/admin/class-fe-product-fields.php:329
+msgid "Excluded"
+msgstr ""
+
+#. translators: %d: number of open events
+#: includes/admin/class-fe-product-fields.php:335
+msgid "Checkout offers the dates of each of these events."
+msgstr ""
+
+#. translators: %d: number of open events
+#: includes/admin/class-fe-product-fields.php:335
+#, php-format
+msgid "In %d open event"
+msgid_plural "In %d open events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-fe-zone-grid.php:40
+msgid "Locations not covered by your other zones"
+msgstr ""
+
+#. translators: %d: shipping zone id
+#: includes/admin/class-fe-zone-grid.php:72
+#, php-format
+msgid "Zone #%d"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:104
+msgid "Change a price for this event"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:105
+msgid "Prices normally come from your shipping zones. Add a row only when this event charges something different."
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:112
+msgid "Add a price change"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:135
+msgid "Also turned off for this event"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:136
+msgid "Set in an earlier version. Remove a row to turn it back on."
+msgstr ""
+
+#. translators: 1: service, 2: zone, 3: date or "all dates"
+#: includes/admin/class-fe-zone-grid.php:143
+#, php-format
+msgid "%1$s off in %2$s, %3$s"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:146
+msgid "all dates"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:187
+msgid "Zone"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:192
+msgid "Service"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:198
+msgid "All dates"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:204
+msgid "Price"
+msgstr ""
+
+#: includes/admin/class-fe-zone-grid.php:206
+msgid "Remove this price change"
+msgstr ""
+
+#: includes/class-fe-plugin.php:82
+msgid "Fulfillment Events for WooCommerce needs WooCommerce to be installed and active."
+msgstr ""
+
+#: includes/data/class-fe-event-repo.php:32
+msgid "Event"
+msgstr ""
+
+#: includes/data/class-fe-event-repo.php:33
+msgid "Add event"
+msgstr ""
+
+#: includes/data/class-fe-event-repo.php:34
+msgid "Edit event"
+msgstr ""
+
+#: includes/functions.php:53
+msgid "Send your own courier, such as Uber, to collect your order on the date you choose. We'll contact you to arrange the pickup time."
+msgstr ""
+
+#: includes/wc/class-fe-addon-field.php:50
+msgid "Adding to an existing order? Order number"
+msgstr ""
+
+#: includes/wc/class-fe-addon-field.php:312
+msgid "Enter the number of the order you are adding to."
+msgstr ""
+
+#. translators: 1: order number, 2: event name
+#: includes/wc/class-fe-addon-field.php:315
+#, php-format
+msgid "We couldn't find an open order #%1$s for %2$s with this email."
+msgstr ""
+
+#: includes/wc/class-fe-addon-field.php:501
+msgid "Add-on order number could not be matched; check this order."
+msgstr ""
+
+#: includes/wc/class-fe-cart.php:76
+msgid "your order"
+msgstr ""
+
+#. translators: %s: event name.
+#: includes/wc/class-fe-cart.php:78
+#, php-format
+msgid "The date you chose for %s has passed. Choose another date."
+msgstr ""
+
+#: includes/wc/class-fe-cart.php:187
+msgid "delivery or pickup"
+msgstr ""
+
+#. translators: 1: comma-separated dates, 2: last date, e.g. "Dec 3, Dec 10" and "Dec 18".
+#: includes/wc/class-fe-cart.php:197
+#, php-format
+msgid "%1$s or %2$s"
+msgstr ""
+
+#. translators: 1: fulfillment types, e.g. "delivery or pickup", 2: dates, e.g. "Dec 10 or Dec 18".
+#: includes/wc/class-fe-cart.php:205
+#, php-format
+msgid "Available for %1$s on %2$s"
+msgstr ""
+
+#: includes/wc/class-fe-cart.php:412
+msgid "Combined delivery"
+msgstr ""
+
+#. translators: %s: event name.
+#: includes/wc/class-fe-cart.php:899
+#, php-format
+msgid "%s items aren't available for this address. Try a different address or remove them from your cart."
+msgstr ""
+
+#. translators: 1: event name, 2: postcode.
+#: includes/wc/class-fe-cart.php:902
+#, php-format
+msgid "%1$s items aren't available for %2$s. Try a different address or remove them from your cart."
+msgstr ""
+
+#. translators: %s: event name, e.g. Holiday Pre-order 2026
+#: includes/wc/class-fe-checkout-dates.php:115
+#, php-format
+msgid "Date for %s"
+msgstr ""
+
+#: includes/wc/class-fe-checkout-dates.php:189
+msgid "Date pickers for event shipping sections."
+msgstr ""
+
+#: includes/wc/class-fe-email-split-confirmation.php:30
+msgid "Split order confirmation"
+msgstr ""
+
+#: includes/wc/class-fe-email-split-confirmation.php:31
+msgid "Sent to the customer once when an order is split by date. It replaces the per-order processing and on-hold emails."
+msgstr ""
+
+#: includes/wc/class-fe-email-split-confirmation.php:49
+msgid "Your {site_title} order #{order_number} is confirmed"
+msgstr ""
+
+#: includes/wc/class-fe-email-split-confirmation.php:58
+msgid "Thanks for your order"
+msgstr ""
+
+#: includes/wc/class-fe-email-split-confirmation.php:126
+msgid "Each order above is prepared and fulfilled separately."
+msgstr ""
+
+#: includes/wc/class-fe-emails.php:263
+msgid "Courier pickup"
+msgstr ""
+
+#: includes/wc/class-fe-method-addon.php:37
+msgid "Event add-on"
+msgstr ""
+
+#: includes/wc/class-fe-method-addon.php:46
+msgid "Lets customers add an event order on to an open order for the same event, at no extra shipping cost."
+msgstr ""
+
+#: includes/wc/class-fe-method-addon.php:82
+msgid "Add to an existing order"
+msgstr ""
+
+#. translators: 1: order number, 2: fulfillment type, 3: date, e.g. Thu, Dec 10
+#: includes/wc/class-fe-method-addon.php:130
+#, php-format
+msgid "Add to my order #%1$s — %2$s · %3$s · no extra fee"
+msgstr ""
+
+#: includes/wc/class-fe-method-courier.php:37
+msgid "Event courier"
+msgstr ""
+
+#: includes/wc/class-fe-method-courier.php:46
+msgid "One courier rate for each date of the event in the cart."
+msgstr ""
+
+#: includes/wc/class-fe-method-delivery.php:37
+msgid "Event delivery"
+msgstr ""
+
+#: includes/wc/class-fe-method-delivery.php:46
+msgid "One delivery rate for each delivery date of the event in the cart."
+msgstr ""
+
+#: includes/wc/class-fe-method-pickup.php:37
+msgid "Event pickup"
+msgstr ""
+
+#: includes/wc/class-fe-method-pickup.php:46
+msgid "One pickup rate for each pickup date of the event in the cart."
+msgstr ""
+
+#. translators: %s: parent order number.
+#: includes/wc/class-fe-order-splitter.php:287
+#, php-format
+msgid "Created from split order #%s."
+msgstr ""
+
+#. translators: %s: comma-separated child order numbers.
+#: includes/wc/class-fe-order-splitter.php:312
+#, php-format
+msgid "Split into %s."
+msgstr ""
+
+#. translators: %s: parent order number.
+#: includes/wc/class-fe-order-splitter.php:354
+#, php-format
+msgid "Payment completed on #%s."
+msgstr ""
+
+#. translators: %s: comma-separated coupon codes.
+#: includes/wc/class-fe-order-splitter.php:541
+#, php-format
+msgid "Coupons used on the original order: %s. Line totals already include the discount."
+msgstr ""
+
+#. translators: %s: rounding adjustment amount.
+#: includes/wc/class-fe-order-splitter.php:576
+#, php-format
+msgid "Total adjusted by %s so the split orders add up to the amount charged."
+msgstr ""
+
+#. translators: %s: error message.
+#: includes/wc/class-fe-order-splitter.php:603
+#, php-format
+msgid "Splitting this order failed and nothing was changed: %s. It stays one order."
+msgstr ""
+
+#. translators: 1: error message, 2: all child order numbers, 3: child order numbers already moved, or a dash.
+#: includes/wc/class-fe-order-splitter.php:633
+#, php-format
+msgid "Split needs manual review: %1$s. Split orders: %2$s. Already moved out of pending: %3$s. Check stock, sales and statuses on this order and those."
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:59
+msgid "Title"
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:63
+msgid "Name shown in the shipping zone list."
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:66
+msgid "Cost"
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:71
+msgid "Default cost for this zone. Events can override it per date."
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:74
+msgid "Default window"
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:78
+msgid "Time window shown when an event date has none of its own."
+msgstr ""
+
+#: includes/wc/class-fe-shipping-method.php:122
+msgid "We'll coordinate the time with you"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/wc/class-fe-shipping-method.php:187
+#, php-format
+msgid "Delivery · %s"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/wc/class-fe-shipping-method.php:192
+#, php-format
+msgid "Pickup · %s"
+msgstr ""
+
+#. translators: 1: location name, 2: date, e.g. Thu, Dec 10
+#: includes/wc/class-fe-shipping-method.php:195
+#, php-format
+msgid "Pickup at %1$s · %2$s"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/wc/class-fe-shipping-method.php:200
+#, php-format
+msgid "Courier pickup · %s"
+msgstr ""
+
+#. translators: 1: service and date, e.g. Delivery · Thu, Dec 10; 2: time, e.g. 9am–1pm
+#: includes/wc/class-fe-shipping-method.php:205
+#, php-format
+msgid "%1$s · %2$s"
+msgstr ""
+
+#: includes/wc/class-fe-split-status.php:45
+#: includes/wc/class-fe-split-status.php:65
+msgctxt "Order status"
+msgid "Split"
+msgstr ""
+
+#. translators: %s: number of orders.
+#: includes/wc/class-fe-split-status.php:51
+#, php-format
+msgid "Split <span class=\"count\">(%s)</span>"
+msgid_plural "Split <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: order number, 2: total paid
+#: templates/emails/plain/split-confirmation.php:21
+#: templates/emails/split-confirmation.php:30
+#, php-format
+msgid "Your order #%1$s is confirmed. You paid %2$s in total, split into the orders below."
+msgstr ""
+
+#. translators: %s: order number
+#: templates/emails/plain/split-confirmation.php:27
+#: templates/emails/split-confirmation.php:42
+#: templates/order-received/split-orders.php:29
+#, php-format
+msgid "Order #%s"
+msgstr ""
+
+#: templates/emails/plain/split-confirmation.php:39
+#: templates/emails/split-confirmation.php:58
+msgid "Shipped separately"
+msgstr ""
+
+#. translators: %s: customer first name
+#: templates/emails/split-confirmation.php:24
+#, php-format
+msgid "Hi %s,"
+msgstr ""
+
+#. translators: %d: number of orders
+#: templates/order-received/split-orders.php:19
+#, php-format
+msgid "Your order was split into %d order"
+msgid_plural "Your order was split into %d orders"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/order-received/split-orders.php:22
+msgid "Each one is prepared and fulfilled separately. We've emailed you this list too."
+msgstr ""
+
+#: templates/order-received/split-orders.php:39
+msgid "No delivery needed"
+msgstr ""
