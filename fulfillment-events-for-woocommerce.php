@@ -62,6 +62,7 @@ require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-cart-grouper.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-split-math.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-fee-dedupe.php';
 require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-addon-rules.php';
+require_once FE_PLUGIN_DIR . 'includes/domain/class-fe-event-setup.php';
 require_once FE_PLUGIN_DIR . 'includes/functions.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-cart.php';
 require_once FE_PLUGIN_DIR . 'includes/wc/class-fe-order-stamper.php';
