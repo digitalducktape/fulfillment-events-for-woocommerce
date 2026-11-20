@@ -238,13 +238,15 @@ class Fe_Checkout_Dates {
 			return;
 		}
 		wp_enqueue_script( 'fe-checkout-dates-classic', plugins_url( 'assets/checkout-dates-classic.js', FE_PLUGIN_FILE ), array( 'jquery' ), FE_VERSION, true );
-		// Themes often lay a shipping option out as a flex row; the courier
-		// note and the date picker go on lines of their own.
+		// Themes often lay a shipping option out as a flex row; the date
+		// picker goes on a line of its own.
 		wp_register_style( 'fe-checkout-dates-classic', false, array(), FE_VERSION );
 		wp_enqueue_style( 'fe-checkout-dates-classic' );
 		wp_add_inline_style(
 			'fe-checkout-dates-classic',
 			'.woocommerce-shipping-methods li:has(.fe-date-picker){flex-wrap:wrap}'
+			// Options can run to several lines; keep the radio on the first.
+			. '.woocommerce-shipping-methods li:has(> input.shipping_method[value^="fe_"]){align-items:baseline}'
 			. '.fe-rate-note{display:block;margin:0.25em 0 0.25em;font-size:0.875em;font-weight:normal;opacity:0.8}'
 			. '.fe-date-picker{flex-basis:100%;margin:0 0 0.75em}'
 			. '.fe-date-picker label{display:block;font-weight:600;margin-bottom:0.25em}'
