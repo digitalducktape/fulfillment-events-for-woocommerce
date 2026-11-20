@@ -238,6 +238,18 @@ class Fe_Checkout_Dates {
 			return;
 		}
 		wp_enqueue_script( 'fe-checkout-dates-classic', plugins_url( 'assets/checkout-dates-classic.js', FE_PLUGIN_FILE ), array( 'jquery' ), FE_VERSION, true );
+		// Themes often lay a shipping option out as a flex row; the courier
+		// note and the date picker go on lines of their own.
+		wp_register_style( 'fe-checkout-dates-classic', false, array(), FE_VERSION );
+		wp_enqueue_style( 'fe-checkout-dates-classic' );
+		wp_add_inline_style(
+			'fe-checkout-dates-classic',
+			'.woocommerce-shipping-methods li:has(.fe-rate-note),.woocommerce-shipping-methods li:has(.fe-date-picker){flex-wrap:wrap}'
+			. '.fe-rate-note{flex-basis:100%;margin:0.25em 0 0.5em;font-size:0.875em;opacity:0.8}'
+			. '.fe-date-picker{flex-basis:100%;margin:0 0 0.75em}'
+			. '.fe-date-picker label{display:block;font-weight:600;margin-bottom:0.25em}'
+			. '.fe-date-picker select{max-width:100%}'
+		);
 		wp_localize_script(
 			'fe-checkout-dates-classic',
 			'feCheckoutDates',
@@ -250,7 +262,7 @@ class Fe_Checkout_Dates {
 
 	/**
 	 * Classic checkout: prints the section's date dropdown after its last
-	 * shipping option.
+	 * shipping option; the classic script moves it above the options.
 	 *
 	 * @param WC_Shipping_Rate $rate  Rate.
 	 * @param int              $index Package index.
@@ -273,7 +285,8 @@ class Fe_Checkout_Dates {
 				continue;
 			}
 			$id = 'fe-date-' . (int) $index;
-			echo '<p class="fe-date-picker" style="margin:0.75em 0 0"><label for="' . esc_attr( $id ) . '" style="display:block;font-weight:600">' . esc_html( $section['label'] ) . '</label>';
+			// The section's name is right beside it, so the label is just "Date".
+			echo '<p class="fe-date-picker"><label for="' . esc_attr( $id ) . '">' . esc_html__( 'Date', 'fulfillment-events-for-woocommerce' ) . '</label>';
 			echo '<select id="' . esc_attr( $id ) . '" class="fe-date-select" data-group="' . esc_attr( $section['group'] ) . '">';
 			foreach ( $section['options'] as $option ) {
 				echo '<option value="' . esc_attr( $option['value'] ) . '"' . selected( $section['selected'], $option['value'], false ) . '>' . esc_html( $option['label'] ) . '</option>';

@@ -434,7 +434,7 @@ class Fe_Cart {
 		}
 		$note = is_callable( array( $rate, 'get_description' ) ) ? (string) $rate->get_description() : fe_courier_instructions();
 		if ( '' !== trim( $note ) ) {
-			echo '<p class="fe-rate-note" style="margin:0.25em 0 0.5em;font-size:0.875em;opacity:0.8">' . esc_html( $note ) . '</p>';
+			echo '<p class="fe-rate-note">' . esc_html( $note ) . '</p>';
 		}
 	}
 
