@@ -48,7 +48,7 @@ class AvailabilityNoteTest extends TestCase {
 	public function test_non_shipping_product_is_treated_as_in_no_event() {
 		$active = array( 'status' => 'active', 'event_id' => 4 );
 		$closed = array( 'status' => 'closed', 'event_id' => null );
-		$none   = array( 'status' => 'none', 'event_id' => null, 'event_ids' => array() );
+		$none   = array( 'status' => 'none', 'event_id' => null, 'event_ids' => array(), 'offers' => array() );
 		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $active ) );
 		$this->assertSame( $none, Fe_Cart::status_for_shipping( false, $closed ) );
 	}
@@ -81,5 +81,21 @@ class AvailabilityNoteTest extends TestCase {
 		$this->assertSame( 'Available for delivery on Dec 18', Fe_Cart::availability_note( array( 'dates' => array( array( 'date' => '2026-12-18', 'delivery' => true, 'courier' => true ) ) ), '2026-12-01' ) );
 		$merged = Fe_Cart::merged_dates( array( array( 'dates' => array( array( 'date' => '2026-12-18', 'courier' => true ) ) ) ) );
 		$this->assertTrue( $merged['dates'][0]['courier'] );
+	}
+
+	public function test_note_uses_only_the_products_allowed_dates() {
+		$events = array(
+			7 => array(
+				'id'    => 7,
+				'dates' => array(
+					array( 'date' => '2026-12-10', 'delivery' => true ),
+					array( 'date' => '2026-12-18', 'delivery' => true ),
+				),
+			),
+		);
+		$trimmed = Fe_Cart::trim_to_offers( $events, array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ) );
+		$this->assertSame( 'Available for delivery on Dec 18', Fe_Cart::availability_note( Fe_Cart::merged_dates( $trimmed ), '2026-12-01' ) );
+		$all = Fe_Cart::trim_to_offers( $events, array( array( 'event_id' => 7, 'dates' => null ) ) );
+		$this->assertSame( 'Available for delivery on Dec 10 or Dec 18', Fe_Cart::availability_note( Fe_Cart::merged_dates( $all ), '2026-12-01' ) );
 	}
 }

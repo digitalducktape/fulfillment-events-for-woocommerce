@@ -136,4 +136,29 @@ class EventResolverTest extends TestCase {
 		$this->assertSame( array(), Fe_Event_Resolver::open_ids( array( 3 ), $open, '2026-12-04' ) );
 		$this->assertSame( 10, Fe_Event_Resolver::resolve( array( 18, 10 ), $open, '2026-12-01' ) );
 	}
+
+	private function limited_events( array $limits ) {
+		return array(
+			array(
+				'id'          => 7,
+				'dates'       => array( array( 'date' => '2026-12-10' ), array( 'date' => '2026-12-18' ) ),
+				'date_limits' => $limits,
+			),
+		);
+	}
+
+	public function test_open_offers_apply_the_products_limit() {
+		$events = $this->limited_events( array( 42 => array( '2026-12-18' ) ) );
+		$this->assertSame( array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ), Fe_Event_Resolver::open_offers( array( 7 ), $events, '2026-12-01', 42 ) );
+		$this->assertSame( array( array( 'event_id' => 7, 'dates' => null ) ), Fe_Event_Resolver::open_offers( array( 7 ), $events, '2026-12-01', 41 ) );
+		$this->assertSame( array(), Fe_Event_Resolver::open_offers( array( 7 ), $events, '2026-12-19', 42 ) );
+		$this->assertSame( array(), Fe_Event_Resolver::open_offers( array( 7 ), $this->limited_events( array( 42 => array() ) ), '2026-12-01', 42 ) );
+	}
+
+	public function test_limited_offer_sorts_by_its_own_next_date() {
+		$events   = $this->limited_events( array( 42 => array( '2026-12-18' ) ) );
+		$events[] = array( 'id' => 9, 'dates' => array( array( 'date' => '2026-12-12' ) ) );
+		$this->assertSame( array( 9, 7 ), array_column( Fe_Event_Resolver::open_offers( array( 7, 9 ), $events, '2026-12-01', 42 ), 'event_id' ) );
+		$this->assertSame( array( 7, 9 ), Fe_Event_Resolver::open_ids( array( 7, 9 ), $events, '2026-12-01' ) );
+	}
 }

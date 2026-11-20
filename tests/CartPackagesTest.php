@@ -21,6 +21,19 @@ final class FeTestRate {
 	}
 }
 
+final class FeNamedProduct {
+	private $name;
+	public function __construct( $name ) {
+		$this->name = $name;
+	}
+	public function needs_shipping() {
+		return true;
+	}
+	public function get_name() {
+		return $this->name;
+	}
+}
+
 final class CartPackagesTest extends TestCase {
 
 	private function line( $pid, $total, $sub, $tax ) {
@@ -177,5 +190,49 @@ final class CartPackagesTest extends TestCase {
 		$this->assertSame( array( 7 ), Fe_Cart::package_event_ids( array( 'fe_event_id' => 7 ) ) );
 		$this->assertSame( '2026-12-10', Fe_Cart::rate_suffix( 5, '2026-12-10', 1 ) );
 		$this->assertSame( '5-2026-12-10', Fe_Cart::rate_suffix( 5, '2026-12-10', 2 ) );
+	}
+
+	public function test_limited_offers_get_their_own_package_and_heading() {
+		$pkg = array(
+			'contents'    => array(
+				'a' => array( 'product_id' => 1, 'data' => new FeNamedProduct( 'Cookie tin' ), 'line_total' => 10 ),
+				'b' => array( 'product_id' => 2, 'data' => new FeNamedProduct( 'Holiday cookie box' ), 'line_total' => 30 ),
+				'c' => array( 'product_id' => 3, 'data' => new FeNamedProduct( 'Gift card box' ), 'line_total' => 5 ),
+			),
+			'destination' => array(),
+		);
+		$offers = array(
+			1 => array( array( 'event_id' => 7, 'dates' => null ) ),
+			2 => array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ),
+			3 => array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) ),
+		);
+		$out = Fe_Cart::build_packages(
+			array( $pkg ),
+			function ( $pid ) use ( $offers ) {
+				return $offers[ $pid ];
+			},
+			function ( $id ) {
+				return 'Event ' . $id;
+			}
+		);
+		$this->assertCount( 2, $out );
+		$this->assertSame( 'event:7', $out[0]['fe_group'] );
+		$this->assertSame( 'Event 7', $out[0]['fe_event_name'] );
+		$this->assertNull( Fe_Cart::package_allowed_dates( $out[0], 7 ) );
+		$this->assertSame( 'event:7@2026-12-18', $out[1]['fe_group'] );
+		$this->assertSame( array( '2026-12-18' ), Fe_Cart::package_allowed_dates( $out[1], 7 ) );
+		$this->assertSame( array( 7 ), Fe_Cart::package_event_ids( $out[1] ) );
+		$this->assertSame( 'Event 7 · Dec 18', $out[1]['fe_event_name'] );
+		unset( $pkg['contents']['c'] );
+		$single = Fe_Cart::build_packages(
+			array( $pkg ),
+			function ( $pid ) use ( $offers ) {
+				return $offers[ $pid ];
+			},
+			function ( $id ) {
+				return 'Event ' . $id;
+			}
+		);
+		$this->assertSame( 'Event 7 · Holiday cookie box', $single[1]['fe_event_name'] );
 	}
 }

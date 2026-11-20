@@ -46,7 +46,7 @@ class Fe_Order_Stamper {
 	 * @return string[]
 	 */
 	public static function item_meta_keys() {
-		$keys = array( 'fe_addon_guest', 'fe_event_ids' );
+		$keys = array( 'fe_addon_guest', 'fe_event_ids', 'fe_offers' );
 		foreach ( self::RATE_KEYS as $key ) {
 			$keys[] = 'fe_' . $key;
 		}
@@ -90,16 +90,16 @@ class Fe_Order_Stamper {
 	 * Matches Fe_Cart_Grouper's package group, so a product in two open
 	 * events is tagged 'event:{a},{b}' like its package.
 	 *
-	 * @param bool           $needs_shipping Whether the product ships.
-	 * @param int|int[]|null $event_ids      Open events, soonest first (or one id), if any.
-	 * @return string 'event:{ids}', 'regular' or 'none'.
+	 * @param bool                 $needs_shipping Whether the product ships.
+	 * @param array|int|int[]|null $offers         Offers (see Fe_Cart_Grouper::to_offers), ids or one id.
+	 * @return string Fe_Cart_Grouper::key(), 'regular' or 'none'.
 	 */
-	public static function line_group( $needs_shipping, $event_ids ) {
+	public static function line_group( $needs_shipping, $offers ) {
 		if ( ! $needs_shipping ) {
 			return 'none';
 		}
-		$ids = array_values( array_unique( array_filter( array_map( 'intval', (array) $event_ids ) ) ) );
-		return $ids ? 'event:' . implode( ',', $ids ) : 'regular';
+		$key = Fe_Cart_Grouper::key( Fe_Cart_Grouper::to_offers( $offers ) );
+		return '' === $key ? 'regular' : $key;
 	}
 
 	/**
@@ -153,8 +153,8 @@ class Fe_Order_Stamper {
 		$product_id = isset( $values['product_id'] ) ? (int) $values['product_id'] : 0;
 		$product    = isset( $values['data'] ) ? $values['data'] : null;
 		$ships      = $product && method_exists( $product, 'needs_shipping' ) ? (bool) $product->needs_shipping() : true;
-		$event_ids  = $ships ? Fe_Cart::product_event_status( $product_id )['event_ids'] : array();
-		$item->update_meta_data( Fe_Meta::GROUP, self::line_group( $ships, $event_ids ) );
+		$offers     = $ships ? Fe_Cart::product_event_status( $product_id )['offers'] : array();
+		$item->update_meta_data( Fe_Meta::GROUP, self::line_group( $ships, $offers ) );
 	}
 
 	/**

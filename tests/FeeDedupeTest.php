@@ -95,4 +95,12 @@ final class FeTestShippingRate {
 	public function get_meta_data() {
 		return $this->meta;
 	}
+
+	public function test_same_date_in_two_packages_is_credited() {
+		$lines = array(
+			array( 'group' => 'event:7', 'type' => 'delivery', 'date' => '2026-12-18', 'cost_cents' => 900 ),
+			array( 'group' => 'event:7@2026-12-18', 'type' => 'delivery', 'date' => '2026-12-18', 'cost_cents' => 900 ),
+		);
+		$this->assertSame( 900, Fe_Fee_Dedupe::credit( $lines ) );
+	}
 }

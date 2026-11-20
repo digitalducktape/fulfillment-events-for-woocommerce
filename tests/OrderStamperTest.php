@@ -126,4 +126,12 @@ final class OrderStamperTest extends TestCase {
 		$m = $this->stamped_meta();
 		$this->assertSame( array( 'set' => array(), 'delete' => array() ), Fe_Order_Stamper::meta_changes( $m, $m, $this->managed() ) );
 	}
+
+	public function test_line_group_matches_package_key_for_limited_offers() {
+		// A variation is tagged from its parent's status, so its offers are the parent's.
+		$parent_offers = array( array( 'event_id' => 7, 'dates' => array( '2026-12-18' ) ) );
+		$groups        = Fe_Cart_Grouper::group( array( array( 'key' => 'v', 'needs_shipping' => true, 'offers' => $parent_offers ) ) );
+		$this->assertSame( $groups[0]['group'], Fe_Order_Stamper::line_group( true, $parent_offers ) );
+		$this->assertSame( 'regular', Fe_Order_Stamper::line_group( true, array() ) );
+	}
 }

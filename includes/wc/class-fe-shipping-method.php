@@ -126,6 +126,18 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 				$specs[ $i ]['label'] = apply_filters( 'fe_rate_label', $this->translated_label( $spec ), $spec, $event, $this->id );
 			}
 
+			$allowed = Fe_Cart::package_allowed_dates( $package, (int) $event['id'] );
+			if ( is_array( $allowed ) ) {
+				$specs = array_values(
+					array_filter(
+						$specs,
+						function ( $spec ) use ( $allowed ) {
+							return in_array( (string) $spec['date'], $allowed, true );
+						}
+					)
+				);
+			}
+
 			$specs = apply_filters( 'fe_package_rates_for_event', $specs, $event, $package, $this );
 
 			foreach ( $specs as $spec ) {

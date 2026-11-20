@@ -205,6 +205,37 @@ class Fe_Cart {
 	}
 
 	/**
+	 * Pure: the offered events with their dates cut down to each offer's
+	 * allowed dates (an offer with null dates keeps all of them).
+	 *
+	 * @param array   $events_by_id Event id => event.
+	 * @param array[] $offers       Offers list.
+	 * @return array[]
+	 */
+	public static function trim_to_offers( array $events_by_id, array $offers ) {
+		$out = array();
+		foreach ( Fe_Cart_Grouper::to_offers( $offers ) as $offer ) {
+			if ( ! isset( $events_by_id[ $offer['event_id'] ] ) ) {
+				continue;
+			}
+			$event = $events_by_id[ $offer['event_id'] ];
+			if ( is_array( $offer['dates'] ) ) {
+				$allowed        = $offer['dates'];
+				$event['dates'] = array_values(
+					array_filter(
+						(array) $event['dates'],
+						function ( $row ) use ( $allowed ) {
+							return isset( $row['date'] ) && in_array( (string) $row['date'], $allowed, true );
+						}
+					)
+				);
+			}
+			$out[] = $event;
+		}
+		return $out;
+	}
+
+	/**
 	 * Pure: one pseudo-event holding every date of the given events, sorted,
 	 * with a date's delivery and pickup flags combined when events share it.
 	 *
@@ -267,10 +298,10 @@ class Fe_Cart {
 		foreach ( $st['event_ids'] as $id ) {
 			$event = Fe_Event_Repo::get( (int) $id );
 			if ( $event ) {
-				$events[] = $event;
+				$events[ (int) $id ] = $event;
 			}
 		}
-		$note = self::availability_note( self::merged_dates( $events ) );
+		$note = self::availability_note( self::merged_dates( self::trim_to_offers( $events, $st['offers'] ) ) );
 		return '' === $note ? '' : '<p class="fe-availability">' . esc_html( $note ) . '</p>';
 	}
 
@@ -401,7 +432,7 @@ class Fe_Cart {
 			$packages,
 			function ( $product_id ) {
 				$st = self::product_event_status( (int) $product_id );
-				return $st['event_ids'];
+				return $st['offers'];
 			},
 			function ( $event_id ) {
 				$event = Fe_Event_Repo::get( (int) $event_id );
@@ -465,7 +496,7 @@ class Fe_Cart {
 	 * Pure package builder behind packages().
 	 *
 	 * @param array    $packages          Packages built by WooCommerce.
-	 * @param callable $event_for_product Product id => event ids (soonest first), a single id, or null.
+	 * @param callable $event_for_product Product id => offers (see Fe_Cart_Grouper::to_offers), event ids, an id, or null.
 	 * @param callable $event_name        Event id => event name.
 	 * @param string   $today             Y-m-d, store-local; defaults to today. Stored on
 	 *                                    each package so WooCommerce's rate cache rolls daily.
@@ -490,18 +521,17 @@ class Fe_Cart {
 		$items     = array();
 		$has_event = false;
 		foreach ( $contents as $key => $item ) {
-			$event_ids = array();
+			$offers = array();
 			if ( ! empty( $item['product_id'] ) ) {
-				$found     = call_user_func( $event_for_product, (int) $item['product_id'] );
-				$event_ids = is_array( $found ) ? $found : ( null === $found ? array() : array( $found ) );
+				$offers = Fe_Cart_Grouper::to_offers( call_user_func( $event_for_product, (int) $item['product_id'] ) );
 			}
-			if ( $event_ids ) {
+			if ( $offers ) {
 				$has_event = true;
 			}
 			$items[] = array(
 				'key'            => (string) $key,
 				'needs_shipping' => isset( $item['data'] ) && is_object( $item['data'] ) && $item['data']->needs_shipping(),
-				'event_ids'      => $event_ids,
+				'offers'         => $offers,
 			);
 		}
 		if ( ! $has_event ) {
@@ -533,7 +563,8 @@ class Fe_Cart {
 			$package['fe_group']        = $group['group'];
 			$package['fe_event_id']     = $group['event_id'];
 			$package['fe_event_ids']    = $group['event_ids'];
-			$package['fe_event_name']   = self::joined_names( $group['event_ids'], $event_name );
+			$package['fe_offers']       = $group['offers'];
+			$package['fe_event_name']   = self::package_heading( $group, $group_contents, $event_name );
 			$package['fe_customer_id']  = isset( $user['ID'] ) ? (int) $user['ID'] : 0;
 			$package['fe_today']        = (string) $today;
 			$result[]                   = $package;
@@ -552,10 +583,63 @@ class Fe_Cart {
 		if ( ! is_array( $package ) ) {
 			return array();
 		}
+		if ( ! empty( $package['fe_offers'] ) && is_array( $package['fe_offers'] ) ) {
+			return array_column( Fe_Cart_Grouper::to_offers( $package['fe_offers'] ), 'event_id' );
+		}
 		if ( ! empty( $package['fe_event_ids'] ) && is_array( $package['fe_event_ids'] ) ) {
 			return array_values( array_unique( array_filter( array_map( 'intval', $package['fe_event_ids'] ) ) ) );
 		}
 		return empty( $package['fe_event_id'] ) ? array() : array( (int) $package['fe_event_id'] );
+	}
+
+	/**
+	 * Pure: the dates a package may offer for one of its events, or null for
+	 * all of the event's dates.
+	 *
+	 * @param array $package  Package.
+	 * @param int   $event_id Event id.
+	 * @return string[]|null
+	 */
+	public static function package_allowed_dates( $package, $event_id ) {
+		$offers = is_array( $package ) && isset( $package['fe_offers'] ) ? Fe_Cart_Grouper::to_offers( $package['fe_offers'] ) : array();
+		foreach ( $offers as $offer ) {
+			if ( (int) $offer['event_id'] === (int) $event_id ) {
+				return $offer['dates'];
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Pure: package heading. Event names joined with " / "; a date-limited
+	 * package adds its product's name when it holds one product, else its
+	 * dates, so checkout tells the two shipping choices apart.
+	 *
+	 * @param array    $group      Group from Fe_Cart_Grouper::group().
+	 * @param array    $contents   The group's cart lines.
+	 * @param callable $event_name Event id => event name.
+	 * @return string
+	 */
+	private static function package_heading( array $group, array $contents, $event_name ) {
+		$name  = self::joined_names( $group['event_ids'], $event_name );
+		$dates = array();
+		foreach ( $group['offers'] as $offer ) {
+			if ( is_array( $offer['dates'] ) ) {
+				$dates = array_merge( $dates, $offer['dates'] );
+			}
+		}
+		if ( ! $dates || '' === $name ) {
+			return $name;
+		}
+		if ( 1 === count( $contents ) ) {
+			$line = reset( $contents );
+			if ( isset( $line['data'] ) && is_object( $line['data'] ) && method_exists( $line['data'], 'get_name' ) ) {
+				return $name . ' · ' . $line['data']->get_name();
+			}
+		}
+		$dates = array_unique( $dates );
+		sort( $dates );
+		return $name . ' · ' . implode( ', ', array_map( array( __CLASS__, 'short_date' ), $dates ) );
 	}
 
 	/**
@@ -729,7 +813,7 @@ class Fe_Cart {
 	 * Event status of a product, computed once per request.
 	 *
 	 * @param int $product_id Product id (a variation id resolves via its parent in the links layer).
-	 * @return array{status:string, event_id:?int, event_ids:int[]}
+	 * @return array{status:string, event_id:?int, event_ids:int[], offers:array[]}
 	 */
 	public static function product_event_status( $product_id ) {
 		$product_id = (int) $product_id;
@@ -743,17 +827,20 @@ class Fe_Cart {
 				'status'    => 'none',
 				'event_id'  => null,
 				'event_ids' => array(),
+				'offers'    => array(),
 			);
 		} else {
 			if ( null === self::$open_events ) {
 				self::$open_events = Fe_Event_Repo::open_events( current_time( 'mysql' ) );
 			}
-			$open     = Fe_Event_Resolver::open_ids( $ids, self::$open_events, current_time( 'Y-m-d' ) );
+			$offers   = Fe_Event_Resolver::open_offers( $ids, self::$open_events, current_time( 'Y-m-d' ), $product_id );
+			$open     = array_column( $offers, 'event_id' );
 			$resolved = $open ? $open[0] : null;
 			$result   = array(
 				'status'    => Fe_Event_Resolver::status( $ids, $resolved ),
 				'event_id'  => $resolved,
 				'event_ids' => $open,
+				'offers'    => $offers,
 			);
 		}
 		self::$status_cache[ $product_id ] = $result;
@@ -777,6 +864,7 @@ class Fe_Cart {
 			'status'    => 'none',
 			'event_id'  => null,
 			'event_ids' => array(),
+			'offers'    => array(),
 		);
 	}
 
