@@ -30,6 +30,7 @@ require_once $includes . 'wc/class-fe-split-status.php';
 require_once $includes . 'wc/class-fe-order-splitter.php';
 require_once $includes . 'admin/class-fe-event-editor.php';
 require_once $includes . 'wc/class-fe-emails.php';
+require_once $includes . 'wc/class-fe-order-received.php';
 require_once $includes . 'admin/class-fe-notices.php';
 require_once $includes . 'admin/class-fe-zone-grid.php';
 require_once $includes . 'domain/class-fe-event-setup.php';

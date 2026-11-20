@@ -245,8 +245,11 @@ class Fe_Checkout_Dates {
 		wp_add_inline_style(
 			'fe-checkout-dates-classic',
 			'.woocommerce-shipping-methods li:has(.fe-date-picker){flex-wrap:wrap}'
-			// Options can run to several lines; keep the radio on the first.
-			. '.woocommerce-shipping-methods li:has(> input.shipping_method[value^="fe_"]){align-items:baseline}'
+			// Options can run to several lines: radio and text side by side, the
+			// radio on the first line. The id outranks themes' #shipping_method rules.
+			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]){display:flex;align-items:baseline;column-gap:0.5em}'
+			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]) > input.shipping_method{flex:none;margin:0}'
+			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]) > label{flex:1 1 auto;min-width:0}'
 			. '.fe-rate-note{display:block;margin:0.25em 0 0.25em;font-size:0.875em;font-weight:normal;opacity:0.8}'
 			. '.fe-date-picker{flex-basis:100%;margin:0 0 0.75em}'
 			. '.fe-date-picker label{display:block;font-weight:600;margin-bottom:0.25em}'

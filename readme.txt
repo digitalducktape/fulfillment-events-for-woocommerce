@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.6.4
+Stable tag: 0.6.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,10 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.6.5 =
+* Order-received page: a split order lists each order it became, with its number, items, and how and when it arrives. Works on the classic and block order confirmation; themes can override templates/order-received/split-orders.php.
+* Classic checkout: radio buttons sit beside their option's text again, on the first line, when the theme lays options out differently from the cart.
 
 = 0.6.4 =
 * Classic cart and checkout: each option's radio button lines up with its first line of text when the option wraps.
