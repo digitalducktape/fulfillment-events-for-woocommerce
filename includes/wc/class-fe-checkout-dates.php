@@ -249,7 +249,9 @@ class Fe_Checkout_Dates {
 			// radio on the first line. The id outranks themes' #shipping_method rules.
 			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]){display:flex;align-items:baseline;column-gap:0.5em}'
 			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]) > input.shipping_method{flex:none;margin:0}'
-			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]) > label{flex:1 1 auto;min-width:0}'
+			// A zero basis keeps the text beside the radio even in themes that
+			// let the row wrap (Kadence's checkout does).
+			. '#shipping_method li:has(> input.shipping_method[value^="fe_"]) > label{flex:1 1 0;min-width:0}'
 			. '.fe-rate-note{display:block;margin:0.25em 0 0.25em;font-size:0.875em;font-weight:normal;opacity:0.8}'
 			. '.fe-date-picker{flex-basis:100%;margin:0 0 0.75em}'
 			. '.fe-date-picker label{display:block;font-weight:600;margin-bottom:0.25em}'
