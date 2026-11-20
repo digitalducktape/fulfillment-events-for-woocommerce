@@ -10,7 +10,7 @@ Design notes: [docs/design.md](docs/design.md).
 ## Requirements
 
 - WordPress 6.0+ (tested up to 6.9)
-- WooCommerce 8.9+ (tested up to 10.3)
+- WooCommerce 8.9+ (tested up to 10.3); 9.2+ for courier instructions in the block checkout
 - PHP 7.4+
 
 ## Install
@@ -20,16 +20,31 @@ Design notes: [docs/design.md](docs/design.md).
 
 ## Configure
 
-1. **Zones.** In WooCommerce > Settings > Shipping, open each shipping zone you serve.
-2. **Event methods.** Add "Event delivery", "Event pickup", "Event courier" and "Event add-on" to the zones that should offer them. Each method has a default cost and default time window; these are the defaults every event inherits.
-3. **Locations.** Under Fulfillment > Locations, add pickup locations and mark one as the default.
-4. **Events.** Under Fulfillment > Events, add an event: give it a name, an optional sales window (when it opens and closes for orders) and one or more dates. For each date, choose whether delivery and pickup are offered, set a window, and pick a location.
-5. **Zone grid.** In the event editor, the zone grid shows each zone and fulfillment type. Leave a cell on its default, turn it off, or override the cost, optionally for a single date.
-6. **Attach products.** Link the event to products (product edit screen, General tab) or to whole product categories (category edit screen).
+1. **Event methods.** In WooCommerce > Settings > Shipping, add "Event delivery", "Event pickup", "Event courier" and "Event add-on" to each zone that should offer them. Each method has a default cost and default time; every event inherits them.
+2. **Locations.** Under Fulfillment > Locations, add pickup locations and mark one as the default.
+3. **Settings.** Under Fulfillment > Settings, set the courier instructions shown at checkout and choose whether admins get a new-order email for each split order.
+4. **Events.** Under Fulfillment > Events, add an event. It opens as one **Event setup** screen:
+   - **When it sells:** an optional sales window.
+   - **Dates:** one card per date with three lines: Delivery (time, and which zones), Pickup (time and place) and Courier (which zones). Untick a line or a zone to turn it off for that date.
+   - **Products:** categories and individual products, plus exceptions: a product can be sold **only on** some of the event's dates, or be **not in this event**.
+   - **Change a price for this event** (closed by default): a different price for a zone and service, for all dates or one.
 
-Cart behaviour: a cart with event products gets one shipping package per event, plus a regular package for everything else. Each event package shows one rate per available date. Carts with no event products are not touched. On a product page, an active event adds a line such as "Available for delivery or pickup on Dec 10 or Dec 18".
+   A side box holds internal notes, and the events list shows each event's dates, notes and exception count. **Duplicate** copies an event as a draft.
+5. **Products** can also be attached from the product edit screen (General tab), a category's edit screen, or bulk edit, which can add, exclude or remove several events at once.
 
-When a paid order spans several packages, it moves to the "Split" status and one child order is created per package. Children are linked with `_fe_parent_id` (not the WooCommerce parent), so WooCommerce Analytics does not treat them as refunds. A negative "Combined delivery" fee removes a duplicate delivery charge when two packages deliver on the same date.
+Only published events whose sales window is open take effect. A product attached to an event that isn't open (a draft, or before its sales window) can't be bought, so attach products when you publish.
+
+### At checkout
+
+- A cart with event products gets one shipping section per event, soonest date first, plus a regular section for everything else. Carts with no event products are not touched.
+- A section with several dates has a **Date** dropdown and one option per service that runs on that date for the customer's address, e.g. "Delivery · Thu, Dec 10 · 9am - 1pm". This works in the block and classic cart and checkout. The block dropdowns sit above the shipping options; in classic they sit at the top of each section.
+- A product limited to some dates gets its own section until its dates match the rest. A product in several events offers the dates of all of them.
+- Courier options show the courier instructions underneath.
+- On a product page, an open event adds a line such as "Available for delivery or pickup on Dec 10 or Dec 18".
+
+### After payment
+
+When a paid order spans several sections, it moves to the "Split" status and one child order is created per section. Children are linked with `_fe_parent_id` (not the WooCommerce parent), so WooCommerce Analytics does not treat them as refunds. The customer gets one confirmation email listing every order, and the order-received page lists them too. A negative "Combined delivery" fee removes a duplicate delivery charge when two sections deliver on the same date.
 
 ## Order meta contract
 
@@ -67,9 +82,21 @@ Actions:
 Filters:
 
 - `fe_rate_label( $label, $spec, $event, $method_id )` the label of a date rate.
+- `fe_courier_instructions( $text, $event, $package )` the courier instructions shown at checkout.
 - `fe_package_rates_for_event( $specs, $event, $package, $method )` the rate specs a method offers for an event package.
 - `fe_should_split_order( $should_split, $order )` return false to skip splitting an order.
 - `fe_child_order_args( $props, $group, $parent )` properties for each child order before it is created.
+
+## Templates
+
+Copy into your theme's `woocommerce/` folder to override:
+
+- `emails/split-confirmation.php` (and `emails/plain/split-confirmation.php`): the customer's split confirmation.
+- `order-received/split-orders.php`: the split orders on the order-received page.
+
+## Store API
+
+The cart response carries `extensions.fulfillment-events.sections`, one entry per section with a date dropdown: `{package_id, group, label, selected, options: [{value, label}]}`. Picking a date is a cart extensions update with namespace `fulfillment-events` and data `{group, date}`.
 
 ## Known limitations
 
@@ -80,7 +107,9 @@ Filters:
 - WooCommerce Blocks "Local pickup" rates are filtered out of event packages; use the plugin's Event pickup method for event items.
 - When a duplicate same-date delivery fee is credited ("Combined delivery"), the shipping tax on that fee is still charged.
 - A split parent passes through Processing (or On hold) before Split, so third-party hooks on those statuses fire for the parent and again for each child.
-- A product linked only to unpublished (draft or private) events is not purchasable.
+- A product attached to an event that isn't open (draft, private, or outside its sales window) is not purchasable.
+- In the block checkout, WooCommerce gives plugins one place above all the shipping options, so with several sections each dropdown is labelled "Date for …" instead of sitting inside its section.
+- Courier has no "Combined delivery" credit: a customer who picks courier on the same date in two sections pays for it twice.
 - Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 - The "possible no-shipping product" hint only looks at the first 200 published physical products.
 
@@ -96,7 +125,7 @@ composer install && vendor/bin/phpcs   # coding standards
 ```
 
 Translation template: `languages/fulfillment-events-for-woocommerce.pot`
-(regenerate with `vendor/bin/wp i18n make-pot . languages/fulfillment-events-for-woocommerce.pot --exclude=vendor,tests,bin,.superpowers`).
+(regenerate with `vendor/bin/wp i18n make-pot . languages/fulfillment-events-for-woocommerce.pot --exclude=vendor,tests,bin,.superpowers,dist`).
 Manual checks that unit tests can't cover are in
 [docs/testing-checklist.md](docs/testing-checklist.md).
 
