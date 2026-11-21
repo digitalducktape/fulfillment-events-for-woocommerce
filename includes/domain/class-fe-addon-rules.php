@@ -52,6 +52,10 @@ class Fe_Addon_Rules {
 		if ( ! empty( $target['is_addon'] ) ) {
 			return false;
 		}
+		// The date stopped taking orders, add-ons included.
+		if ( ! empty( $target['closed'] ) ) {
+			return false;
+		}
 		$date = isset( $target['date'] ) ? (string) $target['date'] : '';
 		if ( '' !== (string) $today && ( '' === $date || $date < (string) $today ) ) {
 			return false;

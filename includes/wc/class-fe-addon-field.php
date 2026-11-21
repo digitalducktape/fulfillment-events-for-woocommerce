@@ -268,6 +268,8 @@ class Fe_Addon_Field {
 				'customer_id'   => (int) $order->get_customer_id(),
 				'billing_email' => (string) $order->get_billing_email(),
 				'date'          => (string) $fulfillment['date'],
+				// No add-ons once the date stops taking orders.
+				'closed'        => in_array( (string) $fulfillment['date'], Fe_Event_Repo::closed_dates( (int) $fulfillment['event_id'] ), true ),
 			),
 			'fulfillment' => $fulfillment,
 		);

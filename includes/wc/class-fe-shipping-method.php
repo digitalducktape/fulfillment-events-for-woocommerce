@@ -107,6 +107,7 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 			if ( ! $event || 'publish' !== $event['status'] ) {
 				continue;
 			}
+			$event = Fe_Event_Repo::without_closed( $event );
 
 			$specs = Fe_Rate_Builder::build(
 				$event,
