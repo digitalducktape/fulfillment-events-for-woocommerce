@@ -28,7 +28,9 @@
 .fe-date__closed-note { display: none; margin: 0 0 8px; padding: 6px 10px; border-left: 4px solid #dba617; background: #fcf9e8; }
 .fe-date.is-closed { background: #f6f7f7; }
 .fe-date.is-closed .fe-date__closed-note { display: block; }
-.fe-date.is-closed .fe-service { opacity: 0.55; }
+.fe-date.is-closed .fe-service:not(.fe-service--addons) { opacity: 0.55; }
+.fe-service__note { grid-column: 2 / -1; color: #50575e; }
+.fe-service--addons.is-off .fe-service__note { text-decoration: line-through; }
 .fe-date.is-closed .fe-date__close { color: #1d2327; font-weight: 600; }
 .fe-service { display: grid; grid-template-columns: 7.5em 9.5em 1fr; align-items: center; gap: 6px 10px; padding: 5px 0; border-top: 1px solid #f0f0f1; }
 .fe-service__toggle { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; }

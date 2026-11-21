@@ -44,7 +44,7 @@ final class ClosedDatesTest extends TestCase {
 		$this->assertSame( array( array( 'event_id' => 7, 'dates' => null ) ), Fe_Event_Resolver::open_offers( array( 7 ), array( $event ), '2026-11-21', 0 ) );
 	}
 
-	public function test_no_add_ons_to_an_order_on_a_closed_date() {
+	public function test_add_ons_follow_their_own_switch_not_closing() {
 		$target = array(
 			'event_id'    => 7,
 			'status'      => 'processing',
@@ -53,7 +53,32 @@ final class ClosedDatesTest extends TestCase {
 			'date'        => '2026-12-10',
 		);
 		$this->assertTrue( Fe_Addon_Rules::eligible( $target, 7, '', 3, '2026-11-21' ) );
-		$this->assertFalse( Fe_Addon_Rules::eligible( $target + array( 'closed' => true ), 7, '', 3, '2026-11-21' ) );
+		// A full date can still take add-ons to its existing orders...
+		$this->assertTrue( Fe_Addon_Rules::eligible( $target + array( 'closed' => true ), 7, '', 3, '2026-11-21' ) );
+		// ...unless add-ons are turned off for it.
+		$this->assertFalse( Fe_Addon_Rules::eligible( $target + array( 'addons_off' => true ), 7, '', 3, '2026-11-21' ) );
+	}
+
+	public function test_editor_reads_which_dates_take_add_ons() {
+		$out = Fe_Event_Editor::parse_post(
+			array(
+				'fe_dates' => array(
+					array( 'date' => '2026-12-10', 'delivery' => '1', 'zones_posted' => '1' ),
+					array( 'date' => '2026-12-18', 'delivery' => '1', 'zones_posted' => '1', 'addons' => '1' ),
+					// A row whose fields never rendered keeps add-ons on.
+					array( 'date' => '2026-12-20', 'delivery' => '1' ),
+				),
+			)
+		);
+		$this->assertSame( array( '2026-12-10' ), $out['addons_off'] );
+	}
+
+	public function test_events_list_says_what_a_date_still_takes() {
+		$row = array( 'date' => '2026-12-10', 'delivery' => true, 'pickup' => false, 'courier' => true );
+		$this->assertSame( 'delivery and courier', Fe_Event_Editor::date_list_text( $row, false, false ) );
+		$this->assertSame( 'delivery and courier · no add-ons', Fe_Event_Editor::date_list_text( $row, false, true ) );
+		$this->assertSame( 'Not taking new orders · add-ons open', Fe_Event_Editor::date_list_text( $row, true, false ) );
+		$this->assertSame( 'Not taking orders', Fe_Event_Editor::date_list_text( $row, true, true ) );
 	}
 
 	public function test_editor_reads_which_dates_stopped_taking_orders() {

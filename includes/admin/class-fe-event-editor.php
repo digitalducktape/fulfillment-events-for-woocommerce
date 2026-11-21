@@ -60,10 +60,10 @@ class Fe_Event_Editor {
 			$error = 'close_before_open';
 		}
 
-		$date_rows = isset( $post['fe_dates'] ) && is_array( $post['fe_dates'] ) ? array_values( $post['fe_dates'] ) : array();
-		$dates     = Fe_Event_Repo::normalize_dates( $date_rows );
-		$date_list = array_column( $dates, 'date' );
-		$setup     = Fe_Event_Setup::rules_from_setup(
+		$date_rows  = isset( $post['fe_dates'] ) && is_array( $post['fe_dates'] ) ? array_values( $post['fe_dates'] ) : array();
+		$dates      = Fe_Event_Repo::normalize_dates( $date_rows );
+		$date_list  = array_column( $dates, 'date' );
+		$setup      = Fe_Event_Setup::rules_from_setup(
 			$existing_rules,
 			Fe_Event_Setup::ticks_from_post( $date_rows, $zones_by_type ),
 			Fe_Event_Setup::prices_from_post( isset( $post['fe_prices'] ) && is_array( $post['fe_prices'] ) ? array_values( $post['fe_prices'] ) : array() ),
@@ -71,10 +71,18 @@ class Fe_Event_Editor {
 			$zones_by_type,
 			! empty( $post['fe_legacy_posted'] ) ? array_map( 'strval', isset( $post['fe_keep_rules'] ) ? (array) $post['fe_keep_rules'] : array() ) : null
 		);
-		$closed    = array();
+		$closed     = array();
+		$addons_off = array();
 		foreach ( $date_rows as $row ) {
-			if ( is_array( $row ) && ! empty( $row['closed'] ) && isset( $row['date'] ) ) {
+			if ( ! is_array( $row ) || ! isset( $row['date'] ) ) {
+				continue;
+			}
+			if ( ! empty( $row['closed'] ) ) {
 				$closed[] = trim( (string) $row['date'] );
+			}
+			// The Add-ons box is unticked (a card that rendered posts zones_posted).
+			if ( ! empty( $row['zones_posted'] ) && empty( $row['addons'] ) ) {
+				$addons_off[] = trim( (string) $row['date'] );
 			}
 		}
 		$exceptions = Fe_Event_Setup::exceptions_from_post( isset( $post['fe_exceptions'] ) && is_array( $post['fe_exceptions'] ) ? array_values( $post['fe_exceptions'] ) : array(), $date_list );
@@ -90,6 +98,7 @@ class Fe_Event_Editor {
 			),
 			'dates'        => $dates,
 			'closed'       => Fe_Event_Repo::clean_closed( $closed, $date_list ),
+			'addons_off'   => Fe_Event_Repo::clean_closed( $addons_off, $date_list ),
 			'rules'        => $setup['rules'],
 			'dropped'      => $setup['dropped'],
 			'category_ids' => self::clean_ids( isset( $post['fe_category_ids'] ) ? $post['fe_category_ids'] : array() ),
@@ -179,6 +188,7 @@ class Fe_Event_Editor {
 		Fe_Event_Repo::save_dates( $post_id, $parsed['dates'] );
 		Fe_Event_Repo::save_date_limits( $post_id, $parsed['limits'] );
 		Fe_Event_Repo::save_closed_dates( $post_id, $parsed['closed'] );
+		Fe_Event_Repo::save_addon_off_dates( $post_id, $parsed['addons_off'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $post_id, $parsed['rules'] );
 		Fe_Product_Links::sync_event( $post_id, $parsed['category_ids'], $product_ids, $parsed['excluded_ids'] );
 		if ( isset( $_POST['fe_notes'] ) ) {
@@ -440,6 +450,23 @@ class Fe_Event_Editor {
 	}
 
 	/**
+	 * Pure: what a date takes, for the events list.
+	 *
+	 * @param array $row        Date row.
+	 * @param bool  $closed     The date stopped taking orders.
+	 * @param bool  $addons_off Add-ons to its orders are off.
+	 * @return string
+	 */
+	public static function date_list_text( array $row, $closed, $addons_off ) {
+		if ( $closed ) {
+			return $addons_off ? __( 'Not taking orders', 'fulfillment-events-for-woocommerce' ) : __( 'Not taking new orders · add-ons open', 'fulfillment-events-for-woocommerce' );
+		}
+		$text = self::offer_text( $row );
+		/* translators: %s: services, e.g. "delivery and courier" */
+		return $addons_off ? sprintf( __( '%s · no add-ons', 'fulfillment-events-for-woocommerce' ), $text ) : $text;
+	}
+
+	/**
 	 * Pure: "1 product exception", "3 product exceptions", or '' for none.
 	 *
 	 * @param int $count Exceptions.
@@ -481,7 +508,7 @@ class Fe_Event_Editor {
 			$when   = $dt ? wp_date( 'D, M j', $dt->getTimestamp() ) : (string) $row['date'];
 			$past   = (string) $row['date'] < $today;
 			$closed = in_array( (string) $row['date'], (array) $event['closed_dates'], true );
-			$kinds  = $closed ? __( 'Not taking orders', 'fulfillment-events-for-woocommerce' ) : self::offer_text( $row );
+			$kinds  = self::date_list_text( $row, $closed, in_array( (string) $row['date'], (array) $event['addon_off_dates'], true ) );
 			$class  = $past ? ' class="fe-past" title="' . esc_attr__( 'Date has passed', 'fulfillment-events-for-woocommerce' ) . '"' : ( $closed ? ' class="fe-closed"' : '' );
 			echo '<li' . $class . '><strong>' . esc_html( $when ) . '</strong> <span class="fe-kinds">' . esc_html( $kinds ) . '</span></li>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $class is built from escaped parts.
 		}
