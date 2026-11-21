@@ -31,7 +31,7 @@ If this plugin saves you time, you can support its development.
 3. **Settings.** Under Fulfillment > Settings, set the courier instructions shown at checkout and choose whether admins get a new-order email for each split order.
 4. **Events.** Under Fulfillment > Events, add an event. It opens as one **Event setup** screen:
    - **When it sells:** an optional sales window.
-   - **Dates:** one card per date with three lines: Delivery (time, and which zones), Pickup (time and place) and Courier (which zones). Untick a line or a zone to turn it off for that date. **Stop taking orders for this date** closes a date that's full: it keeps its settings, disappears from checkout, product pages and "Add to my order", and can be reopened. Orders already placed are unchanged.
+   - **Dates:** one card per date with three lines: Delivery (time, and which zones), Pickup (time and place) and Courier (which zones). Untick a line or a zone to turn it off for that date. **Stop taking orders for this date** closes a date that's full: it keeps its settings, disappears from checkout and product pages, and can be reopened. Orders already placed are unchanged. A separate **Add-ons** line on each date decides whether customers can add items to their existing orders for that date, whether or not it's closed.
    - **Products:** categories and individual products, plus exceptions: a product can be sold **only on** some of the event's dates, or be **not in this event**.
    - **Change a price for this event** (closed by default): a different price for a zone and service, for all dates or one.
 

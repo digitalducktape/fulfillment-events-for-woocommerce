@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.7.0
+Stable tag: 0.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.8.0 =
+* Add-ons per date: each date card in the Event setup screen has an Add-ons line. Untick it and customers can no longer add items to their existing orders for that date ("Add to my order"). On by default.
+* Closing a date ("Stop taking orders for this date") no longer turns off add-ons: a full date can still take add-ons to its existing orders unless you untick Add-ons too.
+* The events list shows "· no add-ons", "Not taking new orders · add-ons open" or "Not taking orders" for each date.
 
 = 0.7.0 =
 * Stop taking orders for a date: tick "Stop taking orders for this date" on a date in the Event setup screen. The date keeps its times, zones and place, but customers can no longer choose it at checkout, see it on product pages, or add to its orders. Orders already placed are unchanged. Untick to reopen it. The events list shows the date as "Not taking orders".

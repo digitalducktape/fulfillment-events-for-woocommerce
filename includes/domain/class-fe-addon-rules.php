@@ -52,8 +52,9 @@ class Fe_Addon_Rules {
 		if ( ! empty( $target['is_addon'] ) ) {
 			return false;
 		}
-		// The date stopped taking orders, add-ons included.
-		if ( ! empty( $target['closed'] ) ) {
+		// Add-ons are turned off for this date (closing a date for new
+		// orders leaves add-ons to its existing orders alone).
+		if ( ! empty( $target['addons_off'] ) ) {
 			return false;
 		}
 		$date = isset( $target['date'] ) ? (string) $target['date'] : '';

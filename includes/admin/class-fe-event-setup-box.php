@@ -27,6 +27,7 @@ class Fe_Event_Setup_Box {
 		$dates = array_column( $rows, 'date' );
 		foreach ( $rows as $k => $row ) {
 			$rows[ $k ]['closed'] = in_array( (string) $row['date'], (array) $event['closed_dates'], true );
+			$rows[ $k ]['addons'] = ! in_array( (string) $row['date'], (array) $event['addon_off_dates'], true );
 		}
 		$rules = Fe_Zone_Rule_Repo::for_event( $post->ID );
 		$zones = Fe_Zone_Grid::zones_by_type();
@@ -132,7 +133,7 @@ class Fe_Event_Setup_Box {
 				<label class="fe-date__close"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[closed]" value="1" <?php checked( $closed ); ?>> <?php esc_html_e( 'Stop taking orders for this date', 'fulfillment-events-for-woocommerce' ); ?></label>
 				<button type="button" class="button-link button-link-delete" data-fe-remove aria-label="<?php esc_attr_e( 'Remove this date', 'fulfillment-events-for-woocommerce' ); ?>"><span class="dashicons dashicons-trash" aria-hidden="true"></span> <?php esc_html_e( 'Remove', 'fulfillment-events-for-woocommerce' ); ?></button>
 			</div>
-			<p class="fe-date__closed-note"><?php esc_html_e( 'Closed: customers can no longer choose this date or add to its orders. Orders already placed are not affected. Untick to take orders again.', 'fulfillment-events-for-woocommerce' ); ?></p>
+			<p class="fe-date__closed-note"><?php esc_html_e( 'Closed: customers can no longer choose this date. Orders already placed are not affected, and Add-ons below decides whether they can still be added to. Untick to take orders again.', 'fulfillment-events-for-woocommerce' ); ?></p>
 			<div class="fe-service<?php echo $on['delivery'] ? '' : ' is-off'; ?>">
 				<label class="fe-service__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[delivery]" value="1" <?php checked( $on['delivery'] ); ?>> <?php esc_html_e( 'Delivery', 'fulfillment-events-for-woocommerce' ); ?></label>
 				<input type="text" class="fe-service__time" name="<?php echo esc_attr( $name ); ?>[delivery_window]" value="<?php echo esc_attr( $get( 'delivery_window' ) ); ?>" placeholder="<?php esc_attr_e( 'e.g. 10am to 2pm', 'fulfillment-events-for-woocommerce' ); ?>" aria-label="<?php esc_attr_e( 'Delivery time', 'fulfillment-events-for-woocommerce' ); ?>">
@@ -154,6 +155,11 @@ class Fe_Event_Setup_Box {
 				<label class="fe-service__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[courier]" value="1" <?php checked( $on['courier'] ); ?>> <?php esc_html_e( 'Courier', 'fulfillment-events-for-woocommerce' ); ?></label>
 				<span class="fe-service__time fe-service__time--none" aria-hidden="true"></span>
 				<?php self::zone_ticks( $name, 'courier', $zones, $ticks ); ?>
+			</div>
+			<?php $addons = $isnew || ! isset( $row['addons'] ) || ! empty( $row['addons'] ); ?>
+			<div class="fe-service fe-service--addons<?php echo $addons ? '' : ' is-off'; ?>">
+				<label class="fe-service__toggle"><input type="checkbox" name="<?php echo esc_attr( $name ); ?>[addons]" value="1" <?php checked( $addons ); ?>> <?php esc_html_e( 'Add-ons', 'fulfillment-events-for-woocommerce' ); ?></label>
+				<span class="fe-service__note"><?php esc_html_e( 'Customers can add items to their existing orders for this date', 'fulfillment-events-for-woocommerce' ); ?></span>
 			</div>
 		</div>
 		<?php

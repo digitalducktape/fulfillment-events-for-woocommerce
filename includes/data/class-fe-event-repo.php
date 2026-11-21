@@ -14,12 +14,13 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'FE_TESTING' ) ) {
  */
 class Fe_Event_Repo {
 
-	const POST_TYPE   = 'fe_event';
-	const META_OPEN   = '_fe_sales_open';
-	const META_CLOSE  = '_fe_sales_close';
-	const META_LIMITS = '_fe_date_limits';
-	const META_CLOSED = '_fe_closed_dates';
-	const MAX_EVENTS  = 200;
+	const POST_TYPE      = 'fe_event';
+	const META_OPEN      = '_fe_sales_open';
+	const META_CLOSE     = '_fe_sales_close';
+	const META_LIMITS    = '_fe_date_limits';
+	const META_CLOSED    = '_fe_closed_dates';
+	const META_NO_ADDONS = '_fe_addon_off_dates';
+	const MAX_EVENTS     = 200;
 
 	/**
 	 * Registers the fe_event post type. Hooked to init.
@@ -96,15 +97,17 @@ class Fe_Event_Repo {
 		$close  = (string) get_post_meta( $post->ID, self::META_CLOSE, true );
 		$limits = get_post_meta( $post->ID, self::META_LIMITS, true );
 		$closed = get_post_meta( $post->ID, self::META_CLOSED, true );
+		$no_add = get_post_meta( $post->ID, self::META_NO_ADDONS, true );
 		return array(
-			'id'           => (int) $post->ID,
-			'title'        => (string) $post->post_title,
-			'status'       => (string) $post->post_status,
-			'sales_open'   => '' === $open ? null : $open,
-			'sales_close'  => '' === $close ? null : $close,
-			'dates'        => $dates,
-			'date_limits'  => is_array( $limits ) ? $limits : array(),
-			'closed_dates' => is_array( $closed ) ? array_values( array_map( 'strval', $closed ) ) : array(),
+			'id'              => (int) $post->ID,
+			'title'           => (string) $post->post_title,
+			'status'          => (string) $post->post_status,
+			'sales_open'      => '' === $open ? null : $open,
+			'sales_close'     => '' === $close ? null : $close,
+			'dates'           => $dates,
+			'date_limits'     => is_array( $limits ) ? $limits : array(),
+			'closed_dates'    => is_array( $closed ) ? array_values( array_map( 'strval', $closed ) ) : array(),
+			'addon_off_dates' => is_array( $no_add ) ? array_values( array_map( 'strval', $no_add ) ) : array(),
 		);
 	}
 
@@ -157,6 +160,34 @@ class Fe_Event_Repo {
 		}
 		$closed = get_post_meta( (int) $event_id, self::META_CLOSED, true );
 		return is_array( $closed ) ? array_values( array_map( 'strval', $closed ) ) : array();
+	}
+
+	/**
+	 * Dates of an event whose existing orders take no add-ons.
+	 *
+	 * @param int $event_id Event id.
+	 * @return string[]
+	 */
+	public static function addon_off_dates( $event_id ) {
+		if ( (int) $event_id <= 0 || ! function_exists( 'get_post_meta' ) ) {
+			return array();
+		}
+		$dates = get_post_meta( (int) $event_id, self::META_NO_ADDONS, true );
+		return is_array( $dates ) ? array_values( array_map( 'strval', $dates ) ) : array();
+	}
+
+	/**
+	 * Saves which dates take no add-ons.
+	 *
+	 * @param int      $event_id Event id.
+	 * @param string[] $dates    Y-m-d list from clean_closed().
+	 */
+	public static function save_addon_off_dates( $event_id, array $dates ) {
+		if ( $dates ) {
+			update_post_meta( (int) $event_id, self::META_NO_ADDONS, array_values( $dates ) );
+		} else {
+			delete_post_meta( (int) $event_id, self::META_NO_ADDONS );
+		}
 	}
 
 	/**
