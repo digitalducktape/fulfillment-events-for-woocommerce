@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.6.7
+Stable tag: 0.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,11 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.7.0 =
+* Stop taking orders for a date: tick "Stop taking orders for this date" on a date in the Event setup screen. The date keeps its times, zones and place, but customers can no longer choose it at checkout, see it on product pages, or add to its orders. Orders already placed are unchanged. Untick to reopen it. The events list shows the date as "Not taking orders".
+* A product sold only on a closed date can't be bought until the date reopens.
+* Checkout stops with a message if the date a customer picked stopped being available while they were checking out (closed, or passed at midnight), instead of switching them to another date.
 
 = 0.6.7 =
 * Classic checkout: an option's text stays beside its radio button in themes that let shipping options wrap (such as Kadence), instead of dropping below it when the column is narrow.

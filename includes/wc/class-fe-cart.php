@@ -81,6 +81,43 @@ class Fe_Cart {
 	}
 
 	/**
+	 * Pure: one error per event section whose picked date is no longer
+	 * offered (it stopped taking orders, or passed while checkout was open).
+	 * The section's options have already moved to another date, so the
+	 * customer is asked to check it rather than ordering it unawares.
+	 *
+	 * @param array $packages Calculated packages (with rates and fe_chosen).
+	 * @param array $chosen   Package key => chosen rate id.
+	 * @return string[]
+	 */
+	public static function changed_date_errors( $packages, $chosen ) {
+		$errors = array();
+		foreach ( (array) $packages as $key => $package ) {
+			$picked = isset( $package['fe_chosen'] ) ? (string) $package['fe_chosen'] : '';
+			if ( '' === $picked || empty( $package['fe_event_id'] ) || ! isset( $chosen[ $key ] ) ) {
+				continue;
+			}
+			$rate = isset( $package['rates'][ $chosen[ $key ] ] ) ? $package['rates'][ $chosen[ $key ] ] : null;
+			if ( ! is_object( $rate ) || ! method_exists( $rate, 'get_meta_data' ) ) {
+				continue;
+			}
+			$meta = (array) $rate->get_meta_data();
+			$date = isset( $meta['fe_date'] ) ? (string) $meta['fe_date'] : '';
+			if ( '' === $date || $date === $picked ) {
+				continue;
+			}
+			$name     = isset( $meta['fe_event_name'] ) && '' !== (string) $meta['fe_event_name'] ? (string) $meta['fe_event_name'] : __( 'your order', 'fulfillment-events-for-woocommerce' );
+			$errors[] = sprintf(
+				/* translators: 1: date, e.g. Dec 10; 2: event name */
+				__( '%1$s is no longer available for %2$s. Check the date and place your order again.', 'fulfillment-events-for-woocommerce' ),
+				self::short_date( $picked ),
+				$name
+			);
+		}
+		return array_values( array_unique( $errors ) );
+	}
+
+	/**
 	 * Pure: meta of the chosen rate in each package, for this plugin's rates only.
 	 *
 	 * @param array $packages Calculated packages (with rates).
@@ -115,6 +152,9 @@ class Fe_Cart {
 		foreach ( self::past_date_errors( self::chosen_fe_metas( WC()->shipping()->get_packages(), $chosen ), self::today() ) as $i => $message ) {
 			$errors->add( 'fe_date_passed_' . $i, esc_html( $message ) );
 		}
+		foreach ( self::changed_date_errors( WC()->shipping()->get_packages(), $chosen ) as $i => $message ) {
+			$errors->add( 'fe_date_changed_' . $i, esc_html( $message ) );
+		}
 	}
 
 	/**
@@ -143,6 +183,9 @@ class Fe_Cart {
 			);
 		}
 		$errors = self::past_date_errors( $metas, self::today() );
+		if ( function_exists( 'WC' ) && WC() && WC()->session && WC()->shipping() ) {
+			$errors = array_merge( $errors, self::changed_date_errors( WC()->shipping()->get_packages(), (array) WC()->session->get( 'chosen_shipping_methods', array() ) ) );
+		}
 		if ( $errors ) {
 			// The Store API returns the message as JSON text; the blocks UI escapes it when rendering.
 			throw new Automattic\WooCommerce\StoreApi\Exceptions\RouteException( 'fe_date_passed', implode( ' ', $errors ), 400 ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
@@ -299,7 +342,7 @@ class Fe_Cart {
 		foreach ( $st['event_ids'] as $id ) {
 			$event = Fe_Event_Repo::get( (int) $id );
 			if ( $event ) {
-				$events[ (int) $id ] = $event;
+				$events[ (int) $id ] = Fe_Event_Repo::without_closed( $event );
 			}
 		}
 		$note = self::availability_note( self::merged_dates( self::trim_to_offers( $events, $st['offers'] ) ) );
@@ -465,7 +508,7 @@ class Fe_Cart {
 			null,
 			function ( $event_id ) {
 				$event = Fe_Event_Repo::get( (int) $event_id );
-				return $event ? array_column( (array) $event['dates'], 'date' ) : array();
+				return $event ? array_column( (array) Fe_Event_Repo::without_closed( $event )['dates'], 'date' ) : array();
 			}
 		);
 		if ( ! is_array( $out ) ) {

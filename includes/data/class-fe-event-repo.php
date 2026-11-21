@@ -18,6 +18,7 @@ class Fe_Event_Repo {
 	const META_OPEN   = '_fe_sales_open';
 	const META_CLOSE  = '_fe_sales_close';
 	const META_LIMITS = '_fe_date_limits';
+	const META_CLOSED = '_fe_closed_dates';
 	const MAX_EVENTS  = 200;
 
 	/**
@@ -91,18 +92,85 @@ class Fe_Event_Repo {
 	 * @return array
 	 */
 	private static function shape( $post, array $dates ) {
-		$open  = (string) get_post_meta( $post->ID, self::META_OPEN, true );
+		$open   = (string) get_post_meta( $post->ID, self::META_OPEN, true );
 		$close  = (string) get_post_meta( $post->ID, self::META_CLOSE, true );
 		$limits = get_post_meta( $post->ID, self::META_LIMITS, true );
+		$closed = get_post_meta( $post->ID, self::META_CLOSED, true );
 		return array(
-			'id'          => (int) $post->ID,
-			'title'       => (string) $post->post_title,
-			'status'      => (string) $post->post_status,
-			'sales_open'  => '' === $open ? null : $open,
-			'sales_close' => '' === $close ? null : $close,
-			'dates'       => $dates,
-			'date_limits' => is_array( $limits ) ? $limits : array(),
+			'id'           => (int) $post->ID,
+			'title'        => (string) $post->post_title,
+			'status'       => (string) $post->post_status,
+			'sales_open'   => '' === $open ? null : $open,
+			'sales_close'  => '' === $close ? null : $close,
+			'dates'        => $dates,
+			'date_limits'  => is_array( $limits ) ? $limits : array(),
+			'closed_dates' => is_array( $closed ) ? array_values( array_map( 'strval', $closed ) ) : array(),
 		);
+	}
+
+	/**
+	 * Pure: the event as customers see it, without the dates that stopped
+	 * taking orders. Staff screens use the full event.
+	 *
+	 * @param array $event Event from get() or open_events().
+	 * @return array
+	 */
+	public static function without_closed( array $event ) {
+		$closed = isset( $event['closed_dates'] ) ? array_map( 'strval', (array) $event['closed_dates'] ) : array();
+		if ( ! $closed || empty( $event['dates'] ) ) {
+			return $event;
+		}
+		$event['dates'] = array_values(
+			array_filter(
+				(array) $event['dates'],
+				function ( $row ) use ( $closed ) {
+					return ! in_array( isset( $row['date'] ) ? (string) $row['date'] : '', $closed, true );
+				}
+			)
+		);
+		return $event;
+	}
+
+	/**
+	 * Pure: closed dates kept only when they are the event's dates, sorted
+	 * and deduped.
+	 *
+	 * @param array    $raw         Posted or stored Y-m-d list.
+	 * @param string[] $event_dates The event's dates.
+	 * @return string[]
+	 */
+	public static function clean_closed( array $raw, array $event_dates ) {
+		$out = array_values( array_unique( array_intersect( array_map( 'strval', $raw ), array_map( 'strval', $event_dates ) ) ) );
+		sort( $out );
+		return $out;
+	}
+
+	/**
+	 * Dates of an event that stopped taking orders.
+	 *
+	 * @param int $event_id Event id.
+	 * @return string[]
+	 */
+	public static function closed_dates( $event_id ) {
+		if ( (int) $event_id <= 0 || ! function_exists( 'get_post_meta' ) ) {
+			return array();
+		}
+		$closed = get_post_meta( (int) $event_id, self::META_CLOSED, true );
+		return is_array( $closed ) ? array_values( array_map( 'strval', $closed ) ) : array();
+	}
+
+	/**
+	 * Saves which dates stopped taking orders.
+	 *
+	 * @param int      $event_id Event id.
+	 * @param string[] $closed   Y-m-d list from clean_closed().
+	 */
+	public static function save_closed_dates( $event_id, array $closed ) {
+		if ( $closed ) {
+			update_post_meta( (int) $event_id, self::META_CLOSED, array_values( $closed ) );
+		} else {
+			delete_post_meta( (int) $event_id, self::META_CLOSED );
+		}
 	}
 
 	/**
@@ -207,7 +275,7 @@ class Fe_Event_Repo {
 			if ( ! $delivery && ! $pickup && ! $courier ) {
 				continue;
 			}
-			$location = isset( $row['location_id'] ) ? (int) $row['location_id'] : 0;
+			$location         = isset( $row['location_id'] ) ? (int) $row['location_id'] : 0;
 			$by_date[ $date ] = array(
 				'date'            => $date,
 				'delivery'        => $delivery,
@@ -350,7 +418,8 @@ class Fe_Event_Repo {
 		$dates = self::dates_for_events( wp_list_pluck( $open, 'ID' ) );
 		$out   = array();
 		foreach ( $open as $post ) {
-			$out[] = self::shape( $post, isset( $dates[ $post->ID ] ) ? $dates[ $post->ID ] : array() );
+			// Customers only ever see the dates still taking orders.
+			$out[] = self::without_closed( self::shape( $post, isset( $dates[ $post->ID ] ) ? $dates[ $post->ID ] : array() ) );
 		}
 		return $out;
 	}

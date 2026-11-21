@@ -57,5 +57,8 @@
 		if ( 'checkbox' === target.type && target.closest && target.parentElement && target.parentElement.classList.contains( 'fe-service__toggle' ) ) {
 			target.closest( '.fe-service' ).classList.toggle( 'is-off', ! target.checked );
 		}
+		if ( 'checkbox' === target.type && target.closest && target.parentElement && target.parentElement.classList.contains( 'fe-date__close' ) ) {
+			target.closest( '.fe-date' ).classList.toggle( 'is-closed', target.checked );
+		}
 	} );
 }() );

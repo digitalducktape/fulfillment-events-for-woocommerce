@@ -24,6 +24,12 @@
 .fe-date { border: 1px solid #dcdcde; border-radius: 4px; background: #fff; padding: 10px 12px; margin: 0 0 10px; }
 .fe-date__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
 .fe-date__head input[type="date"] { font-weight: 600; }
+.fe-date__close { margin-right: auto; color: #50575e; }
+.fe-date__closed-note { display: none; margin: 0 0 8px; padding: 6px 10px; border-left: 4px solid #dba617; background: #fcf9e8; }
+.fe-date.is-closed { background: #f6f7f7; }
+.fe-date.is-closed .fe-date__closed-note { display: block; }
+.fe-date.is-closed .fe-service { opacity: 0.55; }
+.fe-date.is-closed .fe-date__close { color: #1d2327; font-weight: 600; }
 .fe-service { display: grid; grid-template-columns: 7.5em 9.5em 1fr; align-items: center; gap: 6px 10px; padding: 5px 0; border-top: 1px solid #f0f0f1; }
 .fe-service__toggle { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; }
 .fe-service__time { width: 100%; }
@@ -69,3 +75,6 @@
 .fe-bmc { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid #000; border-radius: 10px; background: #ffdd00; color: #000; font-size: 16px; font-weight: 600; text-decoration: none; }
 .fe-bmc:hover, .fe-bmc:focus { background: #ffe94d; color: #000; }
 .fe-bmc:focus { outline: 2px solid #2271b1; outline-offset: 2px; box-shadow: none; }
+
+/* Events list: a date that stopped taking orders. */
+.fe-datelist .fe-closed .fe-kinds { color: #996800; font-weight: 600; }

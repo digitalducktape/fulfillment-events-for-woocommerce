@@ -60,10 +60,10 @@ class Fe_Event_Editor {
 			$error = 'close_before_open';
 		}
 
-		$date_rows  = isset( $post['fe_dates'] ) && is_array( $post['fe_dates'] ) ? array_values( $post['fe_dates'] ) : array();
-		$dates      = Fe_Event_Repo::normalize_dates( $date_rows );
-		$date_list  = array_column( $dates, 'date' );
-		$setup      = Fe_Event_Setup::rules_from_setup(
+		$date_rows = isset( $post['fe_dates'] ) && is_array( $post['fe_dates'] ) ? array_values( $post['fe_dates'] ) : array();
+		$dates     = Fe_Event_Repo::normalize_dates( $date_rows );
+		$date_list = array_column( $dates, 'date' );
+		$setup     = Fe_Event_Setup::rules_from_setup(
 			$existing_rules,
 			Fe_Event_Setup::ticks_from_post( $date_rows, $zones_by_type ),
 			Fe_Event_Setup::prices_from_post( isset( $post['fe_prices'] ) && is_array( $post['fe_prices'] ) ? array_values( $post['fe_prices'] ) : array() ),
@@ -71,6 +71,12 @@ class Fe_Event_Editor {
 			$zones_by_type,
 			! empty( $post['fe_legacy_posted'] ) ? array_map( 'strval', isset( $post['fe_keep_rules'] ) ? (array) $post['fe_keep_rules'] : array() ) : null
 		);
+		$closed    = array();
+		foreach ( $date_rows as $row ) {
+			if ( is_array( $row ) && ! empty( $row['closed'] ) && isset( $row['date'] ) ) {
+				$closed[] = trim( (string) $row['date'] );
+			}
+		}
 		$exceptions = Fe_Event_Setup::exceptions_from_post( isset( $post['fe_exceptions'] ) && is_array( $post['fe_exceptions'] ) ? array_values( $post['fe_exceptions'] ) : array(), $date_list );
 
 		$excluded = array_values( array_unique( array_merge( self::clean_ids( isset( $post['fe_excluded_ids'] ) ? $post['fe_excluded_ids'] : array() ), $exceptions['excluded'] ) ) );
@@ -83,6 +89,7 @@ class Fe_Event_Editor {
 				'error'       => $error,
 			),
 			'dates'        => $dates,
+			'closed'       => Fe_Event_Repo::clean_closed( $closed, $date_list ),
 			'rules'        => $setup['rules'],
 			'dropped'      => $setup['dropped'],
 			'category_ids' => self::clean_ids( isset( $post['fe_category_ids'] ) ? $post['fe_category_ids'] : array() ),
@@ -171,6 +178,7 @@ class Fe_Event_Editor {
 		Fe_Event_Repo::save_sales_window( $post_id, $parsed['event']['sales_open'], $parsed['event']['sales_close'] );
 		Fe_Event_Repo::save_dates( $post_id, $parsed['dates'] );
 		Fe_Event_Repo::save_date_limits( $post_id, $parsed['limits'] );
+		Fe_Event_Repo::save_closed_dates( $post_id, $parsed['closed'] );
 		Fe_Zone_Rule_Repo::replace_for_event( $post_id, $parsed['rules'] );
 		Fe_Product_Links::sync_event( $post_id, $parsed['category_ids'], $product_ids, $parsed['excluded_ids'] );
 		if ( isset( $_POST['fe_notes'] ) ) {
@@ -469,10 +477,13 @@ class Fe_Event_Editor {
 		$today = wp_date( 'Y-m-d' );
 		echo '<ul class="fe-datelist">';
 		foreach ( $event['dates'] as $row ) {
-			$dt   = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $row['date'], wp_timezone() );
-			$when = $dt ? wp_date( 'D, M j', $dt->getTimestamp() ) : (string) $row['date'];
-			$past = (string) $row['date'] < $today;
-			echo '<li' . ( $past ? ' class="fe-past" title="' . esc_attr__( 'Date has passed', 'fulfillment-events-for-woocommerce' ) . '"' : '' ) . '><strong>' . esc_html( $when ) . '</strong> <span class="fe-kinds">' . esc_html( self::offer_text( $row ) ) . '</span></li>';
+			$dt     = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $row['date'], wp_timezone() );
+			$when   = $dt ? wp_date( 'D, M j', $dt->getTimestamp() ) : (string) $row['date'];
+			$past   = (string) $row['date'] < $today;
+			$closed = in_array( (string) $row['date'], (array) $event['closed_dates'], true );
+			$kinds  = $closed ? __( 'Not taking orders', 'fulfillment-events-for-woocommerce' ) : self::offer_text( $row );
+			$class  = $past ? ' class="fe-past" title="' . esc_attr__( 'Date has passed', 'fulfillment-events-for-woocommerce' ) . '"' : ( $closed ? ' class="fe-closed"' : '' );
+			echo '<li' . $class . '><strong>' . esc_html( $when ) . '</strong> <span class="fe-kinds">' . esc_html( $kinds ) . '</span></li>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $class is built from escaped parts.
 		}
 		echo '</ul>';
 		$count = count( $event['date_limits'] ) + count( Fe_Product_Links::product_ids_for_event( (int) $post_id, Fe_Product_Links::EXCLUDE_KEY ) );
