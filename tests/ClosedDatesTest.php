@@ -83,6 +83,9 @@ final class ClosedDatesTest extends TestCase {
 		$errors   = Fe_Cart::changed_date_errors( $packages, array( 'fe_delivery:3' ) );
 		$this->assertCount( 1, $errors );
 		$this->assertStringContainsString( 'Holiday Pre-order 2026', $errors[0] );
+		// What the section moved to, so the pick can be updated and the
+		// customer isn't stopped again once they've seen the new date.
+		$this->assertSame( array( 'event:7' => '2026-12-18' ), Fe_Cart::changed_dates( $packages, array( 'fe_delivery:3' ) ) );
 		// Picked date still offered, or nothing picked: no error.
 		$packages[0]['fe_chosen'] = '2026-12-18';
 		$this->assertSame( array(), Fe_Cart::changed_date_errors( $packages, array( 'fe_delivery:3' ) ) );

@@ -81,17 +81,30 @@ class Fe_Cart {
 	}
 
 	/**
-	 * Pure: one error per event section whose picked date is no longer
-	 * offered (it stopped taking orders, or passed while checkout was open).
-	 * The section's options have already moved to another date, so the
-	 * customer is asked to check it rather than ordering it unawares.
+	 * Pure: sections whose picked date is no longer offered, with the date
+	 * their options moved to.
 	 *
 	 * @param array $packages Calculated packages (with rates and fe_chosen).
 	 * @param array $chosen   Package key => chosen rate id.
-	 * @return string[]
+	 * @return array<string,string> Section group => Y-m-d now offered.
 	 */
-	public static function changed_date_errors( $packages, $chosen ) {
-		$errors = array();
+	public static function changed_dates( $packages, $chosen ) {
+		$out = array();
+		foreach ( self::date_changes( $packages, $chosen ) as $change ) {
+			$out[ $change['group'] ] = $change['now'];
+		}
+		return $out;
+	}
+
+	/**
+	 * Pure: the sections whose picked date is no longer offered.
+	 *
+	 * @param array $packages Calculated packages.
+	 * @param array $chosen   Package key => chosen rate id.
+	 * @return array[] List of {group, picked, now, name}.
+	 */
+	private static function date_changes( $packages, $chosen ) {
+		$out = array();
 		foreach ( (array) $packages as $key => $package ) {
 			$picked = isset( $package['fe_chosen'] ) ? (string) $package['fe_chosen'] : '';
 			if ( '' === $picked || empty( $package['fe_event_id'] ) || ! isset( $chosen[ $key ] ) ) {
@@ -106,12 +119,47 @@ class Fe_Cart {
 			if ( '' === $date || $date === $picked ) {
 				continue;
 			}
-			$name     = isset( $meta['fe_event_name'] ) && '' !== (string) $meta['fe_event_name'] ? (string) $meta['fe_event_name'] : __( 'your order', 'fulfillment-events-for-woocommerce' );
+			$out[] = array(
+				'group'  => isset( $package['fe_group'] ) ? (string) $package['fe_group'] : '',
+				'picked' => $picked,
+				'now'    => $date,
+				'name'   => isset( $meta['fe_event_name'] ) && '' !== (string) $meta['fe_event_name'] ? (string) $meta['fe_event_name'] : __( 'your order', 'fulfillment-events-for-woocommerce' ),
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Saves the date each changed section now shows as the customer's pick,
+	 * so after seeing the error once they can place the order.
+	 *
+	 * @param array $packages Calculated packages.
+	 * @param array $chosen   Package key => chosen rate id.
+	 */
+	private static function accept_changed_dates( $packages, $chosen ) {
+		foreach ( self::changed_dates( $packages, $chosen ) as $group => $date ) {
+			Fe_Checkout_Dates::set( $group, $date );
+		}
+	}
+
+	/**
+	 * Pure: one error per event section whose picked date is no longer
+	 * offered (it stopped taking orders, or passed while checkout was open).
+	 * The section's options have already moved to another date, so the
+	 * customer is asked to check it rather than ordering it unawares.
+	 *
+	 * @param array $packages Calculated packages (with rates and fe_chosen).
+	 * @param array $chosen   Package key => chosen rate id.
+	 * @return string[]
+	 */
+	public static function changed_date_errors( $packages, $chosen ) {
+		$errors = array();
+		foreach ( self::date_changes( $packages, $chosen ) as $change ) {
 			$errors[] = sprintf(
 				/* translators: 1: date, e.g. Dec 10; 2: event name */
 				__( '%1$s is no longer available for %2$s. Check the date and place your order again.', 'fulfillment-events-for-woocommerce' ),
-				self::short_date( $picked ),
-				$name
+				self::short_date( $change['picked'] ),
+				$change['name']
 			);
 		}
 		return array_values( array_unique( $errors ) );
@@ -155,6 +203,7 @@ class Fe_Cart {
 		foreach ( self::changed_date_errors( WC()->shipping()->get_packages(), $chosen ) as $i => $message ) {
 			$errors->add( 'fe_date_changed_' . $i, esc_html( $message ) );
 		}
+		self::accept_changed_dates( WC()->shipping()->get_packages(), $chosen );
 	}
 
 	/**
@@ -184,7 +233,9 @@ class Fe_Cart {
 		}
 		$errors = self::past_date_errors( $metas, self::today() );
 		if ( function_exists( 'WC' ) && WC() && WC()->session && WC()->shipping() ) {
-			$errors = array_merge( $errors, self::changed_date_errors( WC()->shipping()->get_packages(), (array) WC()->session->get( 'chosen_shipping_methods', array() ) ) );
+			$chosen = (array) WC()->session->get( 'chosen_shipping_methods', array() );
+			$errors = array_merge( $errors, self::changed_date_errors( WC()->shipping()->get_packages(), $chosen ) );
+			self::accept_changed_dates( WC()->shipping()->get_packages(), $chosen );
 		}
 		if ( $errors ) {
 			// The Store API returns the message as JSON text; the blocks UI escapes it when rendering.

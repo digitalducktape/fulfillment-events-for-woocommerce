@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-21T19:38:55+00:00\n"
+"POT-Creation-Date: 2026-11-21T19:39:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -181,17 +181,17 @@ msgid "Dates"
 msgstr ""
 
 #: includes/admin/class-fe-event-editor.php:426
-#: includes/wc/class-fe-cart.php:232
+#: includes/wc/class-fe-cart.php:283
 msgid "delivery"
 msgstr ""
 
 #: includes/admin/class-fe-event-editor.php:429
-#: includes/wc/class-fe-cart.php:234
+#: includes/wc/class-fe-cart.php:285
 msgid "pickup"
 msgstr ""
 
 #: includes/admin/class-fe-event-editor.php:432
-#: includes/wc/class-fe-cart.php:228
+#: includes/wc/class-fe-cart.php:279
 msgid "courier"
 msgstr ""
 
@@ -683,7 +683,7 @@ msgid "Add-on order number could not be matched; check this order."
 msgstr ""
 
 #: includes/wc/class-fe-cart.php:76
-#: includes/wc/class-fe-cart.php:109
+#: includes/wc/class-fe-cart.php:126
 msgid "your order"
 msgstr ""
 
@@ -694,39 +694,39 @@ msgid "The date you chose for %s has passed. Choose another date."
 msgstr ""
 
 #. translators: 1: date, e.g. Dec 10; 2: event name
-#: includes/wc/class-fe-cart.php:112
+#: includes/wc/class-fe-cart.php:160
 #, php-format
 msgid "%1$s is no longer available for %2$s. Check the date and place your order again."
 msgstr ""
 
-#: includes/wc/class-fe-cart.php:230
+#: includes/wc/class-fe-cart.php:281
 msgid "delivery or pickup"
 msgstr ""
 
 #. translators: 1: comma-separated dates, 2: last date, e.g. "Dec 3, Dec 10" and "Dec 18".
-#: includes/wc/class-fe-cart.php:240
+#: includes/wc/class-fe-cart.php:291
 #, php-format
 msgid "%1$s or %2$s"
 msgstr ""
 
 #. translators: 1: fulfillment types, e.g. "delivery or pickup", 2: dates, e.g. "Dec 10 or Dec 18".
-#: includes/wc/class-fe-cart.php:248
+#: includes/wc/class-fe-cart.php:299
 #, php-format
 msgid "Available for %1$s on %2$s"
 msgstr ""
 
-#: includes/wc/class-fe-cart.php:455
+#: includes/wc/class-fe-cart.php:506
 msgid "Combined delivery"
 msgstr ""
 
 #. translators: %s: event name.
-#: includes/wc/class-fe-cart.php:942
+#: includes/wc/class-fe-cart.php:993
 #, php-format
 msgid "%s items aren't available for this address. Try a different address or remove them from your cart."
 msgstr ""
 
 #. translators: 1: event name, 2: postcode.
-#: includes/wc/class-fe-cart.php:945
+#: includes/wc/class-fe-cart.php:996
 #, php-format
 msgid "%1$s items aren't available for %2$s. Try a different address or remove them from your cart."
 msgstr ""
