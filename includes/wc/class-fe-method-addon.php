@@ -76,6 +76,9 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 			if ( isset( $package['fe_guest_addon'] ) && 'no' === $package['fe_guest_addon'] ) {
 				return;
 			}
+			if ( ! self::any_date_takes_addons( $offers ) ) {
+				return;
+			}
 			$this->add_rate(
 				array(
 					'id'        => $this->id . ':' . $this->instance_id . ':guest',
@@ -142,5 +145,25 @@ class Fe_Method_Addon extends Fe_Shipping_Method {
 				)
 			);
 		}
+	}
+
+	/**
+	 * Whether any offered event still has a date taking add-ons.
+	 *
+	 * @param array $offers Offers, see Fe_Cart_Grouper::to_offers().
+	 * @return bool
+	 */
+	private static function any_date_takes_addons( array $offers ) {
+		$today = wp_date( 'Y-m-d' );
+		foreach ( $offers as $offer ) {
+			$event = Fe_Event_Repo::get( (int) $offer['event_id'] );
+			if ( ! $event ) {
+				continue;
+			}
+			if ( Fe_Addon_Rules::takes_addons( array_column( (array) $event['dates'], 'date' ), (array) $event['addon_off_dates'], $today, $offer['dates'] ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

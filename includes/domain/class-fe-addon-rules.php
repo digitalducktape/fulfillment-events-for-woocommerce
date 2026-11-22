@@ -74,6 +74,31 @@ class Fe_Addon_Rules {
 	}
 
 	/**
+	 * Pure: whether any date could still take an add-on, so the generic
+	 * guest "Add to an existing order" option is worth showing.
+	 *
+	 * @param string[]      $dates   Event dates (Y-m-d), closed ones included.
+	 * @param string[]      $off     Dates with add-ons turned off.
+	 * @param string        $today   Store-local Y-m-d; earlier dates don't count.
+	 * @param string[]|null $allowed Dates the items may ship on; null for any.
+	 * @return bool
+	 */
+	public static function takes_addons( array $dates, array $off, $today = '', $allowed = null ) {
+		$off = array_map( 'strval', $off );
+		foreach ( $dates as $date ) {
+			$date = (string) $date;
+			if ( in_array( $date, $off, true ) || ( '' !== (string) $today && $date < (string) $today ) ) {
+				continue;
+			}
+			if ( is_array( $allowed ) && ! in_array( $date, array_map( 'strval', $allowed ), true ) ) {
+				continue;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Order id from what a customer typed ("#345", "345").
 	 *
 	 * @param string $input Raw input.

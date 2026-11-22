@@ -575,12 +575,36 @@ class Fe_Cart {
 				// cart rated before the customer's order existed keeps rates
 				// with no "Add to my order" option.
 				$out[ $i ]['fe_addon_targets'] = self::addon_targets_key( isset( $package['fe_customer_id'] ) ? (int) $package['fe_customer_id'] : 0 );
+				// Turning add-ons off for a date must drop "Add to my order"
+				// from carts already rated.
+				$out[ $i ]['fe_addon_off'] = self::addon_settings_key(
+					Fe_Cart_Grouper::to_offers( isset( $package['fe_offers'] ) ? $package['fe_offers'] : self::package_event_ids( $package ) ),
+					array( 'Fe_Event_Repo', 'addon_off_dates' )
+				);
 				// The date picked for this section; part of the package so a
 				// new pick recalculates its rates.
 				$out[ $i ]['fe_chosen'] = Fe_Checkout_Dates::chosen( (string) $package['fe_group'] );
 			}
 		}
 		return $out;
+	}
+
+	/**
+	 * Pure: the add-on-off dates of a package's events, as a string that
+	 * changes whenever one is turned on or off.
+	 *
+	 * @param array    $offers   Offers, see Fe_Cart_Grouper::to_offers().
+	 * @param callable $off_for  int event id => string[] add-on-off dates.
+	 * @return string
+	 */
+	public static function addon_settings_key( array $offers, $off_for ) {
+		$parts = array();
+		foreach ( $offers as $offer ) {
+			$id           = (int) $offer['event_id'];
+			$parts[ $id ] = $id . ':' . implode( ',', (array) call_user_func( $off_for, $id ) );
+		}
+		ksort( $parts );
+		return implode( ';', $parts );
 	}
 
 	/**

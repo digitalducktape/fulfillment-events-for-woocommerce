@@ -117,4 +117,28 @@ final class ClosedDatesTest extends TestCase {
 		$packages[0]['fe_chosen'] = '';
 		$this->assertSame( array(), Fe_Cart::changed_date_errors( $packages, array( 'fe_delivery:3' ) ) );
 	}
+
+	public function test_guests_are_not_offered_add_ons_when_no_date_takes_them() {
+		$dates = array( '2026-12-10', '2026-12-18' );
+		$this->assertTrue( Fe_Addon_Rules::takes_addons( $dates, array(), '2026-11-21' ) );
+		$this->assertTrue( Fe_Addon_Rules::takes_addons( $dates, array( '2026-12-10' ), '2026-11-21' ) );
+		// Every date has add-ons off.
+		$this->assertFalse( Fe_Addon_Rules::takes_addons( $dates, $dates, '2026-11-21' ) );
+		// The only date that takes add-ons has passed.
+		$this->assertFalse( Fe_Addon_Rules::takes_addons( $dates, array( '2026-12-18' ), '2026-12-11' ) );
+		// The items can only ship on a date whose add-ons are off.
+		$this->assertFalse( Fe_Addon_Rules::takes_addons( $dates, array( '2026-12-18' ), '2026-11-21', array( '2026-12-18' ) ) );
+		$this->assertTrue( Fe_Addon_Rules::takes_addons( $dates, array( '2026-12-10' ), '2026-11-21', array( '2026-12-18' ) ) );
+	}
+
+	public function test_turning_add_ons_off_changes_the_package_so_rates_recalculate() {
+		$offers = array( array( 'event_id' => 7, 'dates' => null ) );
+		$before = Fe_Cart::addon_settings_key( $offers, function () {
+			return array();
+		} );
+		$after  = Fe_Cart::addon_settings_key( $offers, function ( $id ) {
+			return 7 === $id ? array( '2026-12-10' ) : array();
+		} );
+		$this->assertNotSame( $before, $after );
+	}
 }
