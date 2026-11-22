@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.8.0\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.8.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-21T19:57:12+00:00\n"
+"POT-Creation-Date: 2026-11-22T07:36:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -738,13 +738,13 @@ msgid "Combined delivery"
 msgstr ""
 
 #. translators: %s: event name.
-#: includes/wc/class-fe-cart.php:993
+#: includes/wc/class-fe-cart.php:1017
 #, php-format
 msgid "%s items aren't available for this address. Try a different address or remove them from your cart."
 msgstr ""
 
 #. translators: 1: event name, 2: postcode.
-#: includes/wc/class-fe-cart.php:996
+#: includes/wc/class-fe-cart.php:1020
 #, php-format
 msgid "%1$s items aren't available for %2$s. Try a different address or remove them from your cart."
 msgstr ""
@@ -791,12 +791,12 @@ msgstr ""
 msgid "Lets customers add an event order on to an open order for the same event, at no extra shipping cost."
 msgstr ""
 
-#: includes/wc/class-fe-method-addon.php:82
+#: includes/wc/class-fe-method-addon.php:85
 msgid "Add to an existing order"
 msgstr ""
 
 #. translators: 1: order number, 2: fulfillment type, 3: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-method-addon.php:130
+#: includes/wc/class-fe-method-addon.php:133
 #, php-format
 msgid "Add to my order #%1$s — %2$s · %3$s · no extra fee"
 msgstr ""
