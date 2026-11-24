@@ -37,6 +37,7 @@ If this plugin saves you time, you can support its development.
 
    A side box holds internal notes, and the events list shows each event's dates, notes and exception count. **Duplicate** copies an event as a draft.
 5. **Products** can also be attached from the product edit screen (General tab), a category's edit screen, or bulk edit, which can add, exclude or remove several events at once.
+6. **Orders you enter yourself.** On a new or existing order, add shipping, click its pencil and choose the Event, Date, Service, Time and Place. Staff can pick any configured date, including unpublished events and dates closed to customers. The fee is yours to type; the usual fee per zone is shown.
 
 Only published events whose sales window is open take effect. A product attached to an event that isn't open (a draft, or before its sales window) can't be bought, so attach products when you publish.
 

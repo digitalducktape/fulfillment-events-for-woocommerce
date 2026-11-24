@@ -23,6 +23,7 @@ require_once $includes . 'domain/class-fe-cart-grouper.php';
 require_once $includes . 'domain/class-fe-split-math.php';
 require_once $includes . 'domain/class-fe-fee-dedupe.php';
 require_once $includes . 'domain/class-fe-addon-rules.php';
+require_once $includes . 'domain/class-fe-order-event.php';
 require_once $includes . 'wc/class-fe-cart.php';
 require_once $includes . 'wc/class-fe-order-stamper.php';
 require_once $includes . 'wc/class-fe-addon-field.php';

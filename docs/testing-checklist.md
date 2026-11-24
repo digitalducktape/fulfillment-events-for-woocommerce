@@ -114,3 +114,10 @@ here.
 - [ ] While logged in as a shop manager, GET /wp-json/fe/v1/events and /wp-json/fe/v1/events/{id} return events and zone rules; logged out or as a customer both return 401/403; POST is rejected.
 - [ ] Uninstall: with "Delete events, locations and zone rules" on, delete the plugin: the fe_ tables, event posts, `_fe_events` product and category meta, `fe_split_lock_*` options, the ticket-hint transient and the `fe_dismissed_ticket_hint` user meta are gone. With it off, nothing is removed.
 - [ ] Load the .pot file in Loco Translate or Poedit and confirm strings appear.
+
+## Orders entered by staff
+
+- [ ] New order (legacy and HPOS): Add item(s) > Add shipping, pencil, choose an event, date, service, time and place, Save, then Create. The line is titled like checkout ("Delivery · Thu, Dec 10 · 9am–1pm") and the order has the `_fe_*` contract meta. Also choose the event and click Create without Save first.
+- [ ] A draft event, a closed date and a past date can be chosen; the list says which they are.
+- [ ] Edit an existing event order without touching its event and Update: nothing changes and no note is added. Change its date: title, meta and a note change. Choose "No event", or delete the line: the order leaves the event.
+- [ ] A split parent, or an order waiting to be split, shows why its event can't be changed. A processing order (not editable) shows no fields.

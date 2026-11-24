@@ -7,7 +7,7 @@ Tested up to: 6.9
 WC tested up to: 10.3
 Requires PHP: 7.4
 Requires Plugins: woocommerce
-Stable tag: 0.8.1
+Stable tag: 0.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,10 @@ Support this plugin: https://buymeacoffee.com/digitalducktape
 * Listeners on `fe_order_stamped` must be idempotent; it can fire more than once for an order.
 
 == Changelog ==
+
+= 0.9.0 =
+* New: put an order in an event from wp-admin. A shipping line's edit panel now has Event, Date, Service, Time and Place, on new and existing orders. Staff can pick any configured event date, including unpublished events and dates closed to customers.
+* Staff can change or remove an order's event the same way; a note on the order records it.
 
 = 0.8.1 =
 * Fix: turning Add-ons off for a date now removes "Add to my order" from the cart and checkout straight away, including for customers whose cart was already open.

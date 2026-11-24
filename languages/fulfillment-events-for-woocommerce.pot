@@ -2,14 +2,14 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Fulfillment Events for WooCommerce 0.8.1\n"
+"Project-Id-Version: Fulfillment Events for WooCommerce 0.9.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fulfillment-events-for-woocommerce\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-22T07:36:55+00:00\n"
+"POT-Creation-Date: 2026-11-24T21:49:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: fulfillment-events-for-woocommerce\n"
@@ -41,7 +41,7 @@ msgstr ""
 
 #: includes/admin/class-fe-admin.php:46
 #: includes/admin/class-fe-admin.php:158
-#: includes/class-fe-plugin.php:94
+#: includes/class-fe-plugin.php:95
 msgid "Support this plugin"
 msgstr ""
 
@@ -263,6 +263,7 @@ msgstr ""
 
 #. translators: %s: event name, e.g. Holiday Pre-order 2026
 #: includes/admin/class-fe-event-setup-box.php:132
+#: includes/admin/class-fe-order-event-admin.php:387
 #: includes/admin/class-fe-zone-grid.php:197
 #: includes/wc/class-fe-checkout-dates.php:115
 #: includes/wc/class-fe-checkout-dates.php:296
@@ -502,6 +503,102 @@ msgstr ""
 msgid "This order was not split."
 msgstr ""
 
+#: includes/admin/class-fe-order-event-admin.php:70
+msgid "This order was split. Change the event on the split orders."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:73
+msgid "This order will be split once it is paid. Change the event on the split orders."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:133
+#: includes/admin/class-fe-zone-grid.php:40
+msgid "Locations not covered by your other zones"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:178
+#: includes/wc/class-fe-shipping-method.php:123
+msgid "We'll coordinate the time with you"
+msgstr ""
+
+#. translators: %s: event name
+#: includes/admin/class-fe-order-event-admin.php:192
+#, php-format
+msgid "%s (not published)"
+msgstr ""
+
+#. translators: %s: date
+#: includes/admin/class-fe-order-event-admin.php:204
+#, php-format
+msgid "%s (past)"
+msgstr ""
+
+#. translators: %s: date
+#: includes/admin/class-fe-order-event-admin.php:208
+#, php-format
+msgid "%s (closed to customers)"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:225
+msgid "free"
+msgstr ""
+
+#. translators: %s: list of zones and fees, e.g. SF $9.00, Marin $20.00
+#: includes/admin/class-fe-order-event-admin.php:229
+#, php-format
+msgid "Usual fee: %s"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:309
+msgid "An order belongs to one event date. The first event line counts; make a separate order for this one."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:312
+msgid "No event yet. Click the pencil to choose one."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:354
+#: includes/admin/class-fe-product-fields.php:152
+msgid "No event"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:386
+#: includes/data/class-fe-event-repo.php:34
+msgid "Event"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:388
+#: includes/admin/class-fe-zone-grid.php:192
+msgid "Service"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:390
+msgid "Time"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:393
+msgid "Place"
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:484
+msgid "The event was not changed: choose an event, a date and a service it has."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:508
+#: includes/domain/class-fe-order-event.php:234
+msgid "Shipping"
+msgstr ""
+
+#. translators: 1: previous event, date and service; 2: new one
+#: includes/admin/class-fe-order-event-admin.php:553
+#, php-format
+msgid "Fulfillment changed from %1$s to %2$s."
+msgstr ""
+
+#: includes/admin/class-fe-order-event-admin.php:571
+msgid "no event"
+msgstr ""
+
 #: includes/admin/class-fe-product-fields.php:51
 msgid "— No change —"
 msgstr ""
@@ -532,10 +629,6 @@ msgstr ""
 #: includes/admin/class-fe-product-fields.php:137
 #, php-format
 msgid "%s (draft)"
-msgstr ""
-
-#: includes/admin/class-fe-product-fields.php:152
-msgid "No event"
 msgstr ""
 
 #: includes/admin/class-fe-product-fields.php:166
@@ -602,10 +695,6 @@ msgid_plural "In %d open events"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/class-fe-zone-grid.php:40
-msgid "Locations not covered by your other zones"
-msgstr ""
-
 #. translators: %d: shipping zone id
 #: includes/admin/class-fe-zone-grid.php:72
 #, php-format
@@ -646,10 +735,6 @@ msgstr ""
 msgid "Zone"
 msgstr ""
 
-#: includes/admin/class-fe-zone-grid.php:192
-msgid "Service"
-msgstr ""
-
 #: includes/admin/class-fe-zone-grid.php:198
 msgid "All dates"
 msgstr ""
@@ -662,12 +747,8 @@ msgstr ""
 msgid "Remove this price change"
 msgstr ""
 
-#: includes/class-fe-plugin.php:82
+#: includes/class-fe-plugin.php:83
 msgid "Fulfillment Events for WooCommerce needs WooCommerce to be installed and active."
-msgstr ""
-
-#: includes/data/class-fe-event-repo.php:34
-msgid "Event"
 msgstr ""
 
 #: includes/data/class-fe-event-repo.php:35
@@ -676,6 +757,36 @@ msgstr ""
 
 #: includes/data/class-fe-event-repo.php:36
 msgid "Edit event"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/domain/class-fe-order-event.php:251
+#, php-format
+msgid "Delivery · %s"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/domain/class-fe-order-event.php:256
+#, php-format
+msgid "Pickup · %s"
+msgstr ""
+
+#. translators: 1: location name, 2: date, e.g. Thu, Dec 10
+#: includes/domain/class-fe-order-event.php:259
+#, php-format
+msgid "Pickup at %1$s · %2$s"
+msgstr ""
+
+#. translators: %s: date, e.g. Thu, Dec 10
+#: includes/domain/class-fe-order-event.php:264
+#, php-format
+msgid "Courier pickup · %s"
+msgstr ""
+
+#. translators: 1: service and date, e.g. Delivery · Thu, Dec 10; 2: time, e.g. 9am–1pm
+#: includes/domain/class-fe-order-event.php:269
+#, php-format
+msgid "%1$s · %2$s"
 msgstr ""
 
 #: includes/functions.php:53
@@ -889,40 +1000,6 @@ msgstr ""
 
 #: includes/wc/class-fe-shipping-method.php:78
 msgid "Time window shown when an event date has none of its own."
-msgstr ""
-
-#: includes/wc/class-fe-shipping-method.php:123
-msgid "We'll coordinate the time with you"
-msgstr ""
-
-#. translators: %s: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-shipping-method.php:188
-#, php-format
-msgid "Delivery · %s"
-msgstr ""
-
-#. translators: %s: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-shipping-method.php:193
-#, php-format
-msgid "Pickup · %s"
-msgstr ""
-
-#. translators: 1: location name, 2: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-shipping-method.php:196
-#, php-format
-msgid "Pickup at %1$s · %2$s"
-msgstr ""
-
-#. translators: %s: date, e.g. Thu, Dec 10
-#: includes/wc/class-fe-shipping-method.php:201
-#, php-format
-msgid "Courier pickup · %s"
-msgstr ""
-
-#. translators: 1: service and date, e.g. Delivery · Thu, Dec 10; 2: time, e.g. 9am–1pm
-#: includes/wc/class-fe-shipping-method.php:206
-#, php-format
-msgid "%1$s · %2$s"
 msgstr ""
 
 #: includes/wc/class-fe-split-status.php:45
