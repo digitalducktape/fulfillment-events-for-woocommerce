@@ -80,3 +80,14 @@
 
 /* Events list: a date that stopped taking orders. */
 .fe-datelist .fe-closed .fe-kinds { color: #996800; font-weight: 600; }
+
+/* Event fields on an order's shipping line. */
+.woocommerce_order_items .fe-line-summary { margin-top: 4px; color: #646970; font-size: 12px; }
+.woocommerce_order_items .fe-line-error { margin-top: 4px; color: #b32d2e; font-size: 12px; }
+.woocommerce_order_items .fe-line-fields { margin-top: 8px; max-width: 34em; }
+.woocommerce_order_items .fe-line-field { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.woocommerce_order_items .fe-line-field[hidden] { display: none; }
+.woocommerce_order_items .fe-line-field > span { flex: 0 0 5em; }
+.woocommerce_order_items .fe-line-field > select,
+.woocommerce_order_items .fe-line-field > input { flex: 1 1 0; width: auto; min-width: 0; max-width: none; }
+.woocommerce_order_items .fe-line-fees { margin: 0; color: #646970; font-size: 12px; }

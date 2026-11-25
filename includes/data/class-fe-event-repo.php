@@ -112,6 +112,69 @@ class Fe_Event_Repo {
 	}
 
 	/**
+	 * Every configured event, whatever its status or sales window, for staff
+	 * screens: those with a date to come first (soonest first), then past
+	 * ones, newest first.
+	 *
+	 * @param string $today Store-local Y-m-d.
+	 * @return array[]
+	 */
+	public static function all_for_staff( $today ) {
+		$posts  = get_posts(
+			array(
+				'post_type'        => self::POST_TYPE,
+				'post_status'      => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+				'posts_per_page'   => self::MAX_EVENTS,
+				'orderby'          => 'ID',
+				'order'            => 'DESC',
+				'no_found_rows'    => true,
+				'suppress_filters' => false,
+			)
+		);
+		$dates  = self::dates_for_events( wp_list_pluck( $posts, 'ID' ) );
+		$events = array();
+		foreach ( $posts as $post ) {
+			$events[] = self::shape( $post, isset( $dates[ $post->ID ] ) ? $dates[ $post->ID ] : array() );
+		}
+		return self::sort_for_staff( $events, $today );
+	}
+
+	/**
+	 * Pure: the order of all_for_staff().
+	 *
+	 * @param array[] $events Events.
+	 * @param string  $today  Store-local Y-m-d.
+	 * @return array[]
+	 */
+	public static function sort_for_staff( array $events, $today ) {
+		$next = function ( $event ) use ( $today ) {
+			foreach ( array_column( (array) $event['dates'], 'date' ) as $date ) {
+				if ( (string) $date >= (string) $today ) {
+					return (string) $date;
+				}
+			}
+			return '';
+		};
+		$last = function ( $event ) {
+			$dates = array_column( (array) $event['dates'], 'date' );
+			return $dates ? (string) end( $dates ) : '';
+		};
+		usort(
+			$events,
+			function ( $a, $b ) use ( $next, $last ) {
+				$na = $next( $a );
+				$nb = $next( $b );
+				if ( ( '' === $na ) !== ( '' === $nb ) ) {
+					return '' === $na ? 1 : -1;
+				}
+				$by_date = '' === $na ? strcmp( $last( $b ), $last( $a ) ) : strcmp( $na, $nb );
+				return 0 !== $by_date ? $by_date : strcmp( (string) $a['title'], (string) $b['title'] );
+			}
+		);
+		return $events;
+	}
+
+	/**
 	 * Pure: the event as customers see it, without the dates that stopped
 	 * taking orders. Staff screens use the full event.
 	 *

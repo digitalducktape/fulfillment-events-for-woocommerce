@@ -40,6 +40,7 @@ class Fe_Plugin {
 			Fe_Notices::init();
 			Fe_Admin::init();
 			Fe_Order_Admin::init();
+			Fe_Order_Event_Admin::init();
 		}
 		add_action( 'woocommerce_shipping_init', array( __CLASS__, 'load_shipping_methods' ) );
 		add_filter( 'woocommerce_shipping_methods', array( __CLASS__, 'register_shipping_methods' ) );

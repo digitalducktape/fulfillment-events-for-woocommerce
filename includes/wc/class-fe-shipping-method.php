@@ -182,29 +182,6 @@ abstract class Fe_Shipping_Method extends WC_Shipping_Method {
 	 * @return string
 	 */
 	private function translated_label( array $spec ) {
-		switch ( $this->fe_type ) {
-			case 'delivery':
-				/* translators: %s: date, e.g. Thu, Dec 10 */
-				$label = sprintf( __( 'Delivery · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
-				break;
-			case 'pickup':
-				if ( '' === $spec['where'] ) {
-					/* translators: %s: date, e.g. Thu, Dec 10 */
-					$label = sprintf( __( 'Pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
-				} else {
-					/* translators: 1: location name, 2: date, e.g. Thu, Dec 10 */
-					$label = sprintf( __( 'Pickup at %1$s · %2$s', 'fulfillment-events-for-woocommerce' ), $spec['where'], $spec['when'] );
-				}
-				break;
-			default:
-				/* translators: %s: date, e.g. Thu, Dec 10 */
-				$label = sprintf( __( 'Courier pickup · %s', 'fulfillment-events-for-woocommerce' ), $spec['when'] );
-		}
-		$time = isset( $spec['window'] ) ? trim( (string) $spec['window'] ) : '';
-		if ( '' !== $time ) {
-			/* translators: 1: service and date, e.g. Delivery · Thu, Dec 10; 2: time, e.g. 9am–1pm */
-			$label = sprintf( __( '%1$s · %2$s', 'fulfillment-events-for-woocommerce' ), $label, $time );
-		}
-		return $label;
+		return Fe_Order_Event::label( $this->fe_type, $spec['when'], $spec['where'], isset( $spec['window'] ) ? $spec['window'] : '' );
 	}
 }

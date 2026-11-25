@@ -81,7 +81,7 @@ class Fe_Order_Stamper {
 	 * @return string[]
 	 */
 	public static function hidden_item_meta( $keys ) {
-		return array_values( array_unique( array_merge( (array) $keys, self::item_meta_keys() ) ) );
+		return array_values( array_unique( array_merge( (array) $keys, self::item_meta_keys(), array( Fe_Meta::GROUP ) ) ) );
 	}
 
 	/**
